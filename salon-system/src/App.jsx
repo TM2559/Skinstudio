@@ -6,7 +6,7 @@ import {
   Banknote, ExternalLink 
 } from 'lucide-react';
 
-// --- 1. FIREBASE & KONFIGURACE (Toto patří do src/firebaseConfig.js) ---
+// --- 1. FIREBASE & KONFIGURACE (Vloženo pro funkčnost náhledu) ---
 import { initializeApp } from "firebase/app";
 import { 
   getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, setDoc, updateDoc, query 
@@ -15,12 +15,12 @@ import {
   getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken 
 } from "firebase/auth";
 
-// Bezpečný přístup k ENV (funguje v Preview i ve Vite)
+// Bezpečný přístup k ENV
 const getEnv = (key) => {
   try { return import.meta.env[key] || ""; } catch { return ""; }
 };
 
-// Detekce prostředí (Canvas vs Lokální Vite)
+// Detekce prostředí
 const isCanvas = typeof __firebase_config !== 'undefined';
 
 const firebaseConfig = isCanvas
@@ -47,7 +47,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-// Helper pro cesty k datům (aby to fungovalo v Canvasu i na vašem webu)
+// Helpery pro cesty
 const getCollectionPath = (colName) => 
   isCanvas 
     ? collection(db, 'artifacts', appId, 'public', 'data', colName)
@@ -59,7 +59,7 @@ const getDocPath = (colName, docId) =>
     : doc(db, colName, docId);
 
 
-// --- 2. UTILS (Toto patří do src/utils/helpers.js) ---
+// --- 2. UTILS (Vloženo pro funkčnost náhledu) ---
 const Utils = {
   timeToMinutes: (timeStr) => {
     if (!timeStr) return 0;
@@ -99,7 +99,7 @@ const Utils = {
 };
 
 
-// --- 3. CUSTOMER VIEW (Toto patří do src/components/CustomerView.jsx) ---
+// --- 3. CUSTOMER VIEW KOMPONENTA ---
 const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) => {
   const [selectedService, setSelectedService] = useState(null);
   const [selectedDateStr, setSelectedDateStr] = useState(null);
@@ -172,7 +172,6 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
         reminderSent: false
       });
 
-      // EmailJS
       if (EMAILJS_CONFIG.PUBLIC_KEY) {
         await fetch('https://api.emailjs.com/api/v1.0/email/send', {
           method: 'POST',
@@ -204,7 +203,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
 
     } catch (err) {
       console.error(err);
-      alert("Chyba při rezervaci. Zkuste to prosím znovu.");
+      alert("Chyba při rezervaci.");
     } finally {
       setIsSending(false);
     }
@@ -212,10 +211,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
 
   return (
     <div className="flex flex-col gap-10 md:grid md:grid-cols-2 md:gap-16">
-      {/* Levý sloupec: Výběr */}
       <div className="flex flex-col gap-10">
-        
-        {/* Krok 1: Služby */}
         <div>
           <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b border-stone-100 pb-2">
             <span className="w-5 h-5 rounded-full bg-stone-800 text-white flex items-center justify-center text-[8px]">1</span>
@@ -240,7 +236,6 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
           </div>
         </div>
 
-        {/* Krok 2: Datum */}
         <div className={!selectedService ? 'opacity-20 pointer-events-none' : ''}>
           <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 border-b border-stone-100 pb-2">2. Termín</h2>
           <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
@@ -254,14 +249,14 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
                   className={`flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 rounded-xl border transition-all ${activeDateStr === key ? 'bg-stone-800 text-white border-stone-800 shadow-md' : 'bg-white text-stone-500 border-stone-100'}`}
                 >
                   <span className="text-[10px] font-bold uppercase tracking-tighter">{d.toLocaleDateString('cs-CZ', { weekday: 'short' })}</span>
-                  <span className="text-xl font-serif">{d.getDate()}</span>
+                  <span className="text-xl font-serif leading-none my-1">{d.getDate()}</span>
+                  <span className="text-[9px] uppercase tracking-widest opacity-80">{d.toLocaleDateString('cs-CZ', { month: 'short' })}</span>
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Krok 3: Čas */}
         <div className={!activeDateStr ? 'opacity-20 pointer-events-none' : ''}>
           <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 border-b border-stone-100 pb-2">3. Čas</h2>
           <div className="grid grid-cols-3 gap-3">
@@ -279,7 +274,6 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
         </div>
       </div>
 
-      {/* Pravý sloupec: Formulář */}
       <div className="bg-stone-50 p-8 rounded-2xl border border-stone-200 h-fit sticky top-4">
         <h2 className="text-lg font-serif mb-6 border-b border-stone-200 pb-4 flex items-center gap-2 text-stone-800">
           <Sparkles className="text-stone-400" size={16} /> Rezervace
@@ -314,7 +308,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
 };
 
 
-// --- 4. ADMIN VIEW (Toto patří do src/components/AdminView.jsx) ---
+// --- 4. ADMIN VIEW KOMPONENTA ---
 const AdminView = ({ services, schedule, reservations, onLogout }) => {
   const [adminDateInput, setAdminDateInput] = useState(Utils.getLocalISODate());
   const [workStart, setWorkStart] = useState('09:00');
@@ -322,18 +316,15 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
   const [editingServiceId, setEditingServiceId] = useState(null);
   const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60' });
   
-  // Připomínky
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [remindersList, setRemindersList] = useState([]);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // Získání dat pro aktuální den v adminu
   const currentDayKey = Utils.getDateKeyFromISO(adminDateInput);
   const dayData = schedule[currentDayKey];
   const periods = dayData?.periods || (dayData?.start ? [{ start: dayData.start, end: dayData.end }] : []);
 
-  // -- Handlers --
   const handleShift = async (action, index) => {
     if (action === 'add') {
       const newP = [...periods, { start: workStart, end: workEnd }].sort((a,b) => Utils.timeToMinutes(a.start) - Utils.timeToMinutes(b.start));
@@ -560,7 +551,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
 };
 
 
-// --- 5. HLAVNÍ APLIKACE (Toto zůstane v src/App.jsx) ---
+// --- 5. HLAVNÍ APLIKACE (OBAL) ---
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -577,11 +568,6 @@ export default function App() {
   
   // Tajný vstup do adminu (7 kliknutí)
   const [clicks, setClicks] = useState(0);
-  
-  // OPRAVA PRO REACT 18: Odstraněn efekt, logika přesunuta do onClick
-  // useEffect(() => {
-  //   if (clicks >= 7) { setView('login'); setClicks(0); }
-  // }, [clicks]);
 
   // Efekt pouze pro resetování počítadla při neaktivitě
   useEffect(() => {
@@ -602,7 +588,6 @@ export default function App() {
     }
   };
 
-
   // --- INITIALIZATION ---
   useEffect(() => {
     const init = async () => {
@@ -612,7 +597,7 @@ export default function App() {
         } else {
           await signInAnonymously(auth);
         }
-      } catch (e) { console.error(e); }
+      } catch (e) { console.error("Auth error:", e); }
     };
     init();
     const unsub = onAuthStateChanged(auth, u => { setUser(u); setLoading(false); });
@@ -622,11 +607,13 @@ export default function App() {
   // --- DATA FETCHING ---
   useEffect(() => {
     if (!user) return;
+    
     const unsub1 = onSnapshot(query(getCollectionPath("reservations")), s => setReservations(s.docs.map(d => ({id: d.id, ...d.data()}))));
     const unsub2 = onSnapshot(getCollectionPath("schedule"), s => {
       const data = {}; s.forEach(d => data[d.id] = d.data()); setSchedule(data);
     });
     const unsub3 = onSnapshot(query(getCollectionPath("services")), s => setServices(s.docs.map(d => ({id: d.id, ...d.data()}))));
+    
     return () => { unsub1(); unsub2(); unsub3(); };
   }, [user]);
 
