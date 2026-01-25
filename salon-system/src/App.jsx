@@ -1,12 +1,10 @@
-/* eslint-disable no-undef */
 import React, { useState, useEffect } from 'react';
 import { Loader2, Scissors, Lock } from 'lucide-react';
 import { query, onSnapshot } from "firebase/firestore";
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "firebase/auth";
 
-// --- DŮLEŽITÉ: Tady propojujeme nové soubory ---
 import CustomerView from './components/CustomerView';
-import AdminView from './components/AdminView'; // <--- Toto načte vaši úpravu!
+import AdminView from './components/AdminView';
 import { auth, getCollectionPath } from './firebaseConfig';
 
 export default function App() {
@@ -46,7 +44,10 @@ export default function App() {
   useEffect(() => {
     const init = async () => {
       try {
+        // Kontrola pro případné custom tokeny, jinak anonymní
+        // eslint-disable-next-line no-undef
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          // eslint-disable-next-line no-undef
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
           await signInAnonymously(auth);
@@ -60,9 +61,17 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
+    
     const unsub1 = onSnapshot(query(getCollectionPath("reservations")), s => setReservations(s.docs.map(d => ({id: d.id, ...d.data()}))));
     const unsub2 = onSnapshot(getCollectionPath("schedule"), s => { const data = {}; s.forEach(d => data[d.id] = d.data()); setSchedule(data); });
-    const unsub3 = onSnapshot(query(getCollectionPath("services")), s => setServices(s.docs.map(d => ({id: d.id, ...d.data()}))));
+    
+    // Řazení služeb podle 'order'
+    const unsub3 = onSnapshot(query(getCollectionPath("services")), s => {
+      const docs = s.docs.map(d => ({id: d.id, ...d.data()}));
+      docs.sort((a, b) => (a.order ?? 999) - (b.order ?? 999)); 
+      setServices(docs);
+    });
+    
     return () => { unsub1(); unsub2(); unsub3(); };
   }, [user]);
 

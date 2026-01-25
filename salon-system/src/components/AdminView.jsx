@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Calendar, Clock, Phone, Trash2, Plus, X, LogOut, Scissors, Mail, Send, 
-  Loader2, Edit2, CalendarDays, PlusCircle 
+  Loader2, Edit2, CalendarDays, PlusCircle, GripVertical 
 } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
 import { Utils } from '../utils/helpers';
@@ -21,7 +21,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
   const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // --- NOVÉ: Stavy pro manuální rezervaci ---
+  // Stavy pro manuální rezervaci
   const [showManualBooking, setShowManualBooking] = useState(false);
   const [manualForm, setManualForm] = useState({ 
     serviceId: '', 
@@ -33,12 +33,15 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
   });
   const [isManualSubmitting, setIsManualSubmitting] = useState(false);
 
-  // Získání dat pro aktuální den v dashboardu
+  // Drag & Drop stav
+  const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+
+  // Získání dat pro aktuální den
   const currentDayKey = Utils.getDateKeyFromISO(adminDateInput);
   const dayData = schedule[currentDayKey];
   const periods = dayData?.periods || (dayData?.start ? [{ start: dayData.start, end: dayData.end }] : []);
 
-  // --- HANDLERS: SMĚNY A SLUŽBY ---
+  // --- HANDLERS: SMĚNY ---
   const handleShift = async (action, index) => {
     if (action === 'add') {
       const newP = [...periods, { start: workStart, end: workEnd }].sort((a,b) => Utils.timeToMinutes(a.start) - Utils.timeToMinutes(b.start));
@@ -50,15 +53,23 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     }
   };
 
+  // --- HANDLERS: SLUŽBY ---
   const handleService = async () => {
     if (!serviceForm.name) return;
     const data = {
       name: serviceForm.name,
       price: parseInt(serviceForm.price) || 0,
-      duration: parseInt(serviceForm.duration)
+      duration: parseInt(serviceForm.duration),
+      // Pokud přidáváme novou, dáme ji na konec seznamu
+      order: editingServiceId ? undefined : services.length 
     };
+    
+    // Vyčistit undefined, aby při update nepřepsal existující order
+    const updateData = { ...data };
+    if (updateData.order === undefined) delete updateData.order;
+
     if (editingServiceId) {
-      await updateDoc(getDocPath("services", editingServiceId), data);
+      await updateDoc(getDocPath("services", editingServiceId), updateData);
       setEditingServiceId(null);
     } else {
       await addDoc(getCollectionPath("services"), data);
@@ -74,6 +85,44 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     setEditingServiceId(s.id);
     setServiceForm({ name: s.name, price: s.price, duration: s.duration });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // --- DRAG AND DROP HANDLERS ---
+  const handleDragStart = (e, index) => {
+    setDraggedItemIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    // Nastavíme průhlednost pro vizuální efekt
+    e.target.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e) => {
+    e.target.style.opacity = '1';
+    setDraggedItemIndex(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault(); // Nutné pro povolení dropu
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedItemIndex === null || draggedItemIndex === dropIndex) return;
+
+    // 1. Přeházíme pole lokálně
+    const newServices = [...services];
+    const [movedItem] = newServices.splice(draggedItemIndex, 1);
+    newServices.splice(dropIndex, 0, movedItem);
+
+    // 2. Aktualizujeme 'order' v databázi pro všechny dotčené položky
+    const updatePromises = newServices.map((service, index) => {
+      if (service.order !== index) {
+        return updateDoc(getDocPath("services", service.id), { order: index });
+      }
+      return Promise.resolve();
+    });
+
+    await Promise.all(updatePromises);
   };
 
   // --- HANDLERS: REZERVACE A PŘIPOMÍNKY ---
@@ -98,8 +147,12 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
                 template_id: EMAILJS_CONFIG.REMINDER_TEMPLATE,
                 user_id: EMAILJS_CONFIG.PUBLIC_KEY,
                 template_params: {
-                  name: res.name, to_email: res.email, date: Utils.formatDateDisplay(res.date),
-                  time: res.time, service: res.serviceName, reply_to: "rezervace@skinstudio.cz"
+                  name: res.name,
+                  to_email: res.email,
+                  date: Utils.formatDateDisplay(res.date),
+                  time: res.time,
+                  service: res.serviceName,
+                  reply_to: "rezervace@skinstudio.cz"
                 }
               })
            });
@@ -116,19 +169,15 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
   const openReminders = () => {
     const tmr = new Date(); tmr.setDate(tmr.getDate() + 1);
     const key = Utils.formatDateKey(tmr);
-    const list = reservations.filter(r => r.date === key && !r.reminderSent && r.email);
-    setRemindersList(list);
+    setRemindersList(reservations.filter(r => r.date === key && !r.reminderSent && r.email));
     setShowReminderModal(true);
   };
 
   // --- LOGIKA MANUÁLNÍ REZERVACE ---
-  
-  // 1. Zjištění kontextu pro vybrané datum v manuálním formuláři
   const manualDateKey = Utils.getDateKeyFromISO(manualForm.date);
   const manualDaySchedule = schedule[manualDateKey];
   const hasShifts = manualDaySchedule && (manualDaySchedule.periods?.length > 0 || manualDaySchedule.start);
 
-  // 2. Výpočet dostupných slotů (pouze pokud jsou vypsané směny)
   const manualAvailableSlots = useMemo(() => {
     if (!hasShifts || !manualForm.serviceId) return [];
     
@@ -147,7 +196,6 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
       const startMin = Utils.timeToMinutes(p.start);
       const endMin = Utils.timeToMinutes(p.end);
       for (let t = startMin; t <= endMin - dur; t += 30) {
-        // Kontrola kolize
         if (!dayRes.some(r => (t < r.end && t + dur > r.start))) {
           const timeStr = Utils.minutesToTime(t);
           if (!slots.includes(timeStr)) slots.push(timeStr);
@@ -157,7 +205,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     return slots.sort();
   }, [manualDateKey, manualForm.serviceId, manualDaySchedule, reservations, services, hasShifts]);
 
-  // 3. Generování libovolných časů po 15 min (pokud nejsou směny) - OPRAVA: POUŽITÍ SELECT MÍSTO INPUT
+  // Generátor pro libovolné časy po 15 min
   const arbitraryTimeSlots = useMemo(() => {
     const opts = [];
     for (let i = 6; i <= 22; i++) {
@@ -167,7 +215,6 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     return opts;
   }, []);
 
-  // 4. Odeslání manuální rezervace
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     if (!manualForm.serviceId || !manualForm.time || !manualForm.email) return;
@@ -176,7 +223,6 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     const selectedSrv = services.find(s => s.id === manualForm.serviceId);
 
     try {
-      // Uložíme do stejné kolekce jako běžné rezervace
       await addDoc(getCollectionPath("reservations"), {
         date: manualDateKey,
         time: manualForm.time,
@@ -188,10 +234,9 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
         price: selectedSrv?.price || 0,
         created: new Date().toISOString(),
         reminderSent: false,
-        source: 'admin' // Flag pro rozlišení, kdo rezervaci vytvořil
+        source: 'admin'
       });
 
-      // Odeslat potvrzení emailem
       if (EMAILJS_CONFIG.PUBLIC_KEY) {
         await fetch('https://api.emailjs.com/api/v1.0/email/send', {
           method: 'POST',
@@ -214,11 +259,11 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
 
       setShowManualBooking(false);
       setManualForm({ serviceId: '', date: Utils.getLocalISODate(), time: '', name: '', phone: '', email: '' });
-      alert("Rezervace úspěšně vytvořena.");
+      alert("Rezervace vytvořena.");
 
     } catch (err) {
       console.error(err);
-      alert("Chyba při vytváření rezervace.");
+      alert("Chyba při ukládání.");
     } finally {
       setIsManualSubmitting(false);
     }
@@ -227,7 +272,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
   return (
     <div className="grid md:grid-cols-2 gap-12 relative">
       
-      {/* --- HLAVIČKA ADMINU --- */}
+      {/* HEADER */}
       <div className="md:col-span-2 bg-white sticky top-0 z-20 border-b border-stone-200 p-4 flex justify-between items-center -mx-4 px-8 md:mx-0 md:px-0">
         <span className="font-serif font-bold uppercase tracking-widest text-xs">Admin Panel</span>
         <div className="flex gap-4">
@@ -243,7 +288,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
         </div>
       </div>
 
-      {/* --- MODAL: MANUÁLNÍ REZERVACE --- */}
+      {/* MODAL: MANUÁLNÍ REZERVACE */}
       {showManualBooking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
@@ -253,7 +298,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
             </div>
             
             <form onSubmit={handleManualSubmit} className="space-y-4">
-              {/* 1. Služba */}
+              {/* Služba */}
               <div>
                 <label className="text-[10px] font-bold uppercase text-stone-400">Služba</label>
                 <select 
@@ -267,7 +312,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
                 </select>
               </div>
 
-              {/* 2. Datum */}
+              {/* Datum */}
               <div>
                 <label className="text-[10px] font-bold uppercase text-stone-400">Datum</label>
                 <input 
@@ -279,17 +324,12 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
                 />
               </div>
 
-              {/* 3. Čas (Chytrý přepínač - VŽDY SELECT) */}
+              {/* Čas (Chytrý přepínač - SELECT) */}
               <div>
                 <label className="text-[10px] font-bold uppercase text-stone-400 flex justify-between">
-                  Čas
-                  {hasShifts 
-                    ? <span className="text-green-600 text-[10px]">Dle směn (volné termíny)</span> 
-                    : <span className="text-orange-500 text-[10px]">Bez směn (libovolný čas)</span>}
+                  Čas {hasShifts ? <span className="text-green-600">Dle směn</span> : <span className="text-orange-500">Bez omezení</span>}
                 </label>
-                
                 {hasShifts ? (
-                  // Varianta A: Vybírám z volných slotů
                   <select 
                     required 
                     className="w-full p-3 border rounded-lg text-sm bg-white"
@@ -298,11 +338,9 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
                     disabled={!manualForm.serviceId}
                   >
                     <option value="">Vyberte čas...</option>
-                    {manualAvailableSlots.length === 0 && <option disabled>Žádné volné termíny</option>}
                     {manualAvailableSlots.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 ) : (
-                  // Varianta B: Vybírám libovolný čas po 15 min (ZDE BYLA ZMĚNA)
                   <select 
                     required 
                     className="w-full p-3 border rounded-lg text-sm bg-white"
@@ -315,7 +353,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
                 )}
               </div>
 
-              {/* 4. Osobní údaje */}
+              {/* Osobní údaje */}
               <div className="border-t border-stone-100 my-4 pt-4 space-y-4">
                 <input required type="text" placeholder="Jméno klienta" className="w-full p-3 border rounded-lg text-sm" value={manualForm.name} onChange={e => setManualForm({...manualForm, name: e.target.value})} />
                 <input required type="tel" placeholder="Telefon" className="w-full p-3 border rounded-lg text-sm" value={manualForm.phone} onChange={e => setManualForm({...manualForm, phone: e.target.value})} />
@@ -330,11 +368,11 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
         </div>
       )}
 
-      {/* --- MODAL: PŘIPOMÍNKY --- */}
+      {/* --- OSTATNÍ MODALY --- */}
       {showReminderModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95">
-            <h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-stone-900"><Send size={20} /> Připomínky (Zítra)</h3>
+            <h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-stone-900"><Send size={20} /> Připomínky</h3>
             {remindersList.length > 0 ? (
               <>
                 <p className="text-stone-500 text-sm mb-6">Odeslat {remindersList.length} připomínek?</p>
@@ -353,7 +391,6 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
         </div>
       )}
 
-      {/* --- MODAL: DETAIL REZERVACE --- */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedOrder(null)}>
           <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
@@ -371,15 +408,13 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
         </div>
       )}
 
-      {/* --- LEVÝ SLOUPEC: KONFIGURACE --- */}
+      {/* --- LEVÝ SLOUPEC: DASHBOARD --- */}
       <div className="space-y-10">
-        
-        {/* Správa směn */}
+        {/* Směny */}
         <section>
           <h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Clock size={18} className="text-stone-400" /> Pracovní doba</h2>
           <div className="bg-stone-50 p-6 rounded-xl space-y-6 shadow-inner">
             <input type="date" value={adminDateInput} onChange={e => setAdminDateInput(e.target.value)} className="w-full p-3 border border-stone-200 rounded-lg outline-none bg-white font-medium" />
-            
             <div className="space-y-2">
               <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Směny:</p>
               {periods.map((p, idx) => (
@@ -390,7 +425,6 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
               ))}
               {periods.length === 0 && <p className="text-xs text-stone-400 italic">Tento den je zavřeno.</p>}
             </div>
-
             <div className="pt-4 border-t border-stone-200">
               <div className="flex gap-2 items-center mb-4">
                 <select value={workStart} onChange={e => setWorkStart(e.target.value)} className="p-3 border rounded-lg w-full bg-white text-sm">{Utils.generateTimeOptions().map(t => <option key={t} value={t}>{t}</option>)}</select>
@@ -402,7 +436,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
           </div>
         </section>
 
-        {/* Správa služeb */}
+        {/* Služby s Drag & Drop */}
         <section>
           <h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Scissors size={18} className="text-stone-400" /> Správa produktů</h2>
           <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-3 shadow-sm mb-4">
@@ -419,14 +453,27 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
                {editingServiceId && <button onClick={() => { setEditingServiceId(null); setServiceForm({name:'', price:'', duration:'60'}) }} className="px-4 bg-stone-100 text-stone-500 rounded-lg font-bold text-[10px] uppercase">Zrušit</button>}
              </div>
           </div>
+          
           <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scroll">
-            {services.map(s => (
-              <div key={s.id} className="flex justify-between items-center bg-stone-50 p-3 rounded-lg group border border-stone-100">
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-stone-800">{s.name}</span>
-                  <div className="flex gap-2 mt-1">
-                     <span className="text-[10px] font-bold text-stone-500">{s.price} Kč</span>
-                     <span className="text-[10px] text-stone-300">{s.duration} min</span>
+            {services.map((s, index) => (
+              <div 
+                key={s.id} 
+                className={`flex justify-between items-center bg-stone-50 p-3 rounded-lg group border border-stone-100 transition-all ${draggedItemIndex === index ? 'opacity-50' : 'opacity-100'}`}
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+                onDrop={(e) => handleDrop(e, index)}
+                style={{ cursor: 'move' }}
+              >
+                <div className="flex items-center gap-3">
+                  <GripVertical className="text-stone-300 cursor-move" size={16} />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-stone-800">{s.name}</span>
+                    <div className="flex gap-2 mt-1">
+                       <span className="text-[10px] font-bold text-stone-500">{s.price} Kč</span>
+                       <span className="text-[10px] text-stone-300">{s.duration} min</span>
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
