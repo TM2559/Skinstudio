@@ -15,24 +15,33 @@ import {
   query
 } from "firebase/firestore";
 
-// --- 2. KONFIGURACE (Zabezpečená přes .env / GitHub Secrets) ---
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+// --- BEZPEČNÝ PŘÍSTUP K ENV PROMĚNNÝM ---
+const safeEnv = (key) => {
+  try {
+    // Pro produkční build ve Vite
+    return import.meta.env[key] || "";
+  } catch {
+    // Odstraněna nevyužitá proměnná 'e' pro čistší kód
+    return "";
+  }
 };
 
-// 📧 KONFIGURACE EMAILJS (Zabezpečená):
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID; 
-const EMAILJS_CONFIRM_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_CONFIRM_TEMPLATE_ID; 
-const EMAILJS_REMINDER_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_REMINDER_TEMPLATE_ID; 
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY; 
+// --- 2. KONFIGURACE (Zabezpečená přes GitHub Secrets) ---
+const firebaseConfig = {
+  apiKey: safeEnv('VITE_FIREBASE_API_KEY'),
+  authDomain: safeEnv('VITE_FIREBASE_AUTH_DOMAIN'),
+  projectId: safeEnv('VITE_FIREBASE_PROJECT_ID'),
+  storageBucket: safeEnv('VITE_FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: safeEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
+  appId: safeEnv('VITE_FIREBASE_APP_ID'),
+  measurementId: safeEnv('VITE_FIREBASE_MEASUREMENT_ID')
+};
 
-// Inicializace
+const EMAILJS_SERVICE_ID = safeEnv('VITE_EMAILJS_SERVICE_ID'); 
+const EMAILJS_CONFIRM_TEMPLATE_ID = safeEnv('VITE_EMAILJS_CONFIRM_TEMPLATE_ID'); 
+const EMAILJS_REMINDER_TEMPLATE_ID = safeEnv('VITE_EMAILJS_REMINDER_TEMPLATE_ID'); 
+const EMAILJS_PUBLIC_KEY = safeEnv('VITE_EMAILJS_PUBLIC_KEY'); 
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -89,7 +98,6 @@ const App = () => {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  // Tajný vstup (7x klik na logo)
   const [logoClicks, setLogoClicks] = useState(0);
   const [clickTimeout, setClickTimeout] = useState(null);
 
@@ -100,7 +108,6 @@ const App = () => {
   const [isBooked, setIsBooked] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
-  // Stavy pro připomínky a detaily..
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [remindersToProcess, setRemindersToProcess] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -109,7 +116,6 @@ const App = () => {
   const [schedule, setSchedule] = useState({}); 
   const [services, setServices] = useState([]);
   
-  // Admin stavy
   const [adminDateInput, setAdminDateInput] = useState(getLocalISODate());
   const [workStart, setWorkStart] = useState('09:00');
   const [workEnd, setWorkEnd] = useState('17:00');
@@ -122,7 +128,6 @@ const App = () => {
     document.title = "Skin Studio";
   }, []);
 
-  // Načítání pracovní doby při změně data v adminovi
   useEffect(() => {
     const key = getDateKeyFromISO(adminDateInput);
     if (schedule[key]) {
@@ -134,12 +139,11 @@ const App = () => {
     }
   }, [adminDateInput, schedule]);
 
-  // --- NAČÍTÁNÍ DAT Z FIREBASE ---
   useEffect(() => {
     const q = query(collection(db, "reservations"));
     return onSnapshot(q, (snapshot) => {
       setReservations(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    }, (err) => console.error("Firebase error:", err));
   }, []);
 
   useEffect(() => {
@@ -157,7 +161,6 @@ const App = () => {
     });
   }, []);
 
-  // --- LOGIKA KALENDÁŘE ---
   const clientDates = (() => {
     const dates = [];
     const today = new Date();
@@ -462,9 +465,9 @@ const App = () => {
                         <div className="flex justify-between"><span>Cena:</span><span className="font-bold">{selectedService?.price ? `${selectedService.price} Kč` : '-'}</span></div>
                         <div className="flex justify-between"><span>Termín:</span><span className="font-bold">{formatDateDisplay(activeDateStr)} v {selectedTime || '-'}</span></div>
                       </div>
-                      <input type="text" required placeholder="Vaše jméno" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-3 rounded-lg border focus:ring-1 focus:ring-stone-400 outline-none text-sm" />
-                      <input type="tel" required placeholder="Telefon" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full p-3 rounded-lg border focus:ring-1 focus:ring-stone-400 outline-none text-sm" />
-                      <input type="email" required placeholder="E-mail pro potvrzení" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-3 rounded-lg border focus:ring-1 focus:ring-stone-400 outline-none text-sm" />
+                      <input type="text" required placeholder="Vaše jméno" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-3 rounded-lg border focus:ring-1 focus:ring-stone-400 outline-none text-sm font-medium" />
+                      <input type="tel" required placeholder="Telefon" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full p-3 rounded-lg border focus:ring-1 focus:ring-stone-400 outline-none text-sm font-medium" />
+                      <input type="email" required placeholder="E-mail pro potvrzení" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-3 rounded-lg border focus:ring-1 focus:ring-stone-400 outline-none text-sm font-medium" />
                       <button type="submit" disabled={isSending} className="w-full bg-stone-800 text-white py-4 rounded-lg font-bold uppercase text-[10px] tracking-widest">{isSending ? 'Odesílám...' : 'Potvrdit termín'}</button>
                     </form>
                   )}
@@ -482,9 +485,9 @@ const App = () => {
                    <div className="space-y-10">
                       <section><h2 className="font-serif text-lg mb-4 border-b pb-2 flex items-center gap-2"><Clock size={18} /> Pracovní doba</h2>
                         <div className="bg-stone-50 p-6 rounded-xl space-y-4 shadow-inner">
-                          <input type="date" value={adminDateInput} onChange={e => setAdminDateInput(e.target.value)} className="w-full p-3 border rounded-lg outline-none bg-white" />
+                          <input type="date" value={adminDateInput} onChange={e => setAdminDateInput(e.target.value)} className="w-full p-3 border rounded-lg outline-none bg-white font-medium" />
                           <div className={`p-3 rounded-lg border text-center text-xs transition-all ${isDayOpen ? 'bg-green-50 border-green-100 text-green-800' : 'bg-red-50 border-red-100 text-red-800'}`}>{isDayOpen ? `Otevřeno: ${isDayOpen.start} — ${isDayOpen.end}` : "Zavřeno"}</div>
-                          <div className="flex gap-2 items-center"><select value={workStart} onChange={e => setWorkStart(e.target.value)} className="p-3 border rounded-lg w-full bg-white">{timeOptions.map(t => <option key={t} value={t}>{t}</option>)}</select><span>-</span><select value={workEnd} onChange={e => setWorkEnd(e.target.value)} className="p-3 border rounded-lg w-full bg-white">{timeOptions.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+                          <div className="flex gap-2 items-center"><select value={workStart} onChange={e => setWorkStart(e.target.value)} className="p-3 border rounded-lg w-full bg-white font-medium">{timeOptions.map(t => <option key={t} value={t}>{t}</option>)}</select><span>-</span><select value={workEnd} onChange={e => setWorkEnd(e.target.value)} className="p-3 border rounded-lg w-full bg-white font-medium">{timeOptions.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
                           <div className="flex gap-2"><button onClick={async () => { const key = getDateKeyFromISO(adminDateInput); await setDoc(doc(db, "schedule", key), { start: workStart, end: workEnd }); alert("Uloženo!"); }} className="flex-1 bg-stone-800 text-white py-3 rounded-lg font-bold text-xs uppercase">{isDayOpen ? 'Upravit den' : 'Otevřít den'}</button>
                           {isDayOpen && <button onClick={async () => { if(window.confirm("Zavřít tento den?")) await deleteDoc(doc(db, "schedule", currentAdminDayKey)); }} className="px-4 bg-white text-red-500 border border-stone-200 rounded-lg"><Trash2 size={18}/></button>}</div>
                         </div>
@@ -492,10 +495,16 @@ const App = () => {
                       <section><h2 className="font-serif text-lg mb-4 border-b pb-2 flex items-center gap-2"><Scissors size={18} /> Produkty</h2>
                         <div className="space-y-4">
                           <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-3">
-                            <input type="text" placeholder="Název" value={newServiceName} onChange={e => setNewServiceName(e.target.value)} className="w-full p-3 border rounded-lg text-sm outline-none" />
+                            <input type="text" placeholder="Název" value={newServiceName} onChange={e => setNewServiceName(e.target.value)} className="w-full p-3 border rounded-lg text-sm outline-none font-medium" />
                             <div className="flex gap-2">
-                                <div className="flex-1 relative h-[46px]"><Banknote size={14} className="absolute left-3 top-4 text-stone-400" /><input type="number" placeholder="Cena" value={newServicePrice} onChange={e => setNewServicePrice(e.target.value)} className="w-full h-full pl-9 p-3 border rounded-lg text-sm outline-none" /></div>
-                                <div className="flex-1 relative h-[46px]"><Clock size={14} className="absolute left-3 top-4 text-stone-400" /><select value={newServiceDuration} onChange={(e) => setNewServiceDuration(e.target.value)} className="w-full h-full pl-9 p-3 border rounded-lg text-sm bg-white outline-none appearance-none"><option value="30">30 min</option><option value="60">60 min</option><option value="90">90 min</option><option value="120">120 min</option></select></div>
+                                <div className="flex-1 relative h-11">
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none z-10"><Banknote size={14} className="text-stone-400" /></div>
+                                    <input type="number" placeholder="Cena" value={newServicePrice} onChange={e => setNewServicePrice(e.target.value)} className="w-full h-full pl-9 p-3 border border-stone-200 rounded-lg text-sm outline-none font-medium" />
+                                </div>
+                                <div className="flex-1 relative h-11">
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none z-10"><Clock size={14} className="text-stone-400" /></div>
+                                    <select value={newServiceDuration} onChange={(e) => setNewServiceDuration(e.target.value)} className="w-full h-full pl-9 pr-3 border border-stone-200 rounded-lg text-sm bg-white font-medium outline-none appearance-none"><option value="30">30 min</option><option value="60">60 min</option><option value="90">90 min</option><option value="120">120 min</option></select>
+                                </div>
                             </div>
                             <button onClick={handleAddOrUpdateService} className="w-full bg-stone-800 text-white py-3 rounded-lg font-bold text-[10px] uppercase">{editingServiceId ? 'Uložit změny' : '+ Přidat produkt'}</button>
                             {editingServiceId && <button onClick={() => { setEditingServiceId(null); setNewServiceName(''); setNewServicePrice(''); }} className="w-full text-xs text-stone-400">Zrušit editaci</button>}
@@ -525,7 +534,7 @@ const App = () => {
             )}
           </div>
         </div>
-        <p className="text-center text-stone-300 text-[10px] mt-10 tracking-[0.2em] uppercase">© 2026 Skin Studio</p>
+        <p className="text-center text-stone-300 text-[10px] mt-10 tracking-[0.2em] uppercase">© 2026 Skin Studio | v1.1.3</p>
       </div>
     </div>
   );
