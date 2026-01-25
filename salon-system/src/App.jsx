@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Phone, CheckCircle, Trash2, Shield, CalendarDays, Plus, X, Lock, LogOut, Scissors, Sparkles, Mail, Send, AlertCircle, Loader2, Edit2 } from 'lucide-react';
+import { Calendar, Clock, User, Phone, CheckCircle, Trash2, Shield, CalendarDays, Plus, X, Lock, LogOut, Scissors, Sparkles, Mail, Send, AlertCircle, Loader2, Edit2, Banknote, ExternalLink } from 'lucide-react';
 
 // --- 1. FIREBASE IMPORTS ---
 import { initializeApp } from "firebase/app";
@@ -15,7 +15,7 @@ import {
   query
 } from "firebase/firestore";
 
-// --- 2. KONFIGURACE (Načítaná bezpečně z .env) ---
+// --- 2. KONFIGURACE (Načítaná z .env přes Vite) ---
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -26,7 +26,7 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// 📧 ÚDAJE Z EMAILJS (Načítané z .env):
+// 📧 KONFIGURACE EMAILJS (Z .env):
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID; 
 const EMAILJS_CONFIRM_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_CONFIRM_TEMPLATE_ID; 
 const EMAILJS_REMINDER_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_REMINDER_TEMPLATE_ID; 
@@ -100,32 +100,47 @@ const App = () => {
   const [isBooked, setIsBooked] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
-  // Stavy pro připomínky
+  // Stavy pro připomínky a detaily
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [remindersToProcess, setRemindersToProcess] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // Služby a jejich správa
+  // Data ze systému
   const [reservations, setReservations] = useState([]);
   const [schedule, setSchedule] = useState({}); 
   const [services, setServices] = useState([]);
-  const [newServiceName, setNewServiceName] = useState('');
-  const [newServiceDuration, setNewServiceDuration] = useState('60');
-  const [editingServiceId, setEditingServiceId] = useState(null);
   
+  // Admin stavy pro editaci
   const [adminDateInput, setAdminDateInput] = useState(getLocalISODate());
   const [workStart, setWorkStart] = useState('09:00');
   const [workEnd, setWorkEnd] = useState('17:00');
+  const [newServiceName, setNewServiceName] = useState('');
+  const [newServiceDuration, setNewServiceDuration] = useState('60');
+  const [newServicePrice, setNewServicePrice] = useState('');
+  const [editingServiceId, setEditingServiceId] = useState(null);
 
   useEffect(() => {
     document.title = "Skin Studio";
   }, []);
 
-  // --- NAČÍTÁNÍ DAT ---
+  // Načítání pracovní doby při změně data v adminovi
+  useEffect(() => {
+    const key = getDateKeyFromISO(adminDateInput);
+    if (schedule[key]) {
+      setWorkStart(schedule[key].start);
+      setWorkEnd(schedule[key].end);
+    } else {
+      setWorkStart('09:00');
+      setWorkEnd('17:00');
+    }
+  }, [adminDateInput, schedule]);
+
+  // --- FIREBASE LISTENERS ---
   useEffect(() => {
     const q = query(collection(db, "reservations"));
     return onSnapshot(q, (snapshot) => {
       setReservations(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    }, (error) => console.error("Firestore Error:", error));
+    });
   }, []);
 
   useEffect(() => {
@@ -133,14 +148,14 @@ const App = () => {
       const scheduleData = {};
       snapshot.docs.forEach(doc => { scheduleData[doc.id] = doc.data(); });
       setSchedule(scheduleData);
-    }, (error) => console.error("Firestore Error:", error));
+    });
   }, []);
 
   useEffect(() => {
     const q = query(collection(db, "services"));
     return onSnapshot(q, (snapshot) => {
       setServices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    }, (error) => console.error("Firestore Error:", error));
+    });
   }, []);
 
   // --- LOGIKA KALENDÁŘE ---
@@ -176,7 +191,7 @@ const App = () => {
     return slots;
   };
 
-  // --- TAJNÝ VSTUP DO ADMINA ---
+  // --- AKCE ---
   const handleLogoClick = () => {
     if (clickTimeout) clearTimeout(clickTimeout);
     const newCount = logoClicks + 1;
@@ -209,7 +224,6 @@ const App = () => {
     setLoginError('');
   };
 
-  // --- REZERVACE A ODESLÁNÍ EMAILU ---
   const handleBooking = async (e) => {
     e.preventDefault();
     if (!selectedTime || !selectedService || !formData.email) return;
@@ -223,6 +237,7 @@ const App = () => {
         email: formData.email,
         serviceName: selectedService.name,
         duration: parseInt(selectedService.duration),
+        price: selectedService.price,
         created: new Date().toISOString(),
         reminderSent: false
       });
@@ -256,7 +271,6 @@ const App = () => {
     } catch (err) { console.error("Error:", err); } finally { setIsSending(false); }
   };
 
-  // --- LOGIKA PŘIPOMÍNEK ---
   const prepareReminders = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -299,33 +313,48 @@ const App = () => {
     if (count > 0) alert(`Odesláno ${count} připomínek.`);
   };
 
-  // --- SPRÁVA SLUŽEB ---
+  const saveWorkHours = async () => {
+    const key = getDateKeyFromISO(adminDateInput);
+    await setDoc(doc(db, "schedule", key), { start: workStart, end: workEnd });
+    alert("Pracovní doba pro " + formatDateDisplay(key) + " uložena.");
+  };
+
+  const deleteWorkHours = async () => {
+    const key = getDateKeyFromISO(adminDateInput);
+    if(window.confirm("Opravdu chcete den " + formatDateDisplay(key) + " zavřít?")) {
+        await deleteDoc(doc(db, "schedule", key));
+    }
+  };
+
   const handleAddOrUpdateService = async () => {
     if (!newServiceName) return;
+    const serviceData = {
+      name: newServiceName,
+      duration: parseInt(newServiceDuration),
+      price: parseInt(newServicePrice) || 0
+    };
+
     if (editingServiceId) {
-      await updateDoc(doc(db, "services", editingServiceId), {
-        name: newServiceName,
-        duration: parseInt(newServiceDuration)
-      });
+      await updateDoc(doc(db, "services", editingServiceId), serviceData);
       setEditingServiceId(null);
     } else {
-      await addDoc(collection(db, "services"), {
-        name: newServiceName,
-        duration: parseInt(newServiceDuration)
-      });
+      await addDoc(collection(db, "services"), serviceData);
     }
     setNewServiceName('');
     setNewServiceDuration('60');
+    setNewServicePrice('');
   };
 
   const startEditService = (service) => {
     setEditingServiceId(service.id);
     setNewServiceName(service.name);
     setNewServiceDuration(service.duration.toString());
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setNewServicePrice(service.price ? service.price.toString() : '');
   };
 
   const currentSlots = activeDateStr && selectedService ? calculateAvailableSlots(activeDateStr, selectedService.duration) : [];
+  const currentAdminDayKey = getDateKeyFromISO(adminDateInput);
+  const isDayOpen = schedule[currentAdminDayKey];
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans text-stone-800 pb-10 w-full overflow-x-hidden">
@@ -350,11 +379,72 @@ const App = () => {
         </div>
       )}
 
+      {/* MODAL DETAIL OBJEDNÁVKY */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedOrder(null)}>
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h3 className="font-serif text-2xl font-bold text-stone-900">{selectedOrder.name}</h3>
+                    <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mt-1">{selectedOrder.serviceName}</p>
+                </div>
+                <button onClick={() => setSelectedOrder(null)} className="p-2 bg-stone-50 rounded-full text-stone-400 hover:text-stone-900 transition-colors"><X size={20}/></button>
+            </div>
+
+            <div className="space-y-6">
+                <div className="flex items-center gap-4 text-stone-600">
+                    <div className="w-10 h-10 bg-stone-50 rounded-xl flex items-center justify-center shrink-0"><CalendarDays size={20} className="text-stone-400" /></div>
+                    <div>
+                        <p className="text-[10px] uppercase font-bold text-stone-400 tracking-tighter">Termín</p>
+                        <p className="text-sm font-bold text-stone-800">{formatDateDisplay(selectedOrder.date)} v {selectedOrder.time}</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-4 text-stone-600">
+                    <div className="w-10 h-10 bg-stone-50 rounded-xl flex items-center justify-center shrink-0"><Phone size={20} className="text-stone-400" /></div>
+                    <div className="flex-1">
+                        <p className="text-[10px] uppercase font-bold text-stone-400 tracking-tighter">Telefon</p>
+                        <a href={`tel:${selectedOrder.phone}`} className="text-sm font-bold text-stone-800 hover:underline flex items-center gap-1.5">
+                            {selectedOrder.phone} <ExternalLink size={12} className="text-stone-300" />
+                        </a>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-4 text-stone-600">
+                    <div className="w-10 h-10 bg-stone-50 rounded-xl flex items-center justify-center shrink-0"><Mail size={20} className="text-stone-400" /></div>
+                    <div className="flex-1">
+                        <p className="text-[10px] uppercase font-bold text-stone-400 tracking-tighter">E-mail</p>
+                        <a href={`mailto:${selectedOrder.email}`} className="text-sm font-bold text-stone-800 hover:underline flex items-center gap-1.5 truncate max-w-[200px]">
+                            {selectedOrder.email} <ExternalLink size={12} className="text-stone-300" />
+                        </a>
+                    </div>
+                </div>
+
+                <div className="pt-4 flex gap-3 border-t border-stone-100">
+                    <a href={`tel:${selectedOrder.phone}`} className="flex-1 bg-stone-800 text-white py-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-[10px] uppercase tracking-widest shadow-lg hover:bg-black transition-all">
+                        <Phone size={14} /> Zavolat
+                    </a>
+                    <a href={`mailto:${selectedOrder.email}`} className="flex-1 bg-white border border-stone-200 text-stone-800 py-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-[10px] uppercase tracking-widest hover:bg-stone-50 transition-all">
+                        <Mail size={14} /> E-mail
+                    </a>
+                </div>
+                
+                <button 
+                    onClick={async () => { if(window.confirm("Opravdu smazat tuto rezervaci?")) { await deleteDoc(doc(db, "reservations", selectedOrder.id)); setSelectedOrder(null); } }} 
+                    className="w-full text-red-300 hover:text-red-500 text-[10px] font-bold uppercase tracking-widest pt-2 transition-colors flex items-center justify-center gap-1"
+                >
+                    <Trash2 size={12} /> Smazat objednávku
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* NAVIGACE - JEN ADMIN */}
       {activeTab === 'admin' && (
         <div className="bg-white shadow-sm mb-4 sticky top-0 z-20 border-b border-stone-200 p-4 flex justify-between items-center animate-in slide-in-from-top">
           <span className="font-serif font-bold uppercase tracking-widest text-[10px] text-stone-400">Skin Studio Administrace</span>
-          <button onClick={handleLogout} className="text-stone-400 hover:text-stone-800 flex items-center gap-1 text-[10px] font-bold uppercase bg-stone-50 px-3 py-1.5 rounded-full"><LogOut size={14} /> Odhlásit</button>
+          <button onClick={handleLogout} className="text-stone-400 hover:text-stone-800 flex items-center gap-1 text-[10px] font-bold uppercase bg-stone-50 px-3 py-1.5 rounded-full transition-all"><LogOut size={14} /> Odhlásit</button>
         </div>
       )}
 
@@ -375,11 +465,16 @@ const App = () => {
                 {/* ZÁKAZNICKÁ ČÁST */}
                 <div className="flex flex-col gap-10">
                   <div>
-                    <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b border-stone-100 pb-2"><span className="w-5 h-5 rounded-full bg-stone-800 text-white flex items-center justify-center text-[8px]">1</span>Procedura</h2>
+                    <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b border-stone-100 pb-2"><span className="w-5 h-5 rounded-full bg-stone-800 text-white flex items-center justify-center text-[8px]">1</span>Výběr procedury</h2>
                     <div className="grid gap-3">
                       {services.map(s => (
                         <button key={s.id} onClick={() => { setSelectedService(s); setSelectedTime(null); }} className={`p-4 rounded-xl border transition-all text-left relative overflow-hidden ${selectedService?.id === s.id ? 'border-stone-800 bg-stone-50 shadow-sm' : 'border-stone-100 hover:border-stone-300'}`}>
-                          <div className="flex justify-between items-center"><span className="font-medium text-sm text-stone-900">{s.name}</span><span className="text-[10px] text-stone-400 font-bold uppercase">{s.duration} min</span></div>
+                          <div className="flex justify-between items-start gap-4">
+                            <span className="font-medium text-sm text-stone-900 leading-tight">{s.name}</span>
+                            <span className="text-[11px] text-stone-800 font-bold bg-stone-100 px-2 py-1 rounded-lg shrink-0 whitespace-nowrap">
+                                {s.price ? `${s.price} Kč` : 'Cena neuvedena'}
+                            </span>
+                          </div>
                           {selectedService?.id === s.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-stone-800"></div>}
                         </button>
                       ))}
@@ -415,6 +510,7 @@ const App = () => {
                     <form onSubmit={handleBooking} className={`space-y-4 ${!selectedTime ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
                       <div className="text-xs space-y-1 mb-4 border-b pb-4 border-stone-200 text-stone-600 font-medium">
                         <div className="flex justify-between"><span>Služba:</span><span className="font-bold text-stone-900">{selectedService?.name || '-'}</span></div>
+                        <div className="flex justify-between"><span>Cena:</span><span className="font-bold text-stone-900">{selectedService?.price ? `${selectedService.price} Kč` : '-'}</span></div>
                         <div className="flex justify-between"><span>Termín:</span><span className="font-bold text-stone-900">{formatDateDisplay(activeDateStr)} v {selectedTime || '-'}</span></div>
                       </div>
                       <input type="text" required placeholder="Vaše jméno" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-3 rounded-lg border border-stone-200 focus:ring-1 focus:ring-stone-400 outline-none text-sm font-medium" />
@@ -438,31 +534,96 @@ const App = () => {
               ) : (
                 <div className="grid md:grid-cols-2 gap-12">
                    <div className="space-y-10">
-                      <section><h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Clock size={18} className="text-stone-400" /> Pracovní doba</h2>
-                        <div className="bg-stone-50 p-6 rounded-xl space-y-4 shadow-inner">
-                          <input type="date" value={adminDateInput} onChange={e => setAdminDateInput(e.target.value)} className="w-full p-3 border border-stone-200 rounded-lg outline-none font-medium" />
-                          <div className="flex gap-2 items-center"><select value={workStart} onChange={e => setWorkStart(e.target.value)} className="p-3 border border-stone-200 rounded-lg w-full bg-white font-medium">{timeOptions.map(t => <option key={t} value={t}>{t}</option>)}</select><span className="text-stone-300">-</span><select value={workEnd} onChange={e => setWorkEnd(e.target.value)} className="p-3 border border-stone-200 rounded-lg w-full bg-white font-medium">{timeOptions.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
-                          <div className="flex gap-2"><button onClick={async () => { const key = getDateKeyFromISO(adminDateInput); await setDoc(doc(db, "schedule", key), { start: workStart, end: workEnd }); alert("Uloženo!"); }} className="flex-1 bg-stone-800 text-white py-3 rounded-lg font-bold text-[10px] uppercase shadow-md hover:bg-black transition-all">Otevřít den</button><button onClick={async () => { if(window.confirm("Opravdu zavřít?")) { const key = getDateKeyFromISO(adminDateInput); await deleteDoc(doc(db, "schedule", key)); } }} className="px-4 bg-white text-red-500 border border-stone-200 rounded-lg hover:bg-red-50"><Trash2 size={18}/></button></div>
+                      {/* PRACOVNÍ DOBA */}
+                      <section>
+                        <h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Clock size={18} className="text-stone-400" /> Pracovní doba</h2>
+                        <div className="bg-stone-50 p-6 rounded-xl space-y-5 shadow-inner">
+                          <div className="flex flex-col gap-1">
+                             <label className="text-[10px] font-bold uppercase text-stone-400">Vybrat den v kalendáři</label>
+                             <input type="date" value={adminDateInput} onChange={e => setAdminDateInput(e.target.value)} className="w-full p-3 border border-stone-200 rounded-lg outline-none font-medium bg-white" />
+                          </div>
+
+                          {/* STAV DNE */}
+                          <div className={`p-3 rounded-lg border text-center transition-all ${isDayOpen ? 'bg-green-50 border-green-100 text-green-800' : 'bg-red-50 border-red-100 text-red-800'}`}>
+                             <div className="text-[10px] uppercase font-bold tracking-widest mb-1">Stav pro {formatDateDisplay(currentAdminDayKey)}</div>
+                             <div className="text-sm font-serif italic">
+                                {isDayOpen ? `Otevřeno: ${isDayOpen.start} — ${isDayOpen.end}` : "Na tento den nemáte nastavenou pracovní dobu"}
+                             </div>
+                          </div>
+                          
+                          <div className="flex gap-2 items-center">
+                            <div className="flex-1">
+                                <label className="text-[10px] font-bold uppercase text-stone-400">Od</label>
+                                <select value={workStart} onChange={e => setWorkStart(e.target.value)} className="p-3 border border-stone-200 rounded-lg w-full bg-white font-medium outline-none focus:ring-1 focus:ring-stone-400">{timeOptions.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                            </div>
+                            <span className="text-stone-300 mt-5">-</span>
+                            <div className="flex-1">
+                                <label className="text-[10px] font-bold uppercase text-stone-400">Do</label>
+                                <select value={workEnd} onChange={e => setWorkEnd(e.target.value)} className="p-3 border border-stone-200 rounded-lg w-full bg-white font-medium outline-none focus:ring-1 focus:ring-stone-400">{timeOptions.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <button onClick={saveWorkHours} className="flex-1 bg-stone-800 text-white py-4 rounded-lg font-bold text-[10px] uppercase shadow-md hover:bg-black transition-all">
+                                {isDayOpen ? 'Uložit změny času' : 'Otevřít tento den'}
+                            </button>
+                            {isDayOpen && (
+                                <button onClick={deleteWorkHours} title="Zavřít den" className="px-5 bg-white text-red-500 border border-stone-200 rounded-lg hover:bg-red-50 transition-colors"><Trash2 size={20}/></button>
+                            )}
+                          </div>
                         </div>
                       </section>
-                      <section><h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Scissors size={18} className="text-stone-400" /> Služby</h2>
+
+                      {/* SLUŽBY S CENAMI */}
+                      <section><h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Scissors size={18} className="text-stone-400" /> Správa produktů</h2>
                         <div className="space-y-4">
                           <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-3 shadow-sm">
-                            <h3 className="text-[10px] font-bold uppercase text-stone-400 tracking-widest">{editingServiceId ? 'Upravit službu' : 'Nová procedura'}</h3>
-                            <div className="flex gap-2"><input type="text" placeholder="Název" value={newServiceName} onChange={e => setNewServiceName(e.target.value)} className="w-full p-3 border border-stone-200 rounded-lg text-sm outline-none font-medium" /><select value={newServiceDuration} onChange={(e) => setNewServiceDuration(e.target.value)} className="p-3 border border-stone-200 rounded-lg text-sm bg-white font-medium"><option value="30">30 min</option><option value="60">60 min</option><option value="90">90 min</option><option value="120">120 min</option></select></div>
-                            <div className="flex gap-2">
+                            <h3 className="text-[10px] font-bold uppercase text-stone-400 tracking-widest">{editingServiceId ? 'Upravit produkt' : 'Nový produkt / Služba'}</h3>
+                            
+                            <div className="flex flex-col gap-3">
+                                <input type="text" placeholder="Název procedury" value={newServiceName} onChange={e => setNewServiceName(e.target.value)} className="w-full p-3 border border-stone-200 rounded-lg text-sm outline-none font-medium" />
+                                
+                                <div className="flex gap-2">
+                                    <div className="flex-1 relative h-[46px]">
+                                        <div className="absolute left-3 top-0 bottom-0 flex items-center pointer-events-none z-10">
+                                            <Banknote size={14} className="text-stone-400" />
+                                        </div>
+                                        <input type="number" placeholder="Cena v Kč" value={newServicePrice} onChange={e => setNewServicePrice(e.target.value)} className="w-full h-full pl-9 p-3 border border-stone-200 rounded-lg text-sm outline-none font-medium" />
+                                    </div>
+                                    <div className="flex-1 relative h-[46px]">
+                                        <div className="absolute left-3 top-0 bottom-0 flex items-center pointer-events-none z-10">
+                                            <Clock size={14} className="text-stone-400" />
+                                        </div>
+                                        <select value={newServiceDuration} onChange={(e) => setNewServiceDuration(e.target.value)} className="w-full h-full pl-9 p-3 border border-stone-200 rounded-lg text-sm bg-white font-medium outline-none appearance-none">
+                                            <option value="30">30 min</option>
+                                            <option value="60">60 min</option>
+                                            <option value="90">90 min</option>
+                                            <option value="120">120 min</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 pt-2">
                                 <button onClick={handleAddOrUpdateService} className="flex-1 bg-stone-800 text-white py-3 rounded-lg font-bold text-[10px] uppercase hover:bg-black transition-all shadow-md">
-                                    {editingServiceId ? 'Uložit změny' : '+ Přidat službu'}
+                                    {editingServiceId ? 'Uložit změny' : '+ Přidat do nabídky'}
                                 </button>
                                 {editingServiceId && (
-                                    <button onClick={() => { setEditingServiceId(null); setNewServiceName(''); }} className="px-4 bg-stone-100 text-stone-500 rounded-lg text-[10px] font-bold uppercase">Zrušit</button>
+                                    <button onClick={() => { setEditingServiceId(null); setNewServiceName(''); setNewServicePrice(''); }} className="px-4 bg-stone-100 text-stone-500 rounded-lg text-[10px] font-bold uppercase">Zrušit</button>
                                 )}
                             </div>
                           </div>
+
                           <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scroll">
                             {services.map(s => (
                               <div key={s.id} className="flex justify-between items-center bg-stone-50 p-3 rounded-lg group border border-stone-100">
-                                <span className="text-sm font-medium text-stone-700">{s.name} <span className="text-[9px] text-stone-400 font-bold uppercase">({s.duration} min)</span></span>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-stone-800">{s.name}</span>
+                                    <div className="flex gap-3 mt-1">
+                                        <span className="text-[10px] font-bold text-stone-500 uppercase">{s.price} Kč</span>
+                                        <span className="text-[10px] text-stone-300 uppercase">{s.duration} min</span>
+                                    </div>
+                                </div>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                                   <button onClick={() => startEditService(s)} className="p-2 text-stone-400 hover:text-stone-800"><Edit2 size={14} /></button>
                                   <button onClick={async () => { if(window.confirm("Opravdu smazat?")) await deleteDoc(doc(db, "services", s.id)) }} className="p-2 text-stone-300 hover:text-red-500"><Trash2 size={14} /></button>
@@ -473,7 +634,9 @@ const App = () => {
                         </div>
                       </section>
                    </div>
-                   <section><div className="flex justify-between items-end mb-4 border-b border-stone-100 pb-2"><h2 className="font-serif text-lg flex items-center gap-2 text-stone-800"><Calendar size={18} className="text-stone-400" /> Objednávky</h2><button onClick={prepareReminders} className="bg-stone-100 hover:bg-stone-800 hover:text-white text-stone-600 px-3 py-2 rounded-xl text-[10px] uppercase font-bold tracking-widest flex items-center gap-2 transition-all"><Send size={12} /> Připomínky na zítra</button></div>
+
+                   {/* OBJEDNÁVKY */}
+                   <section><div className="flex justify-between items-end mb-4 border-b border-stone-100 pb-2"><h2 className="font-serif text-lg flex items-center gap-2 text-stone-800"><Calendar size={18} className="text-stone-400" /> Rezervace</h2><button onClick={prepareReminders} className="bg-stone-100 hover:bg-stone-800 hover:text-white text-stone-600 px-3 py-2 rounded-xl text-[10px] uppercase font-bold tracking-widest flex items-center gap-2 transition-all"><Send size={12} /> Připomínky</button></div>
                      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scroll">
                         {reservations.length === 0 ? <p className="italic text-stone-300 py-10 text-center text-sm font-medium">Zatím žádné rezervace.</p> : 
                           [...new Set(reservations.map(r => r.date))].sort((a,b) => {
@@ -483,13 +646,14 @@ const App = () => {
                           }).map(d => (
                             <div key={d} className="space-y-2"><div className="text-[9px] font-bold text-stone-400 uppercase tracking-[0.2em]">{formatDateDisplay(d)}</div>
                               {reservations.filter(r => r.date === d).sort((a,b) => a.time.localeCompare(b.time)).map(res => (
-                                <div key={res.id} className="flex justify-between items-center p-4 bg-white border border-stone-50 rounded-xl shadow-sm group hover:border-stone-200 transition-all">
+                                <div key={res.id} onClick={() => setSelectedOrder(res)} className="flex justify-between items-center p-4 bg-white border border-stone-50 rounded-xl shadow-sm group hover:border-stone-400 transition-all cursor-pointer">
                                   <div className="flex-1">
                                     <div className="font-serif text-sm font-bold flex items-center gap-2 text-stone-900">{res.time} - {res.name} {res.reminderSent && <div className="p-1 bg-green-50 rounded-full" title="Připomínka odeslána"><Mail size={10} className="text-green-500" /></div>}</div>
                                     <div className="text-[10px] text-stone-500 uppercase tracking-tight font-medium">{res.serviceName} • {res.phone}</div>
-                                    <div className="text-[9px] text-stone-300 italic lowercase">{res.email}</div>
                                   </div>
-                                  <button onClick={async () => { if(window.confirm("Opravdu smazat rezervaci?")) await deleteDoc(doc(db, "reservations", res.id)) }} className="text-stone-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2"><Trash2 size={16} /></button>
+                                  <div className="flex items-center gap-1">
+                                    <button onClick={(e) => { e.stopPropagation(); if(window.confirm("Opravdu smazat rezervaci?")) deleteDoc(doc(db, "reservations", res.id)); }} className="text-stone-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2"><Trash2 size={16} /></button>
+                                  </div>
                                 </div>
                               ))}
                             </div>
