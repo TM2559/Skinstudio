@@ -100,7 +100,7 @@ const App = () => {
   const [isBooked, setIsBooked] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
-  // Stavy pro připomínky a detaily
+  // Stavy pro připomínky a detaily..
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [remindersToProcess, setRemindersToProcess] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
