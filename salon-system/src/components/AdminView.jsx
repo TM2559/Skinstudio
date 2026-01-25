@@ -1,31 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Calendar, Clock, Phone, Trash2, Plus, X, LogOut, Scissors, Mail, Send, 
-  Loader2, Edit2, CalendarDays 
+  Loader2, Edit2, CalendarDays, PlusCircle 
 } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
 import { Utils } from '../utils/helpers';
 import { getCollectionPath, getDocPath, EMAILJS_CONFIG } from '../firebaseConfig';
 
 const AdminView = ({ services, schedule, reservations, onLogout }) => {
+  // Stavy pro dashboard
   const [adminDateInput, setAdminDateInput] = useState(Utils.getLocalISODate());
   const [workStart, setWorkStart] = useState('09:00');
   const [workEnd, setWorkEnd] = useState('17:00');
   const [editingServiceId, setEditingServiceId] = useState(null);
   const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60' });
   
-  // Připomínky
+  // Stavy pro připomínky a detail rezervace
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [remindersList, setRemindersList] = useState([]);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // Získání dat pro aktuální den v adminu
+  // --- NOVÉ: Stavy pro manuální rezervaci ---
+  const [showManualBooking, setShowManualBooking] = useState(false);
+  const [manualForm, setManualForm] = useState({ 
+    serviceId: '', 
+    date: Utils.getLocalISODate(), 
+    time: '', 
+    name: '', 
+    phone: '', 
+    email: '' 
+  });
+  const [isManualSubmitting, setIsManualSubmitting] = useState(false);
+
+  // Získání dat pro aktuální den v dashboardu
   const currentDayKey = Utils.getDateKeyFromISO(adminDateInput);
   const dayData = schedule[currentDayKey];
   const periods = dayData?.periods || (dayData?.start ? [{ start: dayData.start, end: dayData.end }] : []);
 
-  // -- Handlers --
+  // --- HANDLERS: SMĚNY A SLUŽBY ---
   const handleShift = async (action, index) => {
     if (action === 'add') {
       const newP = [...periods, { start: workStart, end: workEnd }].sort((a,b) => Utils.timeToMinutes(a.start) - Utils.timeToMinutes(b.start));
@@ -57,6 +70,13 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     if (confirm("Smazat tuto proceduru?")) await deleteDoc(getDocPath("services", id));
   };
 
+  const startEdit = (s) => {
+    setEditingServiceId(s.id);
+    setServiceForm({ name: s.name, price: s.price, duration: s.duration });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // --- HANDLERS: REZERVACE A PŘIPOMÍNKY ---
   const handleDeleteRes = async (id) => {
     if (confirm("Smazat rezervaci?")) {
       await deleteDoc(getDocPath("reservations", id));
@@ -101,21 +121,216 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     setShowReminderModal(true);
   };
 
-  const startEdit = (s) => {
-    setEditingServiceId(s.id);
-    setServiceForm({ name: s.name, price: s.price, duration: s.duration });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  // --- LOGIKA MANUÁLNÍ REZERVACE ---
+  
+  // 1. Zjištění kontextu pro vybrané datum v manuálním formuláři
+  const manualDateKey = Utils.getDateKeyFromISO(manualForm.date);
+  const manualDaySchedule = schedule[manualDateKey];
+  const hasShifts = manualDaySchedule && (manualDaySchedule.periods?.length > 0 || manualDaySchedule.start);
+
+  // 2. Výpočet dostupných slotů (pouze pokud jsou vypsané směny)
+  const manualAvailableSlots = useMemo(() => {
+    if (!hasShifts || !manualForm.serviceId) return [];
+    
+    const srv = services.find(s => s.id === manualForm.serviceId);
+    if (!srv) return [];
+
+    const periods = manualDaySchedule.periods || (manualDaySchedule.start ? [{ start: manualDaySchedule.start, end: manualDaySchedule.end }] : []);
+    const dayRes = reservations
+      .filter(r => r.date === manualDateKey)
+      .map(r => ({ start: Utils.timeToMinutes(r.time), end: Utils.timeToMinutes(r.time) + (r.duration || 60) }));
+
+    let slots = [];
+    const dur = parseInt(srv.duration);
+
+    periods.forEach(p => {
+      const startMin = Utils.timeToMinutes(p.start);
+      const endMin = Utils.timeToMinutes(p.end);
+      for (let t = startMin; t <= endMin - dur; t += 30) {
+        // Kontrola kolize
+        if (!dayRes.some(r => (t < r.end && t + dur > r.start))) {
+          const timeStr = Utils.minutesToTime(t);
+          if (!slots.includes(timeStr)) slots.push(timeStr);
+        }
+      }
+    });
+    return slots.sort();
+  }, [manualDateKey, manualForm.serviceId, manualDaySchedule, reservations, services, hasShifts]);
+
+  // 3. Generování libovolných časů po 15 min (pokud nejsou směny) - OPRAVA: POUŽITÍ SELECT MÍSTO INPUT
+  const arbitraryTimeSlots = useMemo(() => {
+    const opts = [];
+    for (let i = 6; i <= 22; i++) {
+      const h = i.toString().padStart(2, '0');
+      opts.push(`${h}:00`, `${h}:15`, `${h}:30`, `${h}:45`);
+    }
+    return opts;
+  }, []);
+
+  // 4. Odeslání manuální rezervace
+  const handleManualSubmit = async (e) => {
+    e.preventDefault();
+    if (!manualForm.serviceId || !manualForm.time || !manualForm.email) return;
+    
+    setIsManualSubmitting(true);
+    const selectedSrv = services.find(s => s.id === manualForm.serviceId);
+
+    try {
+      // Uložíme do stejné kolekce jako běžné rezervace
+      await addDoc(getCollectionPath("reservations"), {
+        date: manualDateKey,
+        time: manualForm.time,
+        name: manualForm.name,
+        phone: manualForm.phone,
+        email: manualForm.email,
+        serviceName: selectedSrv?.name || 'Manual Booking',
+        duration: parseInt(selectedSrv?.duration || 60),
+        price: selectedSrv?.price || 0,
+        created: new Date().toISOString(),
+        reminderSent: false,
+        source: 'admin' // Flag pro rozlišení, kdo rezervaci vytvořil
+      });
+
+      // Odeslat potvrzení emailem
+      if (EMAILJS_CONFIG.PUBLIC_KEY) {
+        await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            service_id: EMAILJS_CONFIG.SERVICE_ID,
+            template_id: EMAILJS_CONFIG.CONFIRM_TEMPLATE,
+            user_id: EMAILJS_CONFIG.PUBLIC_KEY,
+            template_params: {
+              name: manualForm.name,
+              to_email: manualForm.email,
+              date: Utils.formatDateDisplay(manualDateKey),
+              time: manualForm.time,
+              service: selectedSrv?.name,
+              reply_to: "rezervace@skinstudio.cz"
+            }
+          })
+        });
+      }
+
+      setShowManualBooking(false);
+      setManualForm({ serviceId: '', date: Utils.getLocalISODate(), time: '', name: '', phone: '', email: '' });
+      alert("Rezervace úspěšně vytvořena.");
+
+    } catch (err) {
+      console.error(err);
+      alert("Chyba při vytváření rezervace.");
+    } finally {
+      setIsManualSubmitting(false);
+    }
   };
 
   return (
     <div className="grid md:grid-cols-2 gap-12 relative">
-      {/* Sticky Header */}
+      
+      {/* --- HLAVIČKA ADMINU --- */}
       <div className="md:col-span-2 bg-white sticky top-0 z-20 border-b border-stone-200 p-4 flex justify-between items-center -mx-4 px-8 md:mx-0 md:px-0">
         <span className="font-serif font-bold uppercase tracking-widest text-xs">Admin Panel</span>
-        <button onClick={onLogout} className="text-stone-400 hover:text-stone-800 flex items-center gap-1 text-xs"><LogOut size={14} /> Odhlásit</button>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setShowManualBooking(true)} 
+            className="bg-stone-800 hover:bg-black text-white px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-all"
+          >
+            <PlusCircle size={14} /> Nová rezervace
+          </button>
+          <button onClick={onLogout} className="text-stone-400 hover:text-stone-800 flex items-center gap-1 text-xs">
+            <LogOut size={14} /> Odhlásit
+          </button>
+        </div>
       </div>
 
-      {/* MODAL PŘIPOMÍNKY */}
+      {/* --- MODAL: MANUÁLNÍ REZERVACE --- */}
+      {showManualBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-serif text-xl font-bold text-stone-900">Manuální rezervace</h3>
+              <button onClick={() => setShowManualBooking(false)} className="text-stone-400 hover:text-stone-800"><X size={20}/></button>
+            </div>
+            
+            <form onSubmit={handleManualSubmit} className="space-y-4">
+              {/* 1. Služba */}
+              <div>
+                <label className="text-[10px] font-bold uppercase text-stone-400">Služba</label>
+                <select 
+                  required 
+                  className="w-full p-3 border rounded-lg text-sm bg-white"
+                  value={manualForm.serviceId}
+                  onChange={e => setManualForm({...manualForm, serviceId: e.target.value, time: ''})}
+                >
+                  <option value="">Vyberte proceduru...</option>
+                  {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration} min)</option>)}
+                </select>
+              </div>
+
+              {/* 2. Datum */}
+              <div>
+                <label className="text-[10px] font-bold uppercase text-stone-400">Datum</label>
+                <input 
+                  type="date" 
+                  required
+                  className="w-full p-3 border rounded-lg text-sm"
+                  value={manualForm.date}
+                  onChange={e => setManualForm({...manualForm, date: e.target.value, time: ''})}
+                />
+              </div>
+
+              {/* 3. Čas (Chytrý přepínač - VŽDY SELECT) */}
+              <div>
+                <label className="text-[10px] font-bold uppercase text-stone-400 flex justify-between">
+                  Čas
+                  {hasShifts 
+                    ? <span className="text-green-600 text-[10px]">Dle směn (volné termíny)</span> 
+                    : <span className="text-orange-500 text-[10px]">Bez směn (libovolný čas)</span>}
+                </label>
+                
+                {hasShifts ? (
+                  // Varianta A: Vybírám z volných slotů
+                  <select 
+                    required 
+                    className="w-full p-3 border rounded-lg text-sm bg-white"
+                    value={manualForm.time}
+                    onChange={e => setManualForm({...manualForm, time: e.target.value})}
+                    disabled={!manualForm.serviceId}
+                  >
+                    <option value="">Vyberte čas...</option>
+                    {manualAvailableSlots.length === 0 && <option disabled>Žádné volné termíny</option>}
+                    {manualAvailableSlots.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                ) : (
+                  // Varianta B: Vybírám libovolný čas po 15 min (ZDE BYLA ZMĚNA)
+                  <select 
+                    required 
+                    className="w-full p-3 border rounded-lg text-sm bg-white"
+                    value={manualForm.time}
+                    onChange={e => setManualForm({...manualForm, time: e.target.value})}
+                  >
+                    <option value="">Vyberte čas...</option>
+                    {arbitraryTimeSlots.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                )}
+              </div>
+
+              {/* 4. Osobní údaje */}
+              <div className="border-t border-stone-100 my-4 pt-4 space-y-4">
+                <input required type="text" placeholder="Jméno klienta" className="w-full p-3 border rounded-lg text-sm" value={manualForm.name} onChange={e => setManualForm({...manualForm, name: e.target.value})} />
+                <input required type="tel" placeholder="Telefon" className="w-full p-3 border rounded-lg text-sm" value={manualForm.phone} onChange={e => setManualForm({...manualForm, phone: e.target.value})} />
+                <input required type="email" placeholder="Email (pro potvrzení)" className="w-full p-3 border rounded-lg text-sm" value={manualForm.email} onChange={e => setManualForm({...manualForm, email: e.target.value})} />
+              </div>
+
+              <button type="submit" disabled={isManualSubmitting} className="w-full bg-stone-800 text-white py-3 rounded-lg font-bold text-xs uppercase hover:bg-black transition-all disabled:opacity-50">
+                {isManualSubmitting ? 'Ukládám...' : 'Vytvořit rezervaci'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL: PŘIPOMÍNKY --- */}
       {showReminderModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95">
@@ -138,7 +353,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
         </div>
       )}
 
-      {/* MODAL DETAIL */}
+      {/* --- MODAL: DETAIL REZERVACE --- */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedOrder(null)}>
           <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
@@ -156,8 +371,10 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
         </div>
       )}
 
-      {/* LEFT COL: CONFIG */}
+      {/* --- LEVÝ SLOUPEC: KONFIGURACE --- */}
       <div className="space-y-10">
+        
+        {/* Správa směn */}
         <section>
           <h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Clock size={18} className="text-stone-400" /> Pracovní doba</h2>
           <div className="bg-stone-50 p-6 rounded-xl space-y-6 shadow-inner">
@@ -185,6 +402,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
           </div>
         </section>
 
+        {/* Správa služeb */}
         <section>
           <h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Scissors size={18} className="text-stone-400" /> Správa produktů</h2>
           <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-3 shadow-sm mb-4">
@@ -221,7 +439,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
         </section>
       </div>
 
-      {/* RIGHT COL: ORDERS */}
+      {/* --- PRAVÝ SLOUPEC: SEZNAM REZERVACÍ --- */}
       <section>
         <div className="flex justify-between items-end mb-4 border-b border-stone-100 pb-2">
           <h2 className="font-serif text-lg flex items-center gap-2 text-stone-800"><Calendar size={18} className="text-stone-400" /> Objednávky</h2>
