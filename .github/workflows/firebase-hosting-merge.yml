@@ -10,7 +10,6 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install and Build
-        # Přidali jsme informaci, že package.json je ve složce salon-system
         working-directory: salon-system
         run: npm install && npm run build
         env:
@@ -32,5 +31,4 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_TM_RESERVATIONS }}'
           channelId: live
           projectId: tm-reservations
-          # Tady také musíme říct Firebase, kde najde hotový web k nahrání
           entryPoint: salon-system
