@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Phone, CheckCircle, Trash2, Shield, CalendarDays, Plus, X, Lock, LogOut, Scissors, Sparkles, Mail, Send, AlertCircle, Loader2 } from 'lucide-react';
+import { Calendar, Clock, User, Phone, CheckCircle, Trash2, Shield, CalendarDays, Plus, X, Lock, LogOut, Scissors, Sparkles, Mail, Send, AlertCircle, Loader2, Edit2 } from 'lucide-react';
 
 // --- 1. FIREBASE IMPORTS ---
 import { initializeApp } from "firebase/app";
@@ -15,8 +15,7 @@ import {
   query
 } from "firebase/firestore";
 
-// --- 2. CONFIGURATION (Loaded safely from .env via Vite) ---
-// Note: In your local Vite project, these variables must start with VITE_
+// --- 2. KONFIGURACE (Načítaná bezpečně z .env) ---
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -27,17 +26,17 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// 📧 EMAILJS CONFIGURATION (Loaded from .env):
+// 📧 ÚDAJE Z EMAILJS (Načítané z .env):
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID; 
 const EMAILJS_CONFIRM_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_CONFIRM_TEMPLATE_ID; 
 const EMAILJS_REMINDER_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_REMINDER_TEMPLATE_ID; 
 const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY; 
 
-// Initialize Firebase
+// Inicializace Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// --- HELPER FUNCTIONS ---
+// --- POMOCNÉ FUNKCE ---
 const timeToMinutes = (timeStr) => {
   if (!timeStr) return 0;
   const [hours, minutes] = timeStr.split(':').map(Number);
@@ -90,7 +89,7 @@ const App = () => {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  // Secret access logic via logo clicks
+  // Logika pro tajný vstup (7x klik na logo)
   const [logoClicks, setLogoClicks] = useState(0);
   const [clickTimeout, setClickTimeout] = useState(null);
 
@@ -101,30 +100,32 @@ const App = () => {
   const [isBooked, setIsBooked] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
-  // States for bulk reminders
+  // Stavy pro připomínky
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [remindersToProcess, setRemindersToProcess] = useState([]);
 
+  // Služby a jejich správa
   const [reservations, setReservations] = useState([]);
   const [schedule, setSchedule] = useState({}); 
   const [services, setServices] = useState([]);
+  const [newServiceName, setNewServiceName] = useState('');
+  const [newServiceDuration, setNewServiceDuration] = useState('60');
+  const [editingServiceId, setEditingServiceId] = useState(null);
   
   const [adminDateInput, setAdminDateInput] = useState(getLocalISODate());
   const [workStart, setWorkStart] = useState('09:00');
   const [workEnd, setWorkEnd] = useState('17:00');
-  const [newServiceName, setNewServiceName] = useState('');
-  const [newServiceDuration, setNewServiceDuration] = useState('60');
 
   useEffect(() => {
     document.title = "Skin Studio";
   }, []);
 
-  // --- LOADING DATA FROM FIREBASE ---
+  // --- NAČÍTÁNÍ DAT ---
   useEffect(() => {
     const q = query(collection(db, "reservations"));
     return onSnapshot(q, (snapshot) => {
       setReservations(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    }, (error) => console.error("Firestore Error:", error));
   }, []);
 
   useEffect(() => {
@@ -132,17 +133,17 @@ const App = () => {
       const scheduleData = {};
       snapshot.docs.forEach(doc => { scheduleData[doc.id] = doc.data(); });
       setSchedule(scheduleData);
-    });
+    }, (error) => console.error("Firestore Error:", error));
   }, []);
 
   useEffect(() => {
     const q = query(collection(db, "services"));
     return onSnapshot(q, (snapshot) => {
       setServices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    }, (error) => console.error("Firestore Error:", error));
   }, []);
 
-  // --- CALENDAR LOGIC ---
+  // --- LOGIKA KALENDÁŘE ---
   const clientDates = (() => {
     const dates = [];
     const today = new Date();
@@ -175,10 +176,9 @@ const App = () => {
     return slots;
   };
 
-  // --- SECRET ADMIN ENTRY ---
+  // --- TAJNÝ VSTUP DO ADMINA ---
   const handleLogoClick = () => {
     if (clickTimeout) clearTimeout(clickTimeout);
-    
     const newCount = logoClicks + 1;
     if (newCount >= 7) {
       setActiveTab('admin');
@@ -192,21 +192,27 @@ const App = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (loginPassword === 'salon123') { setIsAdminLoggedIn(true); setLoginError(''); }
-    else { setLoginError('Chybné heslo.'); }
+    if (loginPassword === 'salon123') { 
+      setIsAdminLoggedIn(true); 
+      setLoginError(''); 
+    }
+    else { 
+      setLoginError('Chybné heslo.'); 
+    }
   };
 
   const handleLogout = () => {
     setIsAdminLoggedIn(false);
     setActiveTab('customer');
     setLogoClicks(0);
+    setLoginPassword('');
+    setLoginError('');
   };
 
-  // --- BOOKING AND EMAIL SENDING ---
+  // --- REZERVACE A ODESLÁNÍ EMAILU ---
   const handleBooking = async (e) => {
     e.preventDefault();
     if (!selectedTime || !selectedService || !formData.email) return;
-
     setIsSending(true);
     try {
       await addDoc(collection(db, "reservations"), {
@@ -247,19 +253,14 @@ const App = () => {
       setFormData({ name: '', phone: '', email: '' });
       setSelectedTime(null);
       setTimeout(() => setIsBooked(false), 5000);
-    } catch (err) {
-      console.error("Booking error:", err);
-    } finally {
-      setIsSending(false);
-    }
+    } catch (err) { console.error("Error:", err); } finally { setIsSending(false); }
   };
 
-  // --- REMINDER LOGIC ---
+  // --- LOGIKA PŘIPOMÍNEK ---
   const prepareReminders = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowKey = formatDateKey(tomorrow);
-    
     const toNotify = reservations.filter(r => r.date === tomorrowKey && !r.reminderSent && r.email);
     setRemindersToProcess(toNotify);
     setShowReminderModal(true);
@@ -268,7 +269,6 @@ const App = () => {
   const processReminders = async () => {
     setIsSending(true);
     let count = 0;
-
     for (const res of remindersToProcess) {
       try {
         const emailParams = {
@@ -285,55 +285,44 @@ const App = () => {
             reply_to: "rezervace@skinstudio.cz"
           }
         };
-
         await fetch('https://api.emailjs.com/api/v1.0/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(emailParams)
         });
-
         await updateDoc(doc(db, "reservations", res.id), { reminderSent: true });
         count++;
-      } catch (err) {
-        console.error("Reminder error:", err);
-      }
+      } catch (err) { console.error("Reminder error:", err); }
     }
-
     setIsSending(false);
     setShowReminderModal(false);
     if (count > 0) alert(`Odesláno ${count} připomínek.`);
   };
 
-  // --- ADMIN ACTIONS ---
-  const saveWorkHours = async () => {
-    const key = getDateKeyFromISO(adminDateInput);
-    await setDoc(doc(db, "schedule", key), { start: workStart, end: workEnd });
-    alert("Pracovní doba uložena!");
-  };
-
-  const deleteWorkHours = async () => {
-    const key = getDateKeyFromISO(adminDateInput);
-    await deleteDoc(doc(db, "schedule", key));
-    alert("Zavřeno.");
-  };
-
-  const deleteReservation = async (id) => {
-    if (window.confirm("Opravdu chcete smazat tuto rezervaci?")) {
-      try { await deleteDoc(doc(db, "reservations", id)); } 
-      catch (err) { console.error(err); }
-    }
-  };
-
-  const handleAddService = async () => {
+  // --- SPRÁVA SLUŽEB ---
+  const handleAddOrUpdateService = async () => {
     if (!newServiceName) return;
-    await addDoc(collection(db, "services"), { name: newServiceName, duration: parseInt(newServiceDuration) });
+    if (editingServiceId) {
+      await updateDoc(doc(db, "services", editingServiceId), {
+        name: newServiceName,
+        duration: parseInt(newServiceDuration)
+      });
+      setEditingServiceId(null);
+    } else {
+      await addDoc(collection(db, "services"), {
+        name: newServiceName,
+        duration: parseInt(newServiceDuration)
+      });
+    }
     setNewServiceName('');
+    setNewServiceDuration('60');
   };
 
-  const handleDeleteService = async (id) => { 
-    if (window.confirm("Opravdu smazat tuto proceduru?")) {
-        await deleteDoc(doc(db, "services", id)); 
-    }
+  const startEditService = (service) => {
+    setEditingServiceId(service.id);
+    setNewServiceName(service.name);
+    setNewServiceDuration(service.duration.toString());
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const currentSlots = activeDateStr && selectedService ? calculateAvailableSlots(activeDateStr, selectedService.duration) : [];
@@ -341,80 +330,41 @@ const App = () => {
   return (
     <div className="min-h-screen bg-stone-50 font-sans text-stone-800 pb-10 w-full overflow-x-hidden">
       
-      {/* REMINDER MODAL */}
+      {/* MODAL PŘIPOMÍNKY */}
       {showReminderModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 duration-200">
-                <div className="flex items-center gap-3 text-stone-800 mb-4">
-                    <div className="p-2 bg-stone-100 rounded-full"><Send size={20} className="text-stone-600" /></div>
-                    <h3 className="font-serif text-xl font-bold">Odeslat připomínky</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95">
+            <h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-stone-900"><Send size={20} /> Připomínky</h3>
+            {remindersToProcess.length > 0 ? (
+              <>
+                <p className="text-stone-500 text-sm mb-6">Chcete odeslat {remindersToProcess.length} připomínek na zítřek?</p>
+                <div className="flex gap-3">
+                  <button onClick={processReminders} disabled={isSending} className="flex-1 bg-stone-800 text-white py-3 rounded-xl font-bold text-xs uppercase disabled:opacity-50">{isSending ? <Loader2 className="animate-spin mx-auto" size={14} /> : 'Ano, odeslat'}</button>
+                  <button onClick={() => setShowReminderModal(false)} className="px-6 py-3 border border-stone-200 rounded-xl text-xs font-bold uppercase text-stone-400">Zrušit</button>
                 </div>
-                
-                {remindersToProcess.length > 0 ? (
-                    <>
-                        <p className="text-stone-500 text-sm mb-6">
-                            Nalezeno <span className="font-bold text-stone-800">{remindersToProcess.length} termínů</span> na zítra bez připomínky. Chcete je nyní hromadně rozeslat?
-                        </p>
-                        <div className="flex gap-3">
-                            <button 
-                                onClick={processReminders}
-                                disabled={isSending}
-                                className="flex-1 bg-stone-800 text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
-                            >
-                                {isSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                                {isSending ? 'Odesílám...' : 'Ano, odeslat'}
-                            </button>
-                            <button 
-                                onClick={() => setShowReminderModal(false)}
-                                className="px-6 py-3 border border-stone-200 rounded-xl text-xs font-bold uppercase tracking-widest text-stone-400 hover:bg-stone-50"
-                            >
-                                Zrušit
-                            </button>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <p className="text-stone-500 text-sm mb-6">Na zítřek nejsou žádné nové termíny k připomenutí.</p>
-                        <button 
-                            onClick={() => setShowReminderModal(false)}
-                            className="w-full py-3 bg-stone-100 rounded-xl text-xs font-bold uppercase tracking-widest text-stone-600 hover:bg-stone-200 transition-all"
-                        >
-                            Rozumím
-                        </button>
-                    </>
-                )}
-            </div>
-        </div>
-      )}
-
-      {/* NAVIGATION - VISIBLE ONLY IN ADMIN MODE */}
-      {activeTab === 'admin' && (
-        <div className="bg-white shadow-sm mb-4 sticky top-0 z-20 border-b border-stone-200 animate-in slide-in-from-top duration-300">
-          <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div className="font-serif text-xl font-bold text-stone-800 tracking-wider uppercase">Skin Studio Admin</div>
-            <button 
-              onClick={handleLogout} 
-              className="text-stone-400 text-sm flex items-center gap-1 hover:text-stone-800 transition-colors bg-stone-50 px-3 py-1.5 rounded-full"
-            >
-              <LogOut size={14} /> {isAdminLoggedIn ? 'Odhlásit' : 'Zavřít'}
-            </button>
+              </>
+            ) : (
+              <button onClick={() => setShowReminderModal(false)} className="w-full py-3 bg-stone-100 rounded-xl font-bold">Zavřít</button>
+            )}
           </div>
         </div>
       )}
 
-      <div className={`${activeTab === 'customer' ? 'mt-6 sm:mt-10' : ''} max-w-4xl mx-auto px-3 sm:px-4`}>
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl shadow-stone-200/50 overflow-hidden border border-stone-100">
+      {/* NAVIGACE - JEN ADMIN */}
+      {activeTab === 'admin' && (
+        <div className="bg-white shadow-sm mb-4 sticky top-0 z-20 border-b border-stone-200 p-4 flex justify-between items-center animate-in slide-in-from-top">
+          <span className="font-serif font-bold uppercase tracking-widest text-[10px] text-stone-400">Skin Studio Administrace</span>
+          <button onClick={handleLogout} className="text-stone-400 hover:text-stone-800 flex items-center gap-1 text-[10px] font-bold uppercase bg-stone-50 px-3 py-1.5 rounded-full"><LogOut size={14} /> Odhlásit</button>
+        </div>
+      )}
+
+      <div className={`${activeTab === 'customer' ? 'mt-10' : ''} max-w-4xl mx-auto px-3 sm:px-4`}>
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-stone-100 overflow-hidden">
           
-          {/* LOGO WITH SECRET CLICKING */}
+          {/* HEADER LOGO */}
           <div className="bg-white p-10 text-center border-b border-stone-50">
-            <div className="mx-auto cursor-default select-none inline-block relative" onClick={handleLogoClick}>
-                <img 
-                  src="/skinstudio_logo.jpg" 
-                  alt="Skin Studio Logo" 
-                  className="h-40 w-auto mx-auto object-contain mix-blend-multiply opacity-95 active:scale-95 transition-transform" 
-                  onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} 
-                />
-                <div className="hidden w-24 h-24 bg-stone-100 rounded-full mx-auto flex items-center justify-center font-serif text-3xl text-stone-400">S</div>
+            <div className="mx-auto cursor-default inline-block select-none" onClick={handleLogoClick}>
+                <img src="/skinstudio_logo.jpg" alt="Skin Studio" className="h-40 w-auto mx-auto object-contain mix-blend-multiply opacity-95 active:scale-95 transition-transform" />
             </div>
           </div>
 
@@ -422,209 +372,137 @@ const App = () => {
             {activeTab === 'customer' ? (
               <div className="flex flex-col gap-10 md:grid md:grid-cols-2 md:gap-16">
                 
-                {/* CUSTOMER BOOKING FORM */}
+                {/* ZÁKAZNICKÁ ČÁST */}
                 <div className="flex flex-col gap-10">
-                  <div className="w-full">
-                    <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b border-stone-100 pb-2">
-                      <span className="w-5 h-5 rounded-full bg-stone-800 text-white flex items-center justify-center text-[8px]">1</span>
-                      Výběr procedury
-                    </h2>
-                    <div className="grid grid-cols-1 gap-3">
-                      {services.length > 0 ? services.map(service => (
-                        <button
-                          key={service.id}
-                          onClick={() => { setSelectedService(service); setSelectedTime(null); }}
-                          className={`p-4 rounded-xl border transition-all text-left relative overflow-hidden group
-                            ${selectedService?.id === service.id ? 'border-stone-800 bg-stone-50 shadow-sm' : 'border-stone-100 bg-white hover:border-stone-300'}`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <span className={`font-medium ${selectedService?.id === service.id ? 'text-stone-900' : 'text-stone-600'}`}>{service.name}</span>
-                            <span className="text-[10px] font-bold text-stone-400">{service.duration} min</span>
-                          </div>
-                          {selectedService?.id === service.id && <div className="absolute inset-y-0 left-0 w-1 bg-stone-800"></div>}
-                        </button>
-                      )) : (
-                        <div className="p-8 text-center border border-dashed border-stone-200 rounded-xl">
-                          <p className="text-stone-400 text-sm italic">Nabídka služeb se připravuje.</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className={`transition-all duration-500 ${!selectedService ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
-                    <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b border-stone-100 pb-2"><span className="w-5 h-5 rounded-full bg-stone-800 text-white flex items-center justify-center text-[8px]">2</span>Termín</h2>
-                    <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
-                      {clientDates.length > 0 ? clientDates.map(dateObj => {
-                        const dateStr = formatDateKey(dateObj);
-                        const isSelected = activeDateStr === dateStr;
-                        return (
-                          <button
-                            key={dateStr}
-                            onClick={() => { setSelectedDateStr(dateStr); setSelectedTime(null); }}
-                            className={`flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 rounded-xl border transition-all
-                              ${isSelected ? 'bg-stone-800 border-stone-800 text-white shadow-lg scale-105' : 'bg-white border-stone-200 text-stone-500 hover:text-stone-800'}`}
-                          >
-                            <span className="text-[10px] uppercase font-bold tracking-wider opacity-60">{dateObj.toLocaleDateString('cs-CZ', { weekday: 'short' })}</span>
-                            <span className="text-xl font-serif mt-1">{dateObj.getDate()}</span>
-                            <span className="text-[9px] opacity-60">{dateObj.getMonth() + 1}.</span>
-                          </button>
-                        );
-                      }) : (
-                        <p className="text-stone-400 text-xs italic">Aktuálně nejsou volné termíny online.</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className={`transition-all duration-500 ${!selectedService || !activeDateStr ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
-                    <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b border-stone-100 pb-2"><span className="w-5 h-5 rounded-full bg-stone-800 text-white flex items-center justify-center text-[8px]">3</span>Čas</h2>
-                    <div className="grid grid-cols-3 gap-3">
-                      {currentSlots.map(time => (
-                        <button
-                          key={time}
-                          onClick={() => setSelectedTime(time)}
-                          className={`py-3 rounded-lg text-sm border transition-all
-                            ${selectedTime === time ? 'bg-stone-800 border-stone-800 text-white shadow-md' : 'bg-white border-stone-200 text-stone-600 hover:border-stone-400'}`}
-                        >
-                          {time}
+                  <div>
+                    <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b border-stone-100 pb-2"><span className="w-5 h-5 rounded-full bg-stone-800 text-white flex items-center justify-center text-[8px]">1</span>Procedura</h2>
+                    <div className="grid gap-3">
+                      {services.map(s => (
+                        <button key={s.id} onClick={() => { setSelectedService(s); setSelectedTime(null); }} className={`p-4 rounded-xl border transition-all text-left relative overflow-hidden ${selectedService?.id === s.id ? 'border-stone-800 bg-stone-50 shadow-sm' : 'border-stone-100 hover:border-stone-300'}`}>
+                          <div className="flex justify-between items-center"><span className="font-medium text-sm text-stone-900">{s.name}</span><span className="text-[10px] text-stone-400 font-bold uppercase">{s.duration} min</span></div>
+                          {selectedService?.id === s.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-stone-800"></div>}
                         </button>
                       ))}
                     </div>
                   </div>
+
+                  <div className={!selectedService ? 'opacity-20 pointer-events-none' : ''}>
+                    <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 border-b border-stone-100 pb-2">2. Termín</h2>
+                    <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
+                      {clientDates.map(d => (
+                        <button key={formatDateKey(d)} onClick={() => { setSelectedDateStr(formatDateKey(d)); setSelectedTime(null); }} className={`flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 rounded-xl border transition-all ${activeDateStr === formatDateKey(d) ? 'bg-stone-800 text-white border-stone-800 shadow-md' : 'bg-white text-stone-500 border-stone-100'}`}>
+                          <span className="text-[10px] font-bold uppercase tracking-tighter">{d.toLocaleDateString('cs-CZ', { weekday: 'short' })}</span>
+                          <span className="text-xl font-serif">{d.getDate()}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={!activeDateStr ? 'opacity-20 pointer-events-none' : ''}>
+                    <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 border-b border-stone-100 pb-2">3. Čas</h2>
+                    <div className="grid grid-cols-3 gap-3">
+                      {currentSlots.map(t => <button key={t} onClick={() => setSelectedTime(t)} className={`py-3 rounded-lg text-sm border transition-all ${selectedTime === t ? 'bg-stone-800 text-white shadow-md' : 'bg-white border-stone-200 text-stone-700 hover:border-stone-400'}`}>{t}</button>)}
+                    </div>
+                  </div>
                 </div>
 
+                {/* FORMULÁŘ */}
                 <div className="bg-stone-50 p-8 rounded-2xl border border-stone-200 h-fit sticky top-4">
-                  <h2 className="text-lg font-serif mb-6 flex items-center gap-2 text-stone-800 border-b border-stone-200 pb-4">
-                     <Sparkles className="text-stone-400" size={16} /> Rezervace
-                  </h2>
-                  
+                  <h2 className="text-lg font-serif mb-6 border-b border-stone-200 pb-4 flex items-center gap-2 text-stone-800"><Sparkles className="text-stone-400" size={16} /> Rezervace</h2>
                   {isBooked ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-center animate-in zoom-in duration-300">
-                      <div className="w-16 h-16 bg-green-100 text-green-700 rounded-full flex items-center justify-center mb-4"><CheckCircle size={32} /></div>
-                      <p className="text-green-900 font-serif font-bold text-xl mb-2">Potvrzeno</p>
-                      <p className="text-stone-500 text-xs">Potvrzení vám právě odesíláme na e-mail.</p>
-                    </div>
+                    <div className="text-center py-10 animate-in zoom-in"><CheckCircle size={40} className="mx-auto text-green-600 mb-3" /><p className="font-bold text-xl font-serif text-stone-900">Potvrzeno</p><p className="text-xs text-stone-500 mt-2">Detaily byly odeslány na váš e-mail.</p></div>
                   ) : (
                     <form onSubmit={handleBooking} className={`space-y-4 ${!selectedTime ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
-                      <div className="space-y-2 mb-6 text-sm">
-                         <div className="flex justify-between border-b border-stone-200 pb-2"><span className="text-stone-400">Procedura:</span><span className="font-bold">{selectedService?.name || '-'}</span></div>
-                         <div className="flex justify-between border-b border-stone-200 pb-2"><span className="text-stone-400">Termín:</span><span className="font-bold">{activeDateStr ? formatDateDisplay(activeDateStr) : '-'} v {selectedTime || '-'}</span></div>
+                      <div className="text-xs space-y-1 mb-4 border-b pb-4 border-stone-200 text-stone-600 font-medium">
+                        <div className="flex justify-between"><span>Služba:</span><span className="font-bold text-stone-900">{selectedService?.name || '-'}</span></div>
+                        <div className="flex justify-between"><span>Termín:</span><span className="font-bold text-stone-900">{formatDateDisplay(activeDateStr)} v {selectedTime || '-'}</span></div>
                       </div>
-                      
-                      <div className="space-y-3">
-                        <div className="relative">
-                          <User className="absolute left-3 top-3.5 text-stone-300" size={16} />
-                          <input type="text" required placeholder="Vaše jméno" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full pl-10 p-3 rounded-lg border border-stone-200 focus:ring-1 focus:ring-stone-400 outline-none bg-white font-serif" />
-                        </div>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-3.5 text-stone-300" size={16} />
-                          <input type="tel" required placeholder="Telefon" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full pl-10 p-3 rounded-lg border border-stone-200 focus:ring-1 focus:ring-stone-400 outline-none bg-white font-serif" />
-                        </div>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-3.5 text-stone-300" size={16} />
-                          <input type="email" required placeholder="E-mail pro potvrzení" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full pl-10 p-3 rounded-lg border border-stone-200 focus:ring-1 focus:ring-stone-400 outline-none bg-white font-serif" />
-                        </div>
-                      </div>
-
-                      <button 
-                        type="submit" 
-                        disabled={isSending}
-                        className="w-full bg-stone-800 text-white py-4 rounded-lg font-bold hover:bg-black active:scale-95 transition-all tracking-widest text-[10px] uppercase mt-4 disabled:opacity-50"
-                      >
-                        {isSending ? <Loader2 size={16} className="animate-spin inline mr-2" /> : null}
-                        {isSending ? 'Odesílám...' : 'Potvrdit termín'}
-                      </button>
+                      <input type="text" required placeholder="Vaše jméno" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-3 rounded-lg border border-stone-200 focus:ring-1 focus:ring-stone-400 outline-none text-sm font-medium" />
+                      <input type="tel" required placeholder="Telefon" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full p-3 rounded-lg border border-stone-200 focus:ring-1 focus:ring-stone-400 outline-none text-sm font-medium" />
+                      <input type="email" required placeholder="E-mail pro potvrzení" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-3 rounded-lg border border-stone-200 focus:ring-1 focus:ring-stone-400 outline-none text-sm font-medium" />
+                      <button type="submit" disabled={isSending} className="w-full bg-stone-800 text-white py-4 rounded-lg font-bold uppercase text-[10px] tracking-[0.2em] shadow-lg hover:bg-black transition-all disabled:opacity-50">{isSending ? 'Odesílám...' : 'Potvrdit termín'}</button>
                     </form>
                   )}
                 </div>
               </div>
             ) : (
-              // --- ADMIN INTERFACE ---
+              // --- ADMIN ROZHRANÍ ---
               !isAdminLoggedIn ? (
-                <div className="max-w-sm mx-auto py-20 text-center">
-                  <Lock className="mx-auto mb-4 text-stone-300" size={32} /><h2 className="font-serif text-2xl mb-6">Administrace</h2>
+                <div className="max-w-sm mx-auto py-20 text-center"><Lock className="mx-auto mb-4 text-stone-200" size={48} /><h2 className="font-serif text-2xl mb-6 text-stone-800 font-bold">Přihlášení</h2>
                   <form onSubmit={handleLogin} className="space-y-4">
-                    <input type="password" placeholder="Heslo" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="w-full p-4 rounded-xl border border-stone-200 text-center focus:ring-1 focus:ring-stone-500 outline-none" autoFocus />
-                    {loginError && <p className="text-red-500 text-xs font-bold">{loginError}</p>}
-                    <button type="submit" className="w-full bg-stone-800 text-white py-4 rounded-xl font-bold uppercase tracking-widest text-[10px]">Vstoupit</button>
+                    <input type="password" placeholder="Heslo" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="w-full p-4 rounded-xl border border-stone-200 text-center text-lg outline-none focus:ring-1 focus:ring-stone-400" autoFocus />
+                    {loginError && <p className="text-red-500 text-xs font-bold mt-2 animate-pulse">{loginError}</p>}
+                    <button type="submit" className="w-full bg-stone-800 text-white py-4 rounded-xl font-bold uppercase tracking-widest text-[10px] hover:bg-black transition-all mt-2">Vstoupit</button>
                   </form>
                 </div>
               ) : (
-                <div className="grid md:grid-cols-2 gap-12 w-full">
-                  <div className="space-y-10">
-                    <section>
-                      <h2 className="font-serif text-lg mb-4 flex items-center gap-2 border-b border-stone-100 pb-2"><Clock size={18} className="text-stone-400" /> Pracovní doba</h2>
-                      <div className="bg-stone-50 p-6 rounded-xl space-y-4">
-                        <input type="date" value={adminDateInput} onChange={(e) => setAdminDateInput(e.target.value)} className="w-full p-3 border border-stone-200 rounded-lg" />
-                        <div className="flex gap-2 items-center">
-                          <select value={workStart} onChange={(e) => setWorkStart(e.target.value)} className="p-3 border border-stone-200 rounded-lg w-full bg-white">{timeOptions.map(t => <option key={t} value={t}>{t}</option>)}</select>
-                          <span>-</span>
-                          <select value={workEnd} onChange={(e) => setWorkEnd(e.target.value)} className="p-3 border border-stone-200 rounded-lg w-full bg-white">{timeOptions.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                <div className="grid md:grid-cols-2 gap-12">
+                   <div className="space-y-10">
+                      <section><h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Clock size={18} className="text-stone-400" /> Pracovní doba</h2>
+                        <div className="bg-stone-50 p-6 rounded-xl space-y-4 shadow-inner">
+                          <input type="date" value={adminDateInput} onChange={e => setAdminDateInput(e.target.value)} className="w-full p-3 border border-stone-200 rounded-lg outline-none font-medium" />
+                          <div className="flex gap-2 items-center"><select value={workStart} onChange={e => setWorkStart(e.target.value)} className="p-3 border border-stone-200 rounded-lg w-full bg-white font-medium">{timeOptions.map(t => <option key={t} value={t}>{t}</option>)}</select><span className="text-stone-300">-</span><select value={workEnd} onChange={e => setWorkEnd(e.target.value)} className="p-3 border border-stone-200 rounded-lg w-full bg-white font-medium">{timeOptions.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+                          <div className="flex gap-2"><button onClick={async () => { const key = getDateKeyFromISO(adminDateInput); await setDoc(doc(db, "schedule", key), { start: workStart, end: workEnd }); alert("Uloženo!"); }} className="flex-1 bg-stone-800 text-white py-3 rounded-lg font-bold text-[10px] uppercase shadow-md hover:bg-black transition-all">Otevřít den</button><button onClick={async () => { if(window.confirm("Opravdu zavřít?")) { const key = getDateKeyFromISO(adminDateInput); await deleteDoc(doc(db, "schedule", key)); } }} className="px-4 bg-white text-red-500 border border-stone-200 rounded-lg hover:bg-red-50"><Trash2 size={18}/></button></div>
                         </div>
-                        <div className="flex gap-2">
-                          <button onClick={saveWorkHours} className="flex-1 bg-stone-800 text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest shadow-sm hover:bg-black transition-all">Uložit</button>
-                          <button onClick={deleteWorkHours} className="px-4 bg-white text-red-500 border border-red-100 rounded-lg hover:bg-red-50 transition-all"><Trash2 size={18}/></button>
-                        </div>
-                      </div>
-                    </section>
-                    
-                    <section>
-                      <h2 className="font-serif text-lg mb-4 flex items-center gap-2 border-b border-stone-100 pb-2"><Scissors size={18} className="text-stone-400" /> Služby</h2>
-                      <div className="space-y-4">
-                        <div className="flex gap-2"><input type="text" placeholder="Název" value={newServiceName} onChange={(e) => setNewServiceName(e.target.value)} className="w-full p-3 border border-stone-200 rounded-lg text-sm" /><select value={newServiceDuration} onChange={(e) => setNewServiceDuration(e.target.value)} className="p-3 border border-stone-200 rounded-lg text-sm bg-white"><option value="30">30 min</option><option value="60">60 min</option><option value="90">90 min</option><option value="120">120 min</option></select></div>
-                        <button onClick={handleAddService} className="w-full bg-white border border-stone-200 py-3 rounded-lg font-bold text-xs uppercase tracking-widest hover:border-stone-800 transition-all">+ Přidat službu</button>
-                        <div className="space-y-2">{services.map(s => <div key={s.id} className="flex justify-between items-center bg-stone-50 p-3 rounded-lg"><span className="text-sm">{s.name}</span><button onClick={() => handleDeleteService(s.id)} className="text-stone-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button></div>)}</div>
-                      </div>
-                    </section>
-                  </div>
-
-                  <section>
-                    <div className="flex justify-between items-end mb-4 border-b border-stone-100 pb-2">
-                        <h2 className="font-serif text-lg flex items-center gap-2"><Calendar size={18} className="text-stone-400" /> Objednávky</h2>
-                        <button 
-                          onClick={prepareReminders}
-                          className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-stone-800 hover:text-white text-stone-600 rounded-xl text-[10px] uppercase font-bold tracking-widest transition-all"
-                        >
-                           <Send size={12} /> Připomínky na zítra
-                        </button>
-                    </div>
-
-                    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scroll">
-                      {reservations.length === 0 ? <p className="text-stone-400 italic text-center py-10">Žádné rezervace.</p> : 
-                        [...new Set(reservations.map(r => r.date))].sort().map(date => {
-                          const dayRes = reservations.filter(r => r.date === date).sort((a,b) => a.time.localeCompare(b.time));
-                          return (
-                            <div key={date} className="space-y-2">
-                              <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 flex items-center justify-between">
-                                {formatDateDisplay(date)}
-                                {date === formatDateKey(new Date(new Date().setDate(new Date().getDate() + 1))) && (
-                                  <span className="bg-stone-800 text-white px-2 py-0.5 rounded text-[8px]">Zítra</span>
+                      </section>
+                      <section><h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Scissors size={18} className="text-stone-400" /> Služby</h2>
+                        <div className="space-y-4">
+                          <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-3 shadow-sm">
+                            <h3 className="text-[10px] font-bold uppercase text-stone-400 tracking-widest">{editingServiceId ? 'Upravit službu' : 'Nová procedura'}</h3>
+                            <div className="flex gap-2"><input type="text" placeholder="Název" value={newServiceName} onChange={e => setNewServiceName(e.target.value)} className="w-full p-3 border border-stone-200 rounded-lg text-sm outline-none font-medium" /><select value={newServiceDuration} onChange={(e) => setNewServiceDuration(e.target.value)} className="p-3 border border-stone-200 rounded-lg text-sm bg-white font-medium"><option value="30">30 min</option><option value="60">60 min</option><option value="90">90 min</option><option value="120">120 min</option></select></div>
+                            <div className="flex gap-2">
+                                <button onClick={handleAddOrUpdateService} className="flex-1 bg-stone-800 text-white py-3 rounded-lg font-bold text-[10px] uppercase hover:bg-black transition-all shadow-md">
+                                    {editingServiceId ? 'Uložit změny' : '+ Přidat službu'}
+                                </button>
+                                {editingServiceId && (
+                                    <button onClick={() => { setEditingServiceId(null); setNewServiceName(''); }} className="px-4 bg-stone-100 text-stone-500 rounded-lg text-[10px] font-bold uppercase">Zrušit</button>
                                 )}
+                            </div>
+                          </div>
+                          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scroll">
+                            {services.map(s => (
+                              <div key={s.id} className="flex justify-between items-center bg-stone-50 p-3 rounded-lg group border border-stone-100">
+                                <span className="text-sm font-medium text-stone-700">{s.name} <span className="text-[9px] text-stone-400 font-bold uppercase">({s.duration} min)</span></span>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                  <button onClick={() => startEditService(s)} className="p-2 text-stone-400 hover:text-stone-800"><Edit2 size={14} /></button>
+                                  <button onClick={async () => { if(window.confirm("Opravdu smazat?")) await deleteDoc(doc(db, "services", s.id)) }} className="p-2 text-stone-300 hover:text-red-500"><Trash2 size={14} /></button>
+                                </div>
                               </div>
-                              {dayRes.map(res => (
-                                <div key={res.id} className="flex justify-between items-center p-4 bg-white border border-stone-100 rounded-xl shadow-sm mb-2 group">
-                                  <div className="flex-1 pr-4">
-                                    <div className="font-serif text-stone-900 font-bold flex items-center gap-2">
-                                      {res.time} - {res.name}
-                                      {res.reminderSent && <div className="p-1 bg-green-50 rounded-full" title="Připomínka odeslána"><Mail size={10} className="text-green-500" /></div>}
-                                    </div>
-                                    <div className="text-[10px] text-stone-500 uppercase tracking-tight">{res.serviceName} • {res.phone}</div>
-                                    {res.email && <div className="text-[9px] text-stone-400 lowercase italic">{res.email}</div>}
+                            ))}
+                          </div>
+                        </div>
+                      </section>
+                   </div>
+                   <section><div className="flex justify-between items-end mb-4 border-b border-stone-100 pb-2"><h2 className="font-serif text-lg flex items-center gap-2 text-stone-800"><Calendar size={18} className="text-stone-400" /> Objednávky</h2><button onClick={prepareReminders} className="bg-stone-100 hover:bg-stone-800 hover:text-white text-stone-600 px-3 py-2 rounded-xl text-[10px] uppercase font-bold tracking-widest flex items-center gap-2 transition-all"><Send size={12} /> Připomínky na zítra</button></div>
+                     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scroll">
+                        {reservations.length === 0 ? <p className="italic text-stone-300 py-10 text-center text-sm font-medium">Zatím žádné rezervace.</p> : 
+                          [...new Set(reservations.map(r => r.date))].sort((a,b) => {
+                             const [da, ma, ya] = a.split('-').map(Number);
+                             const [db, mb, yb] = b.split('-').map(Number);
+                             return new Date(ya, ma-1, da) - new Date(yb, mb-1, db);
+                          }).map(d => (
+                            <div key={d} className="space-y-2"><div className="text-[9px] font-bold text-stone-400 uppercase tracking-[0.2em]">{formatDateDisplay(d)}</div>
+                              {reservations.filter(r => r.date === d).sort((a,b) => a.time.localeCompare(b.time)).map(res => (
+                                <div key={res.id} className="flex justify-between items-center p-4 bg-white border border-stone-50 rounded-xl shadow-sm group hover:border-stone-200 transition-all">
+                                  <div className="flex-1">
+                                    <div className="font-serif text-sm font-bold flex items-center gap-2 text-stone-900">{res.time} - {res.name} {res.reminderSent && <div className="p-1 bg-green-50 rounded-full" title="Připomínka odeslána"><Mail size={10} className="text-green-500" /></div>}</div>
+                                    <div className="text-[10px] text-stone-500 uppercase tracking-tight font-medium">{res.serviceName} • {res.phone}</div>
+                                    <div className="text-[9px] text-stone-300 italic lowercase">{res.email}</div>
                                   </div>
-                                  <button onClick={() => deleteReservation(res.id)} className="text-stone-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={18} /></button>
+                                  <button onClick={async () => { if(window.confirm("Opravdu smazat rezervaci?")) await deleteDoc(doc(db, "reservations", res.id)) }} className="text-stone-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2"><Trash2 size={16} /></button>
                                 </div>
                               ))}
                             </div>
-                          )
-                        })
-                      }
-                    </div>
-                  </section>
+                          ))
+                        }
+                     </div>
+                   </section>
                 </div>
               )
             )}
           </div>
         </div>
-        <p className="text-center text-stone-300 text-[10px] mt-10 tracking-[0.2em] uppercase">© 2026 Skin Studio</p>
+        <p className="text-center text-stone-300 text-[10px] mt-10 tracking-[0.3em] uppercase">© 2026 Skin Studio</p>
       </div>
     </div>
   );
