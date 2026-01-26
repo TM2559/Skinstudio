@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Calendar, Clock, Phone, Trash2, Plus, X, LogOut, Scissors, Mail, Send, 
-  Loader2, Edit2, CalendarDays, PlusCircle, GripVertical 
+  Loader2, Edit2, CalendarDays, PlusCircle, GripVertical, CalendarPlus 
 } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
 import { Utils } from '../utils/helpers';
@@ -60,11 +60,9 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
       name: serviceForm.name,
       price: parseInt(serviceForm.price) || 0,
       duration: parseInt(serviceForm.duration),
-      // Pokud přidáváme novou, dáme ji na konec seznamu
       order: editingServiceId ? undefined : services.length 
     };
     
-    // Vyčistit undefined, aby při update nepřepsal existující order
     const updateData = { ...data };
     if (updateData.order === undefined) delete updateData.order;
 
@@ -91,7 +89,6 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
   const handleDragStart = (e, index) => {
     setDraggedItemIndex(index);
     e.dataTransfer.effectAllowed = "move";
-    // Nastavíme průhlednost pro vizuální efekt
     e.target.style.opacity = '0.5';
   };
 
@@ -101,7 +98,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
   };
 
   const handleDragOver = (e) => {
-    e.preventDefault(); // Nutné pro povolení dropu
+    e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
 
@@ -109,12 +106,10 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     e.preventDefault();
     if (draggedItemIndex === null || draggedItemIndex === dropIndex) return;
 
-    // 1. Přeházíme pole lokálně
     const newServices = [...services];
     const [movedItem] = newServices.splice(draggedItemIndex, 1);
     newServices.splice(dropIndex, 0, movedItem);
 
-    // 2. Aktualizujeme 'order' v databázi pro všechny dotčené položky
     const updatePromises = newServices.map((service, index) => {
       if (service.order !== index) {
         return updateDoc(getDocPath("services", service.id), { order: index });
@@ -131,6 +126,17 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
       await deleteDoc(getDocPath("reservations", id));
       setSelectedOrder(null);
     }
+  };
+
+  // Export do kalendáře z detailu
+  const handleExportCalendar = (order) => {
+    Utils.downloadICSFile(
+      order.date,
+      order.time,
+      order.duration || 60,
+      `Skin Studio: ${order.serviceName} (${order.name})`,
+      `Klient: ${order.name}\nTel: ${order.phone}\nEmail: ${order.email}`
+    );
   };
 
   const handleReminders = async () => {
@@ -205,7 +211,6 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     return slots.sort();
   }, [manualDateKey, manualForm.serviceId, manualDaySchedule, reservations, services, hasShifts]);
 
-  // Generátor pro libovolné časy po 15 min
   const arbitraryTimeSlots = useMemo(() => {
     const opts = [];
     for (let i = 6; i <= 22; i++) {
@@ -257,9 +262,18 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
         });
       }
 
+      if (confirm("Rezervace uložena. Chcete ji přidat do svého kalendáře?")) {
+        Utils.downloadICSFile(
+          manualDateKey,
+          manualForm.time,
+          parseInt(selectedSrv?.duration || 60),
+          `Skin Studio: ${selectedSrv?.name} (${manualForm.name})`,
+          `Klient: ${manualForm.name}\nTel: ${manualForm.phone}`
+        );
+      }
+
       setShowManualBooking(false);
       setManualForm({ serviceId: '', date: Utils.getLocalISODate(), time: '', name: '', phone: '', email: '' });
-      alert("Rezervace vytvořena.");
 
     } catch (err) {
       console.error(err);
@@ -324,7 +338,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
                 />
               </div>
 
-              {/* Čas (Chytrý přepínač - SELECT) */}
+              {/* Čas */}
               <div>
                 <label className="text-[10px] font-bold uppercase text-stone-400 flex justify-between">
                   Čas {hasShifts ? <span className="text-green-600">Dle směn</span> : <span className="text-orange-500">Bez omezení</span>}
@@ -368,7 +382,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
         </div>
       )}
 
-      {/* --- OSTATNÍ MODALY --- */}
+      {/* --- MODAL: PŘIPOMÍNKY --- */}
       {showReminderModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95">
@@ -391,26 +405,56 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
         </div>
       )}
 
+      {/* --- MODAL: DETAIL REZERVACE (S novými tlačítky) --- */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedOrder(null)}>
           <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+             
+             {/* Header */}
              <div className="flex justify-between items-start mb-6">
-                <div><h3 className="font-serif text-xl font-bold text-stone-900">{selectedOrder.name}</h3><p className="text-xs font-bold text-stone-400 mt-1">{selectedOrder.serviceName}</p></div>
+                <div>
+                    <h3 className="font-serif text-xl font-bold text-stone-900">{selectedOrder.name}</h3>
+                    <p className="text-xs font-bold text-stone-400 mt-1">{selectedOrder.serviceName}</p>
+                </div>
                 <button onClick={() => setSelectedOrder(null)} className="p-2 bg-stone-50 rounded-full text-stone-400 hover:text-stone-900"><X size={20}/></button>
              </div>
-             <div className="space-y-4 text-sm text-stone-600">
+
+             {/* Info List */}
+             <div className="space-y-4 text-sm text-stone-600 mb-6">
                 <div className="flex gap-3 items-center"><CalendarDays size={16}/> <span>{Utils.formatDateDisplay(selectedOrder.date)}, {selectedOrder.time}</span></div>
                 <div className="flex gap-3 items-center"><Phone size={16}/> <a href={`tel:${selectedOrder.phone}`} className="hover:underline">{selectedOrder.phone}</a></div>
                 <div className="flex gap-3 items-center"><Mail size={16}/> <a href={`mailto:${selectedOrder.email}`} className="hover:underline truncate w-48 block">{selectedOrder.email}</a></div>
              </div>
-             <button onClick={() => handleDeleteRes(selectedOrder.id)} className="w-full mt-6 text-red-400 hover:text-red-600 text-xs font-bold uppercase tracking-widest flex justify-center gap-2"><Trash2 size={14} /> Smazat</button>
+             
+             {/* Akce: Zavolat / E-mail */}
+             <div className="flex gap-3 mb-3">
+                <a href={`tel:${selectedOrder.phone}`} className="flex-1 bg-stone-800 text-white py-3 rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors">
+                  <Phone size={14} /> Zavolat
+                </a>
+                <a href={`mailto:${selectedOrder.email}`} className="flex-1 bg-white border border-stone-200 text-stone-800 py-3 rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest hover:bg-stone-50 transition-colors">
+                  <Mail size={14} /> E-mail
+                </a>
+             </div>
+
+             {/* Akce: Kalendář */}
+             <button 
+               onClick={() => handleExportCalendar(selectedOrder)}
+               className="w-full mb-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold uppercase tracking-widest py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+             >
+               <CalendarPlus size={14} /> Uložit do kalendáře
+             </button>
+
+             {/* Akce: Smazat */}
+             <button onClick={() => handleDeleteRes(selectedOrder.id)} className="w-full text-red-400 hover:text-red-600 text-xs font-bold uppercase tracking-widest flex justify-center gap-2 py-3">
+               <Trash2 size={14} /> Smazat objednávku
+             </button>
           </div>
         </div>
       )}
 
-      {/* --- LEVÝ SLOUPEC: DASHBOARD --- */}
+      {/* --- LEVÝ SLOUPEC --- */}
       <div className="space-y-10">
-        {/* Směny */}
+        {/* Správa směn */}
         <section>
           <h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Clock size={18} className="text-stone-400" /> Pracovní doba</h2>
           <div className="bg-stone-50 p-6 rounded-xl space-y-6 shadow-inner">
@@ -436,7 +480,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
           </div>
         </section>
 
-        {/* Služby s Drag & Drop */}
+        {/* Správa služeb (Drag & Drop) */}
         <section>
           <h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Scissors size={18} className="text-stone-400" /> Správa produktů</h2>
           <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-3 shadow-sm mb-4">
@@ -486,7 +530,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
         </section>
       </div>
 
-      {/* --- PRAVÝ SLOUPEC: SEZNAM REZERVACÍ --- */}
+      {/* --- PRAVÝ SLOUPEC --- */}
       <section>
         <div className="flex justify-between items-end mb-4 border-b border-stone-100 pb-2">
           <h2 className="font-serif text-lg flex items-center gap-2 text-stone-800"><Calendar size={18} className="text-stone-400" /> Objednávky</h2>
