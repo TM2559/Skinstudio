@@ -26,5 +26,11 @@ export default defineConfig({
         ]
       }
     })
-  ]
+  ],
+  // TOTO JSME PŘIDALI PRO TESTOVÁNÍ:
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.js',
+  },
 })
