@@ -62,7 +62,14 @@ export default function App() {
     if (!user) return;
     const unsub1 = onSnapshot(query(getCollectionPath("reservations")), s => setReservations(s.docs.map(d => ({id: d.id, ...d.data()}))));
     const unsub2 = onSnapshot(getCollectionPath("schedule"), s => { const data = {}; s.forEach(d => data[d.id] = d.data()); setSchedule(data); });
-    const unsub3 = onSnapshot(query(getCollectionPath("services")), s => setServices(s.docs.map(d => ({id: d.id, ...d.data()}))));
+    
+    // OPRAVA: Přidali jsme .sort() na konec načítání služeb
+    const unsub3 = onSnapshot(query(getCollectionPath("services")), s => {
+      const loadedServices = s.docs.map(d => ({id: d.id, ...d.data()}));
+      // Seřadíme je podle 'order' (pokud order chybí, použije se 0)
+      setServices(loadedServices.sort((a, b) => (a.order || 0) - (b.order || 0)));
+    });
+
     return () => { unsub1(); unsub2(); unsub3(); };
   }, [user]);
 

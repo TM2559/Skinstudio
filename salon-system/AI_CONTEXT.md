@@ -1,17 +1,33 @@
 # PROJEKT: Skin Studio (Rezervační systém)
 Stack: React + Vite + Firebase + Tailwind + EmailJS
-Date: Mon Jan 26 16:11:06 CET 2026
+Date: Mon Jan 26 19:49:37 CET 2026
+--------------------------------------------------
+
+🔴 INSTRUKCE PRO AI (SYSTEM PROMPT):
+Jsi Lead React Developer a Architekt projektu Skin Studio. Tento soubor obsahuje kompletní a aktuální stav naší codebase.
+
+TVA ROLE A CHOVÁNÍ:
+1. Kontext: Všechny odpovědi musí vycházet POUZE z přiloženého kódu. Pokud něco v kódu chybí, upozorni na to, nevymýšlej si halucinace.
+2. Architektura: Dodržuj rozdělení na 'components/AdminView', 'components/CustomerView' a 'utils'. Nemíchej logiku zpět do App.jsx.
+3. Bezpečnost: Nikdy nenavrhuj hardcodování hesel. Vždy používej environment variables.
+4. Styl: Udržuj konzistenci Tailwind CSS tříd a designu (Stone/Rose colors).
+5. Jazyk: Komunikuj stručně, technicky přesně a v češtině.
+
+POKYN PRO TEĎ:
+Analyzuj přiložené soubory, sestav si mentální mapu závislostí (imports/exports) a potvrď, že jsi připraven pracovat. Neopisuj kód zpátky, jen potvrď 'Kontext načten, čekám na zadání'.
 --------------------------------------------------
 
 --- SOUBOR: src/App.jsx ---
 ```javascript
+/* eslint-disable no-undef */
 import React, { useState, useEffect } from 'react';
 import { Loader2, Scissors, Lock } from 'lucide-react';
 import { query, onSnapshot } from "firebase/firestore";
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "firebase/auth";
 
+// --- DŮLEŽITÉ: Tady propojujeme nové soubory ---
 import CustomerView from './components/CustomerView';
-import AdminView from './components/AdminView';
+import AdminView from './components/AdminView'; // <--- Toto načte vaši úpravu!
 import { auth, getCollectionPath } from './firebaseConfig';
 
 export default function App() {
@@ -51,10 +67,7 @@ export default function App() {
   useEffect(() => {
     const init = async () => {
       try {
-        // Kontrola pro případné custom tokeny, jinak anonymní
-        // eslint-disable-next-line no-undef
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          // eslint-disable-next-line no-undef
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
           await signInAnonymously(auth);
@@ -68,17 +81,9 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
-    
     const unsub1 = onSnapshot(query(getCollectionPath("reservations")), s => setReservations(s.docs.map(d => ({id: d.id, ...d.data()}))));
     const unsub2 = onSnapshot(getCollectionPath("schedule"), s => { const data = {}; s.forEach(d => data[d.id] = d.data()); setSchedule(data); });
-    
-    // Řazení služeb podle 'order'
-    const unsub3 = onSnapshot(query(getCollectionPath("services")), s => {
-      const docs = s.docs.map(d => ({id: d.id, ...d.data()}));
-      docs.sort((a, b) => (a.order ?? 999) - (b.order ?? 999)); 
-      setServices(docs);
-    });
-    
+    const unsub3 = onSnapshot(query(getCollectionPath("services")), s => setServices(s.docs.map(d => ({id: d.id, ...d.data()}))));
     return () => { unsub1(); unsub2(); unsub3(); };
   }, [user]);
 
@@ -130,7 +135,7 @@ export default function App() {
           </div>
 
         </div>
-        <p className="text-center text-stone-300 text-[10px] mt-10 tracking-[0.3em] uppercase">© 2026 Skin Studio | Refactored v2.0</p>
+        <p className="text-center text-stone-300 text-[10px] mt-10 tracking-[0.3em] uppercase">© 2026 Skin Studio v1.3.0</p>
       </div>
     </div>
   );
@@ -715,6 +720,8 @@ import { Utils } from '../utils/helpers';
 import { getCollectionPath, EMAILJS_CONFIG } from '../firebaseConfig';
 
 const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) => {
+  const ADMIN_EMAIL = "info@skinstudio.cz"; 
+
   const [selectedService, setSelectedService] = useState(null);
   const [selectedDateStr, setSelectedDateStr] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -722,7 +729,6 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
   const [isSending, setIsSending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // 1. Výpočet dostupných dnů
   const clientDates = useMemo(() => {
     const dates = [];
     const today = new Date();
@@ -738,7 +744,6 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
 
   const activeDateStr = selectedDateStr || (clientDates.length > 0 ? Utils.formatDateKey(clientDates[0]) : null);
 
-  // 2. Výpočet dostupných časů
   const availableSlots = useMemo(() => {
     if (!activeDateStr || !selectedService) return [];
     const dayData = schedule[activeDateStr];
@@ -766,13 +771,17 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
     return slots.sort();
   }, [activeDateStr, selectedService, schedule, reservations]);
 
-  // 3. Odeslání rezervace
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedTime || !selectedService || !formData.email) return;
     setIsSending(true);
 
     try {
+      const calendarLink = Utils.createGoogleCalendarLink(
+        activeDateStr, selectedTime, parseInt(selectedService.duration),
+        `REZERVACE: ${selectedService.name} (${formData.name})`, `Klient: ${formData.name}, Tel: ${formData.phone}`
+      );
+
       await addDoc(getCollectionPath("reservations"), {
         date: activeDateStr,
         time: selectedTime,
@@ -783,11 +792,12 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
         duration: parseInt(selectedService.duration),
         price: selectedService.price || 0,
         created: new Date().toISOString(),
-        reminderSent: false
+        reminderSent: false,
+        source: 'web'
       });
 
-      // EmailJS
       if (EMAILJS_CONFIG.PUBLIC_KEY) {
+        // Klient
         await fetch('https://api.emailjs.com/api/v1.0/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -801,10 +811,33 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
               date: Utils.formatDateDisplay(activeDateStr),
               time: selectedTime,
               service: selectedService.name,
-              reply_to: "rezervace@skinstudio.cz"
+              reply_to: ADMIN_EMAIL 
             }
           })
         });
+
+        // Admin
+        if (EMAILJS_CONFIG.ADMIN_TEMPLATE) {
+            await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                service_id: EMAILJS_CONFIG.SERVICE_ID,
+                template_id: EMAILJS_CONFIG.ADMIN_TEMPLATE,
+                user_id: EMAILJS_CONFIG.PUBLIC_KEY,
+                template_params: {
+                name: formData.name,
+                to_email: ADMIN_EMAIL,
+                date: Utils.formatDateDisplay(activeDateStr),
+                time: selectedTime,
+                service: selectedService.name,
+                phone: formData.phone,
+                reply_to: formData.email,
+                calendar_link: calendarLink 
+                }
+            })
+            });
+        }
       }
 
       setIsSuccess(true);
@@ -818,7 +851,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
 
     } catch (err) {
       console.error(err);
-      alert("Chyba při rezervaci. Zkuste to prosím znovu.");
+      alert("Chyba při rezervaci.");
     } finally {
       setIsSending(false);
     }
@@ -826,10 +859,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
 
   return (
     <div className="flex flex-col gap-10 md:grid md:grid-cols-2 md:gap-16">
-      {/* Levý sloupec: Výběr */}
       <div className="flex flex-col gap-10">
-        
-        {/* Krok 1: Služby */}
         <div>
           <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b border-stone-100 pb-2">
             <span className="w-5 h-5 rounded-full bg-stone-800 text-white flex items-center justify-center text-[8px]">1</span>
@@ -865,10 +895,21 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
                 <button 
                   key={key} 
                   onClick={() => { setSelectedDateStr(key); setSelectedTime(null); }}
-                  className={`flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 rounded-xl border transition-all ${activeDateStr === key ? 'bg-stone-800 text-white border-stone-800 shadow-md' : 'bg-white text-stone-500 border-stone-100'}`}
+                  // ZVĚTŠENÁ VÝŠKA TLAČÍTKA NA h-24
+                  className={`flex-shrink-0 flex flex-col items-center justify-center w-16 h-24 rounded-xl border transition-all ${activeDateStr === key ? 'bg-stone-800 text-white border-stone-800 shadow-md' : 'bg-white text-stone-500 border-stone-100'}`}
                 >
-                  <span className="text-[10px] font-bold uppercase tracking-tighter">{d.toLocaleDateString('cs-CZ', { weekday: 'short' })}</span>
-                  <span className="text-xl font-serif">{d.getDate()}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-tighter">
+                    {d.toLocaleDateString('cs-CZ', { weekday: 'short' })}
+                  </span>
+                  
+                  <span className="text-xl font-serif leading-none my-1">
+                    {d.getDate()}
+                  </span>
+
+                  {/* NÁZEV MĚSÍCE */}
+                  <span className="text-[9px] uppercase tracking-widest opacity-80">
+                    {d.toLocaleDateString('cs-CZ', { month: 'short' })}
+                  </span>
                 </button>
               );
             })}
@@ -893,7 +934,6 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
         </div>
       </div>
 
-      {/* Pravý sloupec: Formulář */}
       <div className="bg-stone-50 p-8 rounded-2xl border border-stone-200 h-fit sticky top-4">
         <h2 className="text-lg font-serif mb-6 border-b border-stone-200 pb-4 flex items-center gap-2 text-stone-800">
           <Sparkles className="text-stone-400" size={16} /> Rezervace
@@ -918,7 +958,11 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
             <input required type="email" placeholder="E-mail pro potvrzení" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-3 rounded-lg border border-stone-200 text-sm font-medium outline-none" />
             
             <button type="submit" disabled={isSending} className="w-full bg-stone-800 text-white py-4 rounded-lg font-bold uppercase text-[10px] tracking-widest shadow-lg hover:bg-black transition-all disabled:opacity-50">
-              {isSending ? 'Odesílám...' : 'Potvrdit termín'}
+              {isSending ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="animate-spin" size={14} /> Odesílám...
+                </span>
+              ) : 'Potvrdit termín'}
             </button>
           </form>
         )}
