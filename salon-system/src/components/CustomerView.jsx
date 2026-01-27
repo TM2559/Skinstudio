@@ -29,31 +29,27 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
 
   const activeDateStr = selectedDateStr || (clientDates.length > 0 ? Utils.formatDateKey(clientDates[0]) : null);
 
+  // --- ZMĚNA: Použití chytré logiky (getSmartSlots) ---
   const availableSlots = useMemo(() => {
     if (!activeDateStr || !selectedService) return [];
     const dayData = schedule[activeDateStr];
     if (!dayData) return [];
 
+    // 1. Získáme pracovní bloky
     const periods = dayData.periods || (dayData.start ? [{ start: dayData.start, end: dayData.end }] : []);
-    const dayRes = reservations
+    
+    // 2. Získáme obsazené intervaly ten den
+    const bookedIntervals = reservations
       .filter(r => r.date === activeDateStr)
       .map(r => ({ start: Utils.timeToMinutes(r.time), end: Utils.timeToMinutes(r.time) + (r.duration || 60) }));
 
-    let slots = [];
-    const dur = parseInt(selectedService.duration);
+    // 3. Zavoláme naši novou funkci "Magnet"
+    return Utils.getSmartSlots(
+      periods, 
+      parseInt(selectedService.duration), 
+      bookedIntervals
+    );
 
-    periods.forEach(p => {
-      const startMin = Utils.timeToMinutes(p.start);
-      const endMin = Utils.timeToMinutes(p.end);
-      for (let t = startMin; t <= endMin - dur; t += 30) {
-        const isCollision = dayRes.some(r => (t < r.end && t + dur > r.start));
-        if (!isCollision) {
-          const timeStr = Utils.minutesToTime(t);
-          if (!slots.includes(timeStr)) slots.push(timeStr);
-        }
-      }
-    });
-    return slots.sort();
   }, [activeDateStr, selectedService, schedule, reservations]);
 
   const handleSubmit = async (e) => {
@@ -180,7 +176,6 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
                 <button 
                   key={key} 
                   onClick={() => { setSelectedDateStr(key); setSelectedTime(null); }}
-                  // ZVĚTŠENÁ VÝŠKA TLAČÍTKA NA h-24
                   className={`flex-shrink-0 flex flex-col items-center justify-center w-16 h-24 rounded-xl border transition-all ${activeDateStr === key ? 'bg-stone-800 text-white border-stone-800 shadow-md' : 'bg-white text-stone-500 border-stone-100'}`}
                 >
                   <span className="text-[10px] font-bold uppercase tracking-tighter">
@@ -191,7 +186,6 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
                     {d.getDate()}
                   </span>
 
-                  {/* NÁZEV MĚSÍCE */}
                   <span className="text-[9px] uppercase tracking-widest opacity-80">
                     {d.toLocaleDateString('cs-CZ', { month: 'short' })}
                   </span>
@@ -204,6 +198,14 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
         {/* Krok 3: Čas */}
         <div className={!activeDateStr ? 'opacity-20 pointer-events-none' : ''}>
           <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6 border-b border-stone-100 pb-2">3. Čas</h2>
+          
+          {/* INFO BOX PRO UŽIVATELE */}
+          {availableSlots.length > 0 && (
+             <p className="text-[10px] text-stone-400 mb-3 italic">
+               Zobrazují se pouze termíny navazující na směny nebo jiné rezervace pro efektivní využití času.
+             </p>
+          )}
+
           <div className="grid grid-cols-3 gap-3">
             {availableSlots.length === 0 && <p className="col-span-3 text-xs text-stone-400">Pro tento den už není volno.</p>}
             {availableSlots.map(t => (

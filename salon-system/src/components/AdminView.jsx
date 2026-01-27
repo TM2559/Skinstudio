@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Calendar, Clock, Phone, Trash2, Plus, X, LogOut, Scissors, Mail, Send, 
-  Loader2, Edit2, CalendarDays, PlusCircle, GripVertical, CalendarPlus 
+  Loader2, Edit2, CalendarDays, PlusCircle, GripVertical, CalendarPlus,
+  ChevronUp, ChevronDown // <--- Přidány ikony šipek
 } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc } from "firebase/firestore";
 import { Utils } from '../utils/helpers';
@@ -85,7 +86,28 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // --- DRAG AND DROP HANDLERS ---
+  // --- NOVÁ FUNKCE: PŘESOUVÁNÍ ŠIPKAMI (PRO MOBILY) ---
+  const moveService = async (index, direction) => {
+    // direction: -1 (nahoru) nebo 1 (dolů)
+    const newServices = [...services];
+    const targetIndex = index + direction;
+    
+    // Kontrola, zda nejsme na kraji seznamu
+    if (targetIndex < 0 || targetIndex >= newServices.length) return;
+
+    // Prohození položek
+    const [movedItem] = newServices.splice(index, 1);
+    newServices.splice(targetIndex, 0, movedItem);
+
+    // Uložení nového pořadí
+    const updatePromises = newServices.map((service, idx) => {
+        return updateDoc(getDocPath("services", service.id), { order: idx });
+    });
+    
+    await Promise.all(updatePromises);
+  };
+
+  // --- DRAG AND DROP HANDLERS (PRO DESKTOP) ---
   const handleDragStart = (e, index) => {
     setDraggedItemIndex(index);
     e.dataTransfer.effectAllowed = "move";
@@ -480,7 +502,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
           </div>
         </section>
 
-        {/* Správa služeb (Drag & Drop) */}
+        {/* Správa služeb (Drag & Drop + Šipky) */}
         <section>
           <h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800"><Scissors size={18} className="text-stone-400" /> Správa produktů</h2>
           <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-3 shadow-sm mb-4">
@@ -511,7 +533,16 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
                 style={{ cursor: 'move' }}
               >
                 <div className="flex items-center gap-3">
-                  <GripVertical className="text-stone-300 cursor-move" size={16} />
+                  {/* ŠIPKY PRO MOBIL */}
+                  <div className="flex flex-col gap-1 mr-1 md:hidden">
+                    <button onClick={() => moveService(index, -1)} disabled={index === 0} className="text-stone-400 hover:text-stone-800 disabled:opacity-20 bg-white p-1 rounded-full border border-stone-200 shadow-sm"><ChevronUp size={14} /></button>
+                    <button onClick={() => moveService(index, 1)} disabled={index === services.length - 1} className="text-stone-400 hover:text-stone-800 disabled:opacity-20 bg-white p-1 rounded-full border border-stone-200 shadow-sm"><ChevronDown size={14} /></button>
+                  </div>
+                  {/* DRAG HANDLE PRO DESKTOP */}
+                  <div className="hidden md:block">
+                     <GripVertical className="text-stone-300 cursor-move" size={16} />
+                  </div>
+                  
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-stone-800">{s.name}</span>
                     <div className="flex gap-2 mt-1">
@@ -520,7 +551,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-1">
                   <button onClick={() => startEdit(s)} className="p-2 text-stone-400 hover:text-stone-800"><Edit2 size={14}/></button>
                   <button onClick={() => handleDeleteService(s.id)} className="p-2 text-stone-300 hover:text-red-500"><Trash2 size={14}/></button>
                 </div>
