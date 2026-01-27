@@ -41,46 +41,39 @@ export const Utils = {
     return opts;
   },
 
-  // --- NOVÁ FUNKCE: HYBRIDNÍ ŘAZENÍ TERMÍNŮ ---
+  // --- HYBRIDNÍ LOGIKA (CLUSTERING v2) ---
   getSmartSlots: (periods, duration, bookedIntervals, step = 30) => {
     let slots = [];
     
-    // Zde je tvá nová logika:
-    // Pokud je služba krátká (30 min), zapneme přísný "Magnet" režim.
-    // Pro delší služby (60, 90...) necháme volný režim.
-    const isStrict = (duration === 30);
+    // Zjistíme, jestli už je ten den někdo objednaný
+    const hasBookings = bookedIntervals.length > 0;
 
+    // ZMĚNA: Přísný "Magnet" režim zapínáme JEN PRO KRÁTKÉ SLUŽBY a JEN POKUD UŽ NĚKDO JE OBJEDNANÝ.
+    // Pokud je den prázdný (!hasBookings), chováme se "Free" i pro krátké služby.
+    const isStrict = (duration <= 30) && hasBookings;
+    
     periods.forEach(p => {
       const startMin = Utils.timeToMinutes(p.start);
       const endMin = Utils.timeToMinutes(p.end);
 
-      // Projdeme směnu po krocích
       for (let t = startMin; t <= endMin - duration; t += step) {
         const tEnd = t + duration;
         const timeStr = Utils.minutesToTime(t);
 
-        // 1. KONTROLA KOLIZE (Platí vždy)
         const isCollision = bookedIntervals.some(r => (t < r.end && tEnd > r.start));
         
         if (!isCollision) {
           if (!isStrict) {
-            // VOLNÝ REŽIM (pro služby > 30 min):
-            // Pokud se vejde, nabídneme ho.
+            // VOLNÝ REŽIM (buď je to dlouhá služba, NEBO je den prázdný) -> Bereme vše
             if (!slots.includes(timeStr)) slots.push(timeStr);
           } else {
-            // PŘÍSNÝ MAGNET REŽIM (pro 30 min):
-            // Nabídneme JEN pokud se dotýká hranice nebo jiné rezervace.
+            // PŘÍSNÝ MAGNET REŽIM (krátká služba A den už má rezervace)
             
-            const touchesStart = (t === startMin); // Začátek směny
-            const touchesEnd = (tEnd === endMin);  // Konec směny
-            
-            // Konec jiné rezervace = začátek této
+            // Lepíme se JEN k existujícím rezervacím
             const touchesPrevRes = bookedIntervals.some(r => r.end === t);
-            
-            // Začátek jiné rezervace = konec této (Tvůj požadavek "před termínem")
             const touchesNextRes = bookedIntervals.some(r => r.start === tEnd);
 
-            if (touchesStart || touchesEnd || touchesPrevRes || touchesNextRes) {
+            if (touchesPrevRes || touchesNextRes) {
                if (!slots.includes(timeStr)) slots.push(timeStr);
             }
           }
@@ -91,7 +84,7 @@ export const Utils = {
     return slots.sort();
   },
 
-  // ... (Zbytek pro kalendáře) ...
+  // ... (Kalendářové funkce) ...
   createGoogleCalendarLink: (dateStr, timeStr, durationMinutes, title, description) => {
     let year, month, day;
     if (dateStr.includes('-')) {

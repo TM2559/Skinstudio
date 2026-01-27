@@ -202,7 +202,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
           {/* INFO BOX PRO UŽIVATELE */}
           {availableSlots.length > 0 && (
              <p className="text-[10px] text-stone-400 mb-3 italic">
-               Zobrazují se pouze termíny navazující na směny nebo jiné rezervace pro efektivní využití času.
+          
              </p>
           )}
 
