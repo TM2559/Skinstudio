@@ -121,7 +121,7 @@ export default function App() {
           </div>
 
         </div>
-        <p className="text-center text-stone-300 text-[10px] mt-10 tracking-[0.3em] uppercase">© 2026 Skin Studio v1.3.5</p>
+        <p className="text-center text-stone-300 text-[10px] mt-10 tracking-[0.3em] uppercase">© 2026 Skin Studio v1.3.6</p>
       </div>
     </div>
   );
