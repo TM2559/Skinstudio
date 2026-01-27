@@ -27,10 +27,12 @@ export default defineConfig({
       }
     })
   ],
-  // TOTO JSME PŘIDALI PRO TESTOVÁNÍ:
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.js',
+    // PŘIDÁNO: Zvýšíme limit a použijeme stabilnější pool pro Mac
+    testTimeout: 10000,
+    pool: 'vmThreads' 
   },
 })

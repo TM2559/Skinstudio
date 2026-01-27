@@ -41,7 +41,57 @@ export const Utils = {
     return opts;
   },
 
-  // --- GOOGLE KALENDÁŘ (Webový odkaz) ---
+  // --- NOVÁ FUNKCE: HYBRIDNÍ ŘAZENÍ TERMÍNŮ ---
+  getSmartSlots: (periods, duration, bookedIntervals, step = 30) => {
+    let slots = [];
+    
+    // Zde je tvá nová logika:
+    // Pokud je služba krátká (30 min), zapneme přísný "Magnet" režim.
+    // Pro delší služby (60, 90...) necháme volný režim.
+    const isStrict = (duration === 30);
+
+    periods.forEach(p => {
+      const startMin = Utils.timeToMinutes(p.start);
+      const endMin = Utils.timeToMinutes(p.end);
+
+      // Projdeme směnu po krocích
+      for (let t = startMin; t <= endMin - duration; t += step) {
+        const tEnd = t + duration;
+        const timeStr = Utils.minutesToTime(t);
+
+        // 1. KONTROLA KOLIZE (Platí vždy)
+        const isCollision = bookedIntervals.some(r => (t < r.end && tEnd > r.start));
+        
+        if (!isCollision) {
+          if (!isStrict) {
+            // VOLNÝ REŽIM (pro služby > 30 min):
+            // Pokud se vejde, nabídneme ho.
+            if (!slots.includes(timeStr)) slots.push(timeStr);
+          } else {
+            // PŘÍSNÝ MAGNET REŽIM (pro 30 min):
+            // Nabídneme JEN pokud se dotýká hranice nebo jiné rezervace.
+            
+            const touchesStart = (t === startMin); // Začátek směny
+            const touchesEnd = (tEnd === endMin);  // Konec směny
+            
+            // Konec jiné rezervace = začátek této
+            const touchesPrevRes = bookedIntervals.some(r => r.end === t);
+            
+            // Začátek jiné rezervace = konec této (Tvůj požadavek "před termínem")
+            const touchesNextRes = bookedIntervals.some(r => r.start === tEnd);
+
+            if (touchesStart || touchesEnd || touchesPrevRes || touchesNextRes) {
+               if (!slots.includes(timeStr)) slots.push(timeStr);
+            }
+          }
+        }
+      }
+    });
+
+    return slots.sort();
+  },
+
+  // ... (Zbytek pro kalendáře) ...
   createGoogleCalendarLink: (dateStr, timeStr, durationMinutes, title, description) => {
     let year, month, day;
     if (dateStr.includes('-')) {
@@ -49,52 +99,34 @@ export const Utils = {
         if (parts[0].length === 4) { [year, month, day] = parts; } 
         else { [day, month, year] = parts; }
     }
-    
     const startDate = new Date(`${year}-${month}-${day}T${timeStr}:00`);
     const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
-    
-    const format = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, ""); // YYYYMMDDTHHMMSSZ
-    
+    const format = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
     const url = new URL("https://www.google.com/calendar/render");
     url.searchParams.append("action", "TEMPLATE");
     url.searchParams.append("text", title);
     url.searchParams.append("dates", `${format(startDate)}/${format(endDate)}`);
     url.searchParams.append("details", description);
     url.searchParams.append("location", "Skin Studio");
-    
     return url.toString();
   },
 
-  // --- APPLE KALENDÁŘ / OUTLOOK (.ics soubor) ---
   downloadICSFile: (dateStr, timeStr, durationMinutes, title, description) => {
     let year, month, day;
     if (dateStr.includes('-')) {
         const parts = dateStr.split('-');
-        if (parts[0].length === 4) { [year, month, day] = parts; } // YYYY-MM-DD
-        else { [day, month, year] = parts; } // DD-MM-YYYY
+        if (parts[0].length === 4) { [year, month, day] = parts; } 
+        else { [day, month, year] = parts; }
     }
-    
     const startDate = new Date(`${year}-${month}-${day}T${timeStr}:00`);
     const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
-    
-    // Formát pro ICS: YYYYMMDDTHHMMSS
-    const formatICSDate = (date) => {
-      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    };
-
+    const formatICSDate = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     const icsContent = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'BEGIN:VEVENT',
-      `DTSTART:${formatICSDate(startDate)}`,
-      `DTEND:${formatICSDate(endDate)}`,
-      `SUMMARY:${title}`,
-      `DESCRIPTION:${description}`,
-      'LOCATION:Skin Studio',
-      'END:VEVENT',
-      'END:VCALENDAR'
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'BEGIN:VEVENT',
+      `DTSTART:${formatICSDate(startDate)}`, `DTEND:${formatICSDate(endDate)}`,
+      `SUMMARY:${title}`, `DESCRIPTION:${description}`, 'LOCATION:Skin Studio',
+      'END:VEVENT', 'END:VCALENDAR'
     ].join('\n');
-
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const link = document.createElement('a');
     link.href = window.URL.createObjectURL(blob);
