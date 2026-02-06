@@ -1,3 +1,65 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Skin Studio – paleta z titulky: teplý krém, zlatý akcent, uhlově černá */
+:root {
+  --skin-cream: #f7f4ec;
+  --skin-cream-dark: #ebe7de;
+  --skin-gold: #c5aa80;
+  --skin-gold-dark: #a3803d;
+  --skin-charcoal: #2f2f2f;
+  --skin-beige-muted: #d3cfc6;
+  --skin-white: #fdfcfa;
+}
+
+@layer base {
+  body {
+    background-color: var(--skin-cream);
+    color: var(--skin-charcoal);
+  }
+}
+
+@layer components {
+  .skin-bg {
+    background-color: var(--skin-cream);
+  }
+  .skin-bg-card {
+    background-color: var(--skin-white);
+  }
+  .skin-text {
+    color: var(--skin-charcoal);
+  }
+  .skin-text-muted {
+    color: #6b6560;
+  }
+  .skin-accent {
+    background-color: var(--skin-gold-dark);
+    color: white;
+    border-radius: 9999px;
+    letter-spacing: 0.05em;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+  }
+  .skin-accent:hover {
+    background-color: #8a6b32;
+    color: white;
+    transform: translateY(-2px);
+  }
+  .skin-accent:active {
+    transform: translateY(0);
+  }
+  .skin-border {
+    border-color: var(--skin-beige-muted);
+  }
+  .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+  .body-text {
+    line-height: 1.65;
+    color: #2f2f2f;
+  }
+  .input-focus:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--skin-gold);
+  }
+}

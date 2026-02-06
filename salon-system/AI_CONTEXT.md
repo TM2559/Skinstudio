@@ -1,6 +1,6 @@
 # PROJEKT: Skin Studio (Rezervační systém)
 Stack: React + Vite + Firebase + Tailwind + EmailJS + Vitest
-Date: Mon Feb  2 17:33:13 CET 2026
+Date: Wed Feb  4 21:01:43 CET 2026
 --------------------------------------------------
 
 🔴 INSTRUKCE PRO AI (SYSTEM PROMPT):
