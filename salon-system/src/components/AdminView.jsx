@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, Clock, LogOut, PlusCircle, Archive } from 'lucide-react';
+import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { Utils } from '../utils/helpers';
 import { getCollectionPath, getDocPath, EMAILJS_CONFIG } from '../firebaseConfig';
@@ -7,6 +7,7 @@ import { getCollectionPath, getDocPath, EMAILJS_CONFIG } from '../firebaseConfig
 import AdminBookingsTab from './admin/AdminBookingsTab';
 import AdminHistoryTab from './admin/AdminHistoryTab';
 import AdminSettingsTab from './admin/AdminSettingsTab';
+import AdminInstagramTab from './admin/AdminInstagramTab';
 import ManualBookingModal from './admin/ManualBookingModal';
 import RemindersModal from './admin/RemindersModal';
 import OrderDetailModal from './admin/OrderDetailModal';
@@ -18,7 +19,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
   const [workStart, setWorkStart] = useState('09:00');
   const [workEnd, setWorkEnd] = useState('17:00');
   const [editingServiceId, setEditingServiceId] = useState(null);
-  const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60' });
+  const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60', description: '' });
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [remindersList, setRemindersList] = useState([]);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
@@ -87,6 +88,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
       name: serviceForm.name,
       price: parseInt(serviceForm.price) || 0,
       duration: parseInt(serviceForm.duration),
+      description: (serviceForm.description || '').trim(),
       order: editingServiceId ? undefined : services.length,
     };
     const updateData = { ...data };
@@ -97,7 +99,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     } else {
       await addDoc(getCollectionPath('services'), data);
     }
-    setServiceForm({ name: '', price: '', duration: '60' });
+    setServiceForm({ name: '', price: '', duration: '60', description: '' });
   };
 
   const handleDeleteService = async (id) => {
@@ -107,7 +109,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
   const startEdit = (s) => {
     setActiveTab('settings');
     setEditingServiceId(s.id);
-    setServiceForm({ name: s.name, price: s.price, duration: s.duration });
+    setServiceForm({ name: s.name, price: s.price, duration: s.duration, description: s.description || '' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -282,7 +284,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
           <div className="flex gap-3">
             <button
               onClick={() => setShowManualBooking(true)}
-              className="bg-stone-800 hover:bg-black text-white px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-all shadow-lg shadow-stone-200"
+              className="skin-accent px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-all shadow-sm"
             >
               <PlusCircle size={14} /> <span className="hidden sm:inline">Nová rezervace</span>
             </button>
@@ -323,6 +325,15 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
           >
             <Archive size={16} /> Archiv
           </button>
+          <button
+            onClick={() => {
+              setActiveTab('instagram');
+              setSearchTerm('');
+            }}
+            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'instagram' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+          >
+            <Instagram size={16} /> Instagram
+          </button>
         </div>
       </div>
 
@@ -348,6 +359,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
             todayKey={todayKey}
           />
         )}
+        {activeTab === 'instagram' && <AdminInstagramTab />}
         {activeTab === 'settings' && (
           <AdminSettingsTab
             adminDateInput={adminDateInput}
@@ -373,7 +385,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
             draggedItemIndex={draggedItemIndex}
             onCancelEdit={() => {
               setEditingServiceId(null);
-              setServiceForm({ name: '', price: '', duration: '60' });
+              setServiceForm({ name: '', price: '', duration: '60', description: '' });
             }}
           />
         )}

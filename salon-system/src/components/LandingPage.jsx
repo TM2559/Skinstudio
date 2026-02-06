@@ -1,0 +1,273 @@
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Calendar, Heart, MapPin, Phone, Mail, Instagram, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
+import InstagramSection from './InstagramSection';
+import { INSTAGRAM_URL } from '../firebaseConfig';
+
+/** Remove parenthetical meta-commentary (e.g. " (Zní to jako odměna...) ") from description text. */
+function cleanDescription(text) {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export default function LandingPage({ services = [] }) {
+  const [expandedServiceId, setExpandedServiceId] = useState(null);
+
+  useEffect(() => {
+    const hash = window.location.hash?.slice(1);
+    if (hash) {
+      const el = document.getElementById(hash);
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+  }, []);
+
+  return (
+    <>
+      {/* Hero – typografie jako hlavní bod zájmu */}
+      <section
+        className="relative border-b overflow-hidden"
+        style={{ backgroundColor: 'var(--skin-cream)', borderColor: 'var(--skin-beige-muted)' }}
+      >
+        <div className="max-w-4xl mx-auto px-4 pt-14 sm:pt-20 pb-8 sm:pb-10 text-center">
+          <h1 className="font-display font-bold text-4xl sm:text-5xl tracking-wide text-[var(--skin-charcoal)]">
+            Skin Studio
+          </h1>
+          <p className="font-display font-semibold text-lg sm:text-xl text-stone-600 mt-2 tracking-wide">
+            Lucie Metelková
+          </p>
+        </div>
+        <div className="max-w-4xl mx-auto px-4 pb-14 sm:pb-20 text-center">
+          <p className="body-text text-sm sm:text-base max-w-xl mx-auto mb-8 text-[#3d3730]">
+            Odborná péče o pleť s <strong className="font-semibold">individuálním přístupem</strong> v <strong className="font-semibold">Uherském Brodě</strong>. Svěřte svou pleť do
+            rukou profesionálky v příjemném a klidném prostředí.
+          </p>
+          <Link
+            to="/rezervace"
+            className="skin-accent inline-flex items-center justify-center px-8 py-4 font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm"
+          >
+            Objednat termín
+          </Link>
+        </div>
+      </section>
+
+      {/* O studiu / O Lucii */}
+      <section
+        id="o-nas"
+        className="scroll-mt-20 py-20 sm:py-24"
+        style={{ backgroundColor: 'var(--skin-cream-dark)' }}
+      >
+        <div className="max-w-4xl mx-auto px-4">
+          <h2 className="font-display text-2xl font-bold mb-10 text-center text-[var(--skin-charcoal)]">
+            O studiu
+          </h2>
+          <div
+            className="rounded-2xl p-8 sm:p-10 shadow-sm"
+            style={{ backgroundColor: 'var(--skin-white)', border: '1px solid var(--skin-beige-muted)' }}
+          >
+            <div className="body-text text-left mb-8 text-[#2f2f2f] space-y-6" style={{ lineHeight: 1.7 }}>
+              <p>
+                Jmenuji se Lucie Metelková a kosmetika je pro mě víc než jen práce – je to spojení odbornosti, relaxace a preciznosti. Kladu absolutní důraz na čistotu, špičkové postupy a bezpečí vaší pleti.
+              </p>
+              <p>
+                V mém studiu v <strong className="font-semibold">Uherském Brodě</strong> nenajdete „pásovou výrobu“. Každá pleť je jedinečná, a proto je i každé mé ošetření 100% individuální. Ať už řešíme akné, vrásky, nebo jen toužíte po dokonalém obočí díky laminaci, mým cílem je, abyste odcházela nejen krásnější, ale i dokonale odpočatá.
+              </p>
+              <p>
+                Zastavte se a dopřejte si svůj „Me Time“ okamžik v prostředí, kde se čas točí jen kolem vás.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-6 sm:gap-8 justify-start items-center border-t pt-8" style={{ borderColor: '#E5E5E5' }}>
+              {[
+                'Individuální přístup',
+                'Kvalitní kosmetika',
+                'Příjemné prostředí',
+                'Odborná péče',
+              ].map((item) => (
+                <span
+                  key={item}
+                  className="inline-flex items-center gap-2 text-sm text-[#3d3730]"
+                >
+                  <Heart size={14} className="opacity-70 shrink-0" style={{ color: 'var(--skin-gold)' }} /> {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Procedury a ceník – Service Menu */}
+      <section
+        id="procedury"
+        className="scroll-mt-20 py-20 sm:py-24 border-t border-stone-200"
+        style={{ backgroundColor: '#fcfbf7' }}
+      >
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <h2 className="font-display text-2xl sm:text-3xl font-semibold mb-2 text-center text-stone-800">
+            Procedury a ceník
+          </h2>
+          <p className="text-sm text-center mb-12 text-gray-500">
+            Vyberte si ošetření a rezervujte termín on-line.
+          </p>
+          {services.length === 0 ? (
+            <div className="text-center py-12 text-sm text-gray-500">Načítání procedur a ceníku…</div>
+          ) : (
+            <ul className="space-y-0">
+              {services.map((s) => {
+                const hasDescription = !!(s.description && cleanDescription(s.description));
+                const isExpanded = expandedServiceId === s.id;
+
+                return (
+                  <li
+                    key={s.id}
+                    className="border-b last:border-b-0"
+                    style={{ borderColor: '#E5E5E5' }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setExpandedServiceId((id) => (id === s.id ? null : s.id))}
+                      className="w-full flex justify-between items-center text-left transition-colors hover:bg-stone-50/80 active:bg-stone-100/80 py-[20px]"
+                    >
+                      <span className="font-display text-lg sm:text-xl text-stone-800 font-semibold min-w-0 pr-4">
+                        {s.name}
+                      </span>
+                      <div className="flex items-center shrink-0">
+                        <span className="font-normal text-stone-700 tabular-nums text-right">
+                          {s.price != null ? `${s.price} Kč` : '—'}
+                        </span>
+                        {hasDescription && (
+                          <span className="ml-4 flex items-center justify-center text-stone-400 shrink-0">
+                            {isExpanded ? (
+                              <ChevronUp size={20} aria-hidden />
+                            ) : (
+                              <ChevronDown size={20} aria-hidden />
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Expandable description with smooth transition */}
+                    <div
+                      className="grid ease-out"
+                      style={{
+                        gridTemplateRows: isExpanded && hasDescription ? '1fr' : '0fr',
+                        transition: 'grid-template-rows 0.3s ease, opacity 0.3s ease',
+                      }}
+                    >
+                      <div className="min-h-0 overflow-hidden">
+                        <div
+                          className="pb-6 pt-0 px-0 transition-opacity duration-300 ease-out"
+                          style={{ opacity: isExpanded && hasDescription ? 1 : 0 }}
+                        >
+                          {hasDescription && (
+                            <>
+                              <p className="text-gray-600 leading-relaxed max-w-[65ch] whitespace-pre-wrap">
+                                {cleanDescription(s.description)}
+                              </p>
+                              <Link
+                                to={`/rezervace?service=${encodeURIComponent(s.id)}`}
+                                className="skin-accent mt-6 inline-flex items-center justify-center gap-2 font-medium text-sm px-6 py-3 uppercase tracking-[0.05em] focus:outline-none focus:ring-2 focus:ring-stone-600 focus:ring-offset-2"
+                              >
+                                <Calendar size={16} /> Rezervovat termín
+                              </Link>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <div className="text-center mt-[48px]">
+            <Link
+              to="/rezervace"
+              className="skin-accent inline-flex items-center justify-center gap-2 px-6 py-3 font-bold text-xs uppercase tracking-[0.05em] rounded-full"
+            >
+              <Calendar size={14} /> Rezervovat
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer – Kontakt + Sociální sítě */}
+      <footer
+        id="kontakt"
+        className="scroll-mt-20 py-20 sm:py-24"
+        style={{ backgroundColor: '#F9F7F2' }}
+      >
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16">
+            {/* Left: Contact */}
+            <div className="text-left">
+              <h2 className="font-display text-2xl font-bold mb-6 text-[var(--skin-charcoal)]">
+                Kontakt
+              </h2>
+              <p className="text-sm text-[#6b6560] mb-6">Domluvte si termín návštěvy. Těším se na vás.</p>
+              <ul className="space-y-4">
+                <li>
+                  <a
+                    href="tel:+420123456789"
+                    className="flex items-center gap-4 font-normal text-[var(--skin-charcoal)] hover:text-[var(--skin-gold-dark)] transition-colors"
+                  >
+                    <Phone size={20} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
+                    +420 123 456 789
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="mailto:info@skinstudio.cz"
+                    className="flex items-center gap-4 font-normal text-[var(--skin-charcoal)] hover:text-[var(--skin-gold-dark)] transition-colors"
+                  >
+                    <Mail size={20} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
+                    info@skinstudio.cz
+                  </a>
+                </li>
+                <li>
+                  <div className="flex items-center gap-4 text-[var(--skin-charcoal)]">
+                    <MapPin size={20} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
+                    <span className="text-sm">Uherský Brod</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            {/* Right: Socials & CTA */}
+            <div className="text-left">
+              <h2 className="font-display text-2xl font-bold mb-6 text-[var(--skin-charcoal)]">
+                Sledujte nás
+              </h2>
+              {INSTAGRAM_URL && (
+                <a
+                  href={INSTAGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 font-normal text-[var(--skin-charcoal)] hover:text-[var(--skin-gold-dark)] transition-colors mb-6"
+                >
+                  <Instagram size={20} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
+                  <span>Instagram @{INSTAGRAM_URL.replace(/\/$/, '').split('/').pop()}</span>
+                  <ArrowRight size={18} className="shrink-0" />
+                </a>
+              )}
+              <Link
+                to="/rezervace"
+                className="skin-accent inline-flex items-center justify-center gap-2 px-6 py-3 font-bold text-xs uppercase tracking-[0.05em] mt-2"
+              >
+                <Calendar size={14} /> Objednat termín
+              </Link>
+            </div>
+          </div>
+
+          <InstagramSection embedOnly />
+
+          <p className="text-center text-sm text-stone-400 mt-16 pt-8 border-t" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+            © 2024 Skin Studio Lucie Metelková
+          </p>
+        </div>
+      </footer>
+    </>
+  );
+}

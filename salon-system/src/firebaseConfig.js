@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, doc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 // Bezpečný přístup k ENV
 const getEnv = (key) => {
@@ -30,10 +31,18 @@ export const EMAILJS_CONFIG = {
   PUBLIC_KEY: getEnv('VITE_EMAILJS_PUBLIC_KEY')
 };
 
+// Instagram – celá URL nebo jen username (např. skinstudio.uhb)
+const instagramUrl = getEnv('VITE_INSTAGRAM_URL');
+const instagramUsername = getEnv('VITE_INSTAGRAM_USERNAME');
+export const INSTAGRAM_URL = instagramUrl || (instagramUsername ? `https://www.instagram.com/${instagramUsername.replace(/^@/, '')}/` : '');
+// Volitelné: URL příspěvků pro embed, oddělené čárkou (max cca 6)
+export const INSTAGRAM_POST_URLS = (getEnv('VITE_INSTAGRAM_POST_URLS') || '').split(',').map(s => s.trim()).filter(Boolean);
+
 // Inicializace
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 // Pokud jsme v Canvasu, použijeme injektované ID, jinak defaultní nebo prázdné
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';

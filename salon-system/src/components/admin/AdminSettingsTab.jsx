@@ -126,6 +126,16 @@ const AdminSettingsTab = ({
             <option value="120">120 min</option>
           </select>
         </div>
+        <div>
+          <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Popis služby</label>
+          <textarea
+            placeholder="Několik vět popisujících proceduru (zobrazí se po rozkliknutí na webu)"
+            value={serviceForm.description || ''}
+            onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
+            rows={4}
+            className="w-full p-3 border rounded-lg text-sm resize-y min-h-[80px]"
+          />
+        </div>
         <div className="flex gap-2">
           <button
             onClick={onService}
