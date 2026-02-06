@@ -48,13 +48,12 @@ export default function Layout({ children }) {
         }}
       >
         <div className="max-w-4xl mx-auto px-4 flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-3 shrink-0" aria-label="Skin Studio – Domů">
-            <img
-              src="/Skinstudio_logo_new.png"
-              alt="Skin Studio"
-              className="h-12 w-auto object-contain"
-            />
-            <span className="font-display font-bold hidden sm:inline text-stone-800">Skin Studio</span>
+          <Link
+            to="/"
+            className="font-display font-bold text-2xl tracking-wide text-[var(--skin-charcoal)] hover:text-stone-700 transition-colors shrink-0"
+            aria-label="Skin Studio – Domů"
+          >
+            Skin Studio
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">

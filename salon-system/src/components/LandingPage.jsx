@@ -26,17 +26,18 @@ export default function LandingPage({ services = [] }) {
 
   return (
     <>
-      {/* Hero – logo jako hlavní bod zájmu */}
+      {/* Hero – typografie jako hlavní bod zájmu */}
       <section
         className="relative border-b overflow-hidden"
         style={{ backgroundColor: 'var(--skin-cream)', borderColor: 'var(--skin-beige-muted)' }}
       >
-        <div className="max-w-2xl mx-auto px-4 pt-14 sm:pt-20 pb-8 sm:pb-10">
-          <img
-            src="/Skinstudio_logo_new.png"
-            alt="Skin Studio – Lucie Metelková"
-            className="w-full h-auto object-contain object-center max-h-40 sm:max-h-52 block"
-          />
+        <div className="max-w-4xl mx-auto px-4 pt-14 sm:pt-20 pb-8 sm:pb-10 text-center">
+          <h1 className="font-display font-bold text-4xl sm:text-5xl tracking-wide text-[var(--skin-charcoal)]">
+            Skin Studio
+          </h1>
+          <p className="font-display font-semibold text-lg sm:text-xl text-stone-600 mt-2 tracking-wide">
+            Lucie Metelková
+          </p>
         </div>
         <div className="max-w-4xl mx-auto px-4 pb-14 sm:pb-20 text-center">
           <p className="body-text text-sm sm:text-base max-w-xl mx-auto mb-8 text-[#3d3730]">
@@ -66,12 +67,17 @@ export default function LandingPage({ services = [] }) {
             className="rounded-2xl p-8 sm:p-10 shadow-sm"
             style={{ backgroundColor: 'var(--skin-white)', border: '1px solid var(--skin-beige-muted)' }}
           >
-            <p className="body-text text-left mb-8 text-[#2f2f2f]" style={{ lineHeight: 1.7 }}>
-              Vítejte ve Skin Studio v <strong className="font-semibold">Uherském Brodě</strong>. Jmenuji se Lucie Metelková, jsem magistra
-              v oboru <strong className="font-semibold">kvalita a bezpečnost</strong> potravin a profesionální kosmetickou péči nabízím
-              v klidném a útulném prostředí. Každé ošetření přizpůsobuji typu pleti a přáním klientky,
-              aby byl <strong className="font-semibold">výsledek vždy přesně na míru</strong>.
-            </p>
+            <div className="body-text text-left mb-8 text-[#2f2f2f] space-y-6" style={{ lineHeight: 1.7 }}>
+              <p>
+                Jmenuji se Lucie Metelková a kosmetika je pro mě víc než jen práce – je to spojení odbornosti, relaxace a preciznosti. Kladu absolutní důraz na čistotu, špičkové postupy a bezpečí vaší pleti.
+              </p>
+              <p>
+                V mém studiu v <strong className="font-semibold">Uherském Brodě</strong> nenajdete „pásovou výrobu“. Každá pleť je jedinečná, a proto je i každé mé ošetření 100% individuální. Ať už řešíme akné, vrásky, nebo jen toužíte po dokonalém obočí díky laminaci, mým cílem je, abyste odcházela nejen krásnější, ale i dokonale odpočatá.
+              </p>
+              <p>
+                Zastavte se a dopřejte si svůj „Me Time“ okamžik v prostředí, kde se čas točí jen kolem vás.
+              </p>
+            </div>
             <div className="flex flex-wrap gap-6 sm:gap-8 justify-start items-center border-t pt-8" style={{ borderColor: '#E5E5E5' }}>
               {[
                 'Individuální přístup',

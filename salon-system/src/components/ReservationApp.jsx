@@ -34,9 +34,9 @@ export default function ReservationApp({
         className="rounded-xl sm:rounded-2xl shadow-lg overflow-hidden"
         style={{ backgroundColor: 'var(--skin-white)', border: '1px solid var(--skin-beige-muted)' }}
       >
-        {/* Banner – logo na celou šířku */}
+        {/* Banner – typografické logo */}
         <div
-          className="w-full border-b cursor-default select-none active:opacity-95 transition-opacity"
+          className="w-full border-b py-6 sm:py-8 cursor-default select-none active:opacity-95 transition-opacity text-center"
           style={{ borderColor: 'var(--skin-beige-muted)', backgroundColor: 'var(--skin-cream)' }}
           onClick={handleLogoClick}
           onKeyDown={(e) => e.key === 'Enter' && handleLogoClick()}
@@ -44,11 +44,9 @@ export default function ReservationApp({
           tabIndex={0}
           aria-label="Logo"
         >
-          <img
-            src="/skinstudio_titulka.png"
-            alt="Skin Studio"
-            className="w-full h-auto object-contain object-center max-h-40 sm:max-h-48 block"
-          />
+          <span className="font-display font-bold text-2xl sm:text-3xl tracking-wide text-[var(--skin-charcoal)]">
+            Skin Studio
+          </span>
         </div>
 
         <div className="p-4 sm:p-10 bg-white">
