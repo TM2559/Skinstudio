@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, doc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 // Bezpečný přístup k ENV
 const getEnv = (key) => {
@@ -41,6 +42,7 @@ export const INSTAGRAM_POST_URLS = (getEnv('VITE_INSTAGRAM_POST_URLS') || '').sp
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 // Pokud jsme v Canvasu, použijeme injektované ID, jinak defaultní nebo prázdné
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';

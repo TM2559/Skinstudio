@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, Clock, LogOut, PlusCircle, Archive } from 'lucide-react';
+import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { Utils } from '../utils/helpers';
 import { getCollectionPath, getDocPath, EMAILJS_CONFIG } from '../firebaseConfig';
@@ -7,6 +7,7 @@ import { getCollectionPath, getDocPath, EMAILJS_CONFIG } from '../firebaseConfig
 import AdminBookingsTab from './admin/AdminBookingsTab';
 import AdminHistoryTab from './admin/AdminHistoryTab';
 import AdminSettingsTab from './admin/AdminSettingsTab';
+import AdminInstagramTab from './admin/AdminInstagramTab';
 import ManualBookingModal from './admin/ManualBookingModal';
 import RemindersModal from './admin/RemindersModal';
 import OrderDetailModal from './admin/OrderDetailModal';
@@ -324,6 +325,15 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
           >
             <Archive size={16} /> Archiv
           </button>
+          <button
+            onClick={() => {
+              setActiveTab('instagram');
+              setSearchTerm('');
+            }}
+            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'instagram' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+          >
+            <Instagram size={16} /> Instagram
+          </button>
         </div>
       </div>
 
@@ -349,6 +359,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
             todayKey={todayKey}
           />
         )}
+        {activeTab === 'instagram' && <AdminInstagramTab />}
         {activeTab === 'settings' && (
           <AdminSettingsTab
             adminDateInput={adminDateInput}

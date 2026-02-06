@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Instagram } from 'lucide-react';
 import { INSTAGRAM_URL } from '../firebaseConfig';
+import InstagramShowcase from './InstagramShowcase';
 
 const getNav = () => {
   const items = [
@@ -146,6 +147,8 @@ export default function Layout({ children }) {
       </header>
 
       <main className="flex-1">{children}</main>
+
+      <InstagramShowcase />
 
       <footer
         className="border-t py-6 mt-auto skin-border"
