@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Edit2, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit2, Trash2, Plus } from 'lucide-react';
 import { Utils } from '../../utils/helpers';
 
 const WEEKDAY_LABELS = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
@@ -169,38 +169,47 @@ export default function ShiftOverview({
     await deleteDoc(ref);
   };
 
+  const monthDays = useMemo(
+    () => daysInGrid.filter((c) => !c.empty),
+    [daysInGrid]
+  );
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={prevMonth}
-            className="p-2 rounded-lg border border-stone-200 hover:bg-stone-50 text-stone-600"
-            aria-label="Předchozí měsíc"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <h3 className="font-display font-semibold text-stone-800 text-lg min-w-[160px] text-center">
-            {MONTH_NAMES[viewMonth]} {viewYear}
-          </h3>
-          <button
-            type="button"
-            onClick={nextMonth}
-            className="p-2 rounded-lg border border-stone-200 hover:bg-stone-50 text-stone-600"
-            aria-label="Následující měsíc"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </div>
-        <div className="text-sm text-stone-500 flex flex-wrap gap-x-4 gap-y-1">
-          <span><strong className="text-stone-700">Standard:</strong> {stats.standard} dní</span>
-          <span><strong className="text-stone-700">PMU:</strong> {stats.pmu} dní</span>
-          <span><strong className="text-stone-700">Volno:</strong> {stats.off} dní</span>
+      {/* Month selector: sticky on mobile, static on desktop */}
+      <div className="sticky top-0 z-10 -mx-4 px-4 py-3 md:static md:mx-0 md:px-0 md:py-0 bg-white/95 backdrop-blur-sm md:bg-transparent border-b border-stone-100 md:border-0">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={prevMonth}
+              className="p-2 rounded-lg border border-stone-200 hover:bg-stone-50 text-stone-600 touch-manipulation"
+              aria-label="Předchozí měsíc"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <h3 className="font-display font-semibold text-stone-800 text-lg min-w-[160px] text-center">
+              {MONTH_NAMES[viewMonth]} {viewYear}
+            </h3>
+            <button
+              type="button"
+              onClick={nextMonth}
+              className="p-2 rounded-lg border border-stone-200 hover:bg-stone-50 text-stone-600 touch-manipulation"
+              aria-label="Následující měsíc"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+          <div className="text-sm text-stone-500 flex flex-wrap gap-x-4 gap-y-1 md:block">
+            <span><strong className="text-stone-700">Standard:</strong> {stats.standard} dní</span>
+            <span><strong className="text-stone-700">PMU:</strong> {stats.pmu} dní</span>
+            <span><strong className="text-stone-700">Volno:</strong> {stats.off} dní</span>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      {/* Desktop: 7-column calendar grid */}
+      <div className="hidden md:grid grid-cols-7 gap-1">
         {WEEKDAY_LABELS.map((label) => (
           <div key={label} className="text-center text-[10px] font-bold text-stone-400 uppercase tracking-wider py-1">
             {label}
@@ -238,6 +247,59 @@ export default function ShiftOverview({
                 </span>
               )}
               {!hasAny && <span className="text-[9px] opacity-0 group-hover:opacity-100 mt-0.5 transition-opacity">Přidat směnu</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Mobile: vertical agenda (day cards) */}
+      <div className="flex flex-col gap-2 md:hidden pb-2">
+        {monthDays.map((cell) => {
+          const isToday = cell.dateKey === todayKey;
+          const hasAny = cell.hasStandard || cell.hasPmu;
+          const isPmuOnly = cell.hasPmu && !cell.hasStandard;
+          const isStandardOnly = cell.hasStandard && !cell.hasPmu;
+          const isBoth = cell.hasStandard && cell.hasPmu;
+          const dayLabel = cell.date.toLocaleDateString('cs-CZ', { weekday: 'short', day: 'numeric', month: 'numeric' });
+
+          return (
+            <button
+              key={cell.dateKey}
+              type="button"
+              onClick={() => handleCellClick(cell)}
+              className={`
+                w-full min-h-[60px] rounded-lg flex items-center justify-between gap-3 px-4 py-3 text-left
+                touch-manipulation active:scale-[0.99] transition-transform
+                ${!hasAny
+                  ? 'bg-white border border-stone-200 text-stone-500 hover:bg-stone-50 hover:border-stone-300'
+                  : ''
+                }
+                ${isStandardOnly
+                  ? 'bg-stone-50 border-l-4 border-stone-300 border border-stone-100 text-stone-800'
+                  : ''
+                }
+                ${isPmuOnly || isBoth
+                  ? 'bg-stone-900 border-l-4 border-amber-500 border border-stone-800 text-amber-50'
+                  : ''
+                }
+              `}
+            >
+              <span className={`font-bold text-base shrink-0 ${isToday ? 'text-amber-600' : ''}`}>
+                {dayLabel}
+                {isToday && <span className="ml-1.5 text-xs font-medium">(dnes)</span>}
+              </span>
+              {!hasAny ? (
+                <span className="shrink-0 p-2 rounded-full bg-stone-100 text-stone-400" aria-hidden>
+                  <Plus size={18} />
+                </span>
+              ) : (
+                <span className={`
+                  text-xs font-semibold px-2.5 py-1 rounded-full shrink-0
+                  ${isPmuOnly || isBoth ? 'bg-amber-500/20 text-amber-200' : 'bg-stone-200 text-stone-700'}
+                `}>
+                  {isBoth ? 'S + P' : (cell.stdTime || cell.pmuTime)}
+                </span>
+              )}
             </button>
           );
         })}
