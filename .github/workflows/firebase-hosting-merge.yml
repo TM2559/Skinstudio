@@ -24,6 +24,7 @@ jobs:
           VITE_EMAILJS_CONFIRM_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_CONFIRM_TEMPLATE_ID }}
           VITE_EMAILJS_REMINDER_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_REMINDER_TEMPLATE_ID }}
           VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
+          VITE_INSTAGRAM_URL: ${{ secrets.VITE_INSTAGRAM_URL }}
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
