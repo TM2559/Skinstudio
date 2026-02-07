@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package } from 'lucide-react';
+import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package, Sliders } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { Utils } from '../utils/helpers';
 import { getCollectionPath, getDocPath, EMAILJS_CONFIG } from '../firebaseConfig';
@@ -7,20 +7,23 @@ import { getCollectionPath, getDocPath, EMAILJS_CONFIG } from '../firebaseConfig
 import AdminBookingsTab from './admin/AdminBookingsTab';
 import AdminHistoryTab from './admin/AdminHistoryTab';
 import AdminSettingsTab from './admin/AdminSettingsTab';
+import ShiftOverview from './admin/ShiftOverview';
 import AdminAddonsTab from './admin/AdminAddonsTab';
 import AdminInstagramTab from './admin/AdminInstagramTab';
+import AdminPMUSlidersTab from './admin/AdminPMUSlidersTab';
 import ManualBookingModal from './admin/ManualBookingModal';
 import RemindersModal from './admin/RemindersModal';
 import OrderDetailModal from './admin/OrderDetailModal';
 
-const AdminView = ({ services, schedule, reservations, addons = [], serviceAddonLinks = [], onLogout }) => {
+const AdminView = ({ services, schedule, setSchedule, schedulePmu = {}, setSchedulePmu, reservations, addons = [], serviceAddonLinks = [], onLogout }) => {
   const [activeTab, setActiveTab] = useState('bookings');
   const [searchTerm, setSearchTerm] = useState('');
   const [adminDateInput, setAdminDateInput] = useState(Utils.getLocalISODate());
+  const [scheduleType, setScheduleType] = useState('standard');
   const [workStart, setWorkStart] = useState('09:00');
   const [workEnd, setWorkEnd] = useState('17:00');
   const [editingServiceId, setEditingServiceId] = useState(null);
-  const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60', description: '' });
+  const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60', description: '', category: 'STANDARD' });
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [remindersList, setRemindersList] = useState([]);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
@@ -37,6 +40,8 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
   const [isManualSubmitting, setIsManualSubmitting] = useState(false);
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
   const [editingAddonLinks, setEditingAddonLinks] = useState([]);
+  const [isShiftSaving, setIsShiftSaving] = useState(false);
+  const [shiftMessage, setShiftMessage] = useState(null);
 
   const getComparableDate = (dateStr) => {
     if (!dateStr) return 0;
@@ -68,19 +73,50 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
   }, [reservations, searchTerm, adminDateInput, todayComparable]);
 
   const currentDayKey = Utils.getDateKeyFromISO(adminDateInput);
-  const dayData = schedule[currentDayKey];
+  const currentSchedule = scheduleType === 'pmu' ? schedulePmu : schedule;
+  const dayData = currentSchedule[currentDayKey];
   const periods = dayData?.periods || (dayData?.start ? [{ start: dayData.start, end: dayData.end }] : []);
 
+  const scheduleCollection = scheduleType === 'pmu' ? 'schedule_pmu' : 'schedule';
+
   const handleShift = async (action, index) => {
-    if (action === 'add') {
-      const newP = [...periods, { start: workStart, end: workEnd }].sort(
-        (a, b) => Utils.timeToMinutes(a.start) - Utils.timeToMinutes(b.start)
-      );
-      await setDoc(getDocPath('schedule', currentDayKey), { periods: newP });
-    } else if (action === 'remove') {
-      const newP = periods.filter((_, i) => i !== index);
-      const ref = getDocPath('schedule', currentDayKey);
-      newP.length === 0 ? await deleteDoc(ref) : await setDoc(ref, { periods: newP });
+    if (!currentDayKey) {
+      alert('Nejprve vyberte datum v kalendáři nebo v poli „Upravit vybraný den“.');
+      return;
+    }
+    setIsShiftSaving(true);
+    try {
+      if (action === 'add') {
+        const newP = [...(periods || []), { start: workStart, end: workEnd }].sort(
+          (a, b) => Utils.timeToMinutes(a.start) - Utils.timeToMinutes(b.start)
+        );
+        await setDoc(getDocPath(scheduleCollection, currentDayKey), { periods: newP });
+        if (scheduleCollection === 'schedule_pmu' && setSchedulePmu) {
+          setSchedulePmu((prev) => ({ ...prev, [currentDayKey]: { periods: newP } }));
+        } else if (scheduleCollection === 'schedule' && setSchedule) {
+          setSchedule((prev) => ({ ...prev, [currentDayKey]: { periods: newP } }));
+        }
+        setShiftMessage({ type: 'success', text: 'Směna uložena.' });
+        setTimeout(() => setShiftMessage(null), 3000);
+      } else if (action === 'remove') {
+        const newP = (periods || []).filter((_, i) => i !== index);
+        const ref = getDocPath(scheduleCollection, currentDayKey);
+        newP.length === 0 ? await deleteDoc(ref) : await setDoc(ref, { periods: newP });
+        if (scheduleCollection === 'schedule_pmu' && setSchedulePmu) {
+          if (newP.length === 0) setSchedulePmu((prev) => { const next = { ...prev }; delete next[currentDayKey]; return next; });
+          else setSchedulePmu((prev) => ({ ...prev, [currentDayKey]: { periods: newP } }));
+        } else if (scheduleCollection === 'schedule' && setSchedule) {
+          if (newP.length === 0) setSchedule((prev) => { const next = { ...prev }; delete next[currentDayKey]; return next; });
+          else setSchedule((prev) => ({ ...prev, [currentDayKey]: { periods: newP } }));
+        }
+      }
+    } catch (err) {
+      console.error('handleShift error:', err);
+      const msg = err?.message || String(err);
+      setShiftMessage({ type: 'error', text: `Chyba: ${msg}. Zkontrolujte pravidla Firestore pro „${scheduleCollection}“.` });
+      setTimeout(() => setShiftMessage(null), 8000);
+    } finally {
+      setIsShiftSaving(false);
     }
   };
 
@@ -106,6 +142,7 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
       price: parseInt(serviceForm.price) || 0,
       duration: parseInt(serviceForm.duration),
       description: (serviceForm.description || '').trim(),
+      category: serviceForm.category || 'STANDARD',
       order: editingServiceId ? undefined : services.length,
     };
     const updateData = { ...data };
@@ -118,7 +155,7 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
     } else {
       await addDoc(getCollectionPath('services'), data);
     }
-    setServiceForm({ name: '', price: '', duration: '60', description: '' });
+    setServiceForm({ name: '', price: '', duration: '60', description: '', category: 'STANDARD' });
   };
 
   const handleDeleteService = async (id) => {
@@ -128,7 +165,7 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
   const startEdit = (s) => {
     setActiveTab('settings');
     setEditingServiceId(s.id);
-    setServiceForm({ name: s.name, price: s.price, duration: s.duration, description: s.description || '' });
+    setServiceForm({ name: s.name, price: s.price, duration: s.duration, description: s.description || '', category: s.category || 'STANDARD' });
     const links = serviceAddonLinks
       .filter((l) => l.main_service_id === s.id)
       .map((l) => ({
@@ -370,6 +407,15 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
           >
             <Instagram size={16} /> Instagram
           </button>
+          <button
+            onClick={() => {
+              setActiveTab('pmu');
+              setSearchTerm('');
+            }}
+            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'pmu' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+          >
+            <Sliders size={16} /> PMU
+          </button>
         </div>
       </div>
 
@@ -397,16 +443,26 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
         )}
         {activeTab === 'addons' && <AdminAddonsTab addons={addons} />}
         {activeTab === 'instagram' && <AdminInstagramTab />}
+        {activeTab === 'pmu' && <AdminPMUSlidersTab />}
         {activeTab === 'settings' && (
           <AdminSettingsTab
+            schedule={schedule}
+            schedulePmu={schedulePmu}
             adminDateInput={adminDateInput}
             setAdminDateInput={setAdminDateInput}
+            scheduleType={scheduleType}
+            setScheduleType={setScheduleType}
             workStart={workStart}
             setWorkStart={setWorkStart}
             workEnd={workEnd}
             setWorkEnd={setWorkEnd}
             periods={periods}
             onShift={handleShift}
+            isShiftSaving={isShiftSaving}
+            shiftMessage={shiftMessage}
+            getDocPath={getDocPath}
+            setDoc={setDoc}
+            deleteDoc={deleteDoc}
             services={services}
             editingServiceId={editingServiceId}
             serviceForm={serviceForm}
@@ -422,7 +478,7 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
             draggedItemIndex={draggedItemIndex}
             onCancelEdit={() => {
               setEditingServiceId(null);
-              setServiceForm({ name: '', price: '', duration: '60', description: '' });
+              setServiceForm({ name: '', price: '', duration: '60', description: '', category: 'STANDARD' });
               setEditingAddonLinks([]);
             }}
             addons={addons}
