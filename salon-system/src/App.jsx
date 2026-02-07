@@ -8,6 +8,7 @@ import { signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'fi
 import Layout from './components/Layout';
 import LandingPage from './components/LandingPage';
 import ReservationApp from './components/ReservationApp';
+import PMUPage from './components/PMUPage';
 import { auth, getCollectionPath } from './firebaseConfig';
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [reservations, setReservations] = useState([]);
   const [schedule, setSchedule] = useState({});
+  const [schedulePmu, setSchedulePmu] = useState({});
   const [services, setServices] = useState([]);
   const [addons, setAddons] = useState([]);
   const [serviceAddonLinks, setServiceAddonLinks] = useState([]);
@@ -70,6 +72,11 @@ export default function App() {
       s.forEach((d) => (data[d.id] = d.data()));
       setSchedule(data);
     });
+    const unsub2b = onSnapshot(getCollectionPath('schedule_pmu'), (s) => {
+      const data = {};
+      s.forEach((d) => (data[d.id] = d.data()));
+      setSchedulePmu(data);
+    });
     const unsub3 = onSnapshot(query(getCollectionPath('services')), (s) => {
       const loadedServices = s.docs.map((d) => ({ id: d.id, ...d.data() }));
       setServices([...loadedServices].sort((a, b) => (a.order || 0) - (b.order || 0)));
@@ -83,6 +90,7 @@ export default function App() {
     return () => {
       unsub1();
       unsub2();
+      unsub2b();
       unsub3();
       unsub4();
       unsub5();
@@ -110,6 +118,11 @@ export default function App() {
     });
   }, [services, addons, serviceAddonLinks]);
 
+  const servicesStandardOnly = useMemo(() => {
+    return services.filter((s) => (s.category || 'STANDARD') === 'STANDARD');
+  }, [services]);
+
+
   const handleLogin = (e) => {
     e.preventDefault();
     if (adminPassword === 'salon123') {
@@ -134,8 +147,18 @@ export default function App() {
         path="/"
         element={
           <Layout>
-            <LandingPage services={services} />
+            <LandingPage services={servicesStandardOnly} />
           </Layout>
+        }
+      />
+      <Route
+        path="/pmu"
+        element={
+          <PMUPage
+            services={servicesWithAddons}
+            schedule={schedulePmu}
+            reservations={reservations}
+          />
         }
       />
       <Route
@@ -154,6 +177,9 @@ export default function App() {
               handleLogin={handleLogin}
               services={servicesWithAddons}
               schedule={schedule}
+              setSchedule={setSchedule}
+              schedulePmu={schedulePmu}
+              setSchedulePmu={setSchedulePmu}
               reservations={reservations}
               addons={addons}
               serviceAddonLinks={serviceAddonLinks}

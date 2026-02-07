@@ -11,16 +11,26 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Utils } from '../../utils/helpers';
+import ShiftOverview from './ShiftOverview';
 
 const AdminSettingsTab = ({
+  schedule = {},
+  schedulePmu = {},
   adminDateInput,
   setAdminDateInput,
+  scheduleType,
+  setScheduleType,
   workStart,
   setWorkStart,
   workEnd,
   setWorkEnd,
   periods,
   onShift,
+  isShiftSaving = false,
+  shiftMessage = null,
+  getDocPath,
+  setDoc,
+  deleteDoc,
   services,
   editingServiceId,
   serviceForm,
@@ -40,11 +50,51 @@ const AdminSettingsTab = ({
   setEditingAddonLinks,
 }) => (
   <div className="grid md:grid-cols-2 gap-10">
-    <section>
+    <section className="md:col-span-2">
       <h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800">
         <Clock size={18} className="text-stone-400" /> Pracovní doba
       </h2>
+      <div className="mb-6 p-4 rounded-xl border border-stone-200 bg-white shadow-sm">
+        <ShiftOverview
+          schedule={schedule}
+          schedulePmu={schedulePmu}
+          adminDateInput={adminDateInput}
+          setAdminDateInput={setAdminDateInput}
+          scheduleType={scheduleType}
+          setScheduleType={setScheduleType}
+          getDocPath={getDocPath}
+          setDoc={setDoc}
+          deleteDoc={deleteDoc}
+        />
+      </div>
+    </section>
+    <section id="shift-edit-form">
+      <h3 className="font-serif text-base mb-3 border-b border-stone-100 pb-2 text-stone-700">
+        Upravit vybraný den
+      </h3>
       <div className="bg-stone-50 p-6 rounded-xl space-y-6 shadow-inner">
+        <div>
+          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Typ směn</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setScheduleType('standard')}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${scheduleType === 'standard' ? 'bg-stone-800 text-white' : 'bg-white text-stone-600 border border-stone-200 hover:border-stone-300'}`}
+            >
+              Standard (kosmetika)
+            </button>
+            <button
+              type="button"
+              onClick={() => setScheduleType('pmu')}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${scheduleType === 'pmu' ? 'bg-stone-800 text-white' : 'bg-white text-stone-600 border border-stone-200 hover:border-stone-300'}`}
+            >
+              PMU
+            </button>
+          </div>
+          <p className="text-xs text-stone-500 mt-1.5">
+            {scheduleType === 'pmu' ? 'Směny pro rezervace na stránce PMU.' : 'Směny pro běžné rezervace (kosmetika).'}
+          </p>
+        </div>
         <input
           type="date"
           value={adminDateInput}
@@ -86,11 +136,18 @@ const AdminSettingsTab = ({
             </select>
           </div>
           <button
+            type="button"
             onClick={() => onShift('add')}
-            className="w-full bg-stone-800 text-white py-3 rounded-lg font-bold text-[10px] uppercase shadow-md flex items-center justify-center gap-2 hover:bg-black transition-all"
+            disabled={isShiftSaving}
+            className="w-full bg-stone-800 text-white py-3 rounded-lg font-bold text-[10px] uppercase shadow-md flex items-center justify-center gap-2 hover:bg-black transition-all disabled:opacity-60 disabled:cursor-wait"
           >
-            <Plus size={14} /> Přidat blok času
+            {isShiftSaving ? 'Ukládám…' : <><Plus size={14} /> Přidat blok času</>}
           </button>
+          {shiftMessage && (
+            <p className={`text-sm font-medium ${shiftMessage.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+              {shiftMessage.text}
+            </p>
+          )}
         </div>
       </div>
     </section>
@@ -138,6 +195,33 @@ const AdminSettingsTab = ({
             rows={4}
             className="w-full p-3 border rounded-lg text-sm resize-y min-h-[80px]"
           />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Kategorie</label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="category"
+                value="STANDARD"
+                checked={(serviceForm.category || 'STANDARD') === 'STANDARD'}
+                onChange={() => setServiceForm({ ...serviceForm, category: 'STANDARD' })}
+                className="text-stone-700"
+              />
+              <span className="text-sm font-medium text-stone-700">Standard (kosmetika)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="category"
+                value="PMU"
+                checked={serviceForm.category === 'PMU'}
+                onChange={() => setServiceForm({ ...serviceForm, category: 'PMU' })}
+                className="text-stone-700"
+              />
+              <span className="text-sm font-medium text-stone-700">PMU</span>
+            </label>
+          </div>
         </div>
         <div className="flex gap-2">
           <button

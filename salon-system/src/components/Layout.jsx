@@ -8,6 +8,7 @@ const getNav = () => {
   const items = [
     { label: 'O studiu', to: '/', hash: 'o-nas' },
     { label: 'Procedury a ceník', to: '/', hash: 'procedury' },
+    { label: 'PMU', to: '/pmu' },
     { label: 'Rezervace', to: '/rezervace', cta: true },
     { label: 'Kontakt', to: '/', hash: 'kontakt' },
   ];
