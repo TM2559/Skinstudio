@@ -1,18 +1,19 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram } from 'lucide-react';
-import { addDoc, deleteDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package } from 'lucide-react';
+import { addDoc, deleteDoc, updateDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { Utils } from '../utils/helpers';
 import { getCollectionPath, getDocPath, EMAILJS_CONFIG } from '../firebaseConfig';
 
 import AdminBookingsTab from './admin/AdminBookingsTab';
 import AdminHistoryTab from './admin/AdminHistoryTab';
 import AdminSettingsTab from './admin/AdminSettingsTab';
+import AdminAddonsTab from './admin/AdminAddonsTab';
 import AdminInstagramTab from './admin/AdminInstagramTab';
 import ManualBookingModal from './admin/ManualBookingModal';
 import RemindersModal from './admin/RemindersModal';
 import OrderDetailModal from './admin/OrderDetailModal';
 
-const AdminView = ({ services, schedule, reservations, onLogout }) => {
+const AdminView = ({ services, schedule, reservations, addons = [], serviceAddonLinks = [], onLogout }) => {
   const [activeTab, setActiveTab] = useState('bookings');
   const [searchTerm, setSearchTerm] = useState('');
   const [adminDateInput, setAdminDateInput] = useState(Utils.getLocalISODate());
@@ -35,6 +36,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
   });
   const [isManualSubmitting, setIsManualSubmitting] = useState(false);
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+  const [editingAddonLinks, setEditingAddonLinks] = useState([]);
 
   const getComparableDate = (dateStr) => {
     if (!dateStr) return 0;
@@ -82,6 +84,21 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     }
   };
 
+  const saveServiceAddonLinks = async (mainServiceId) => {
+    const col = getCollectionPath('service_addon_links');
+    const snapshot = await getDocs(query(col, where('main_service_id', '==', mainServiceId)));
+    await Promise.all(snapshot.docs.map((d) => deleteDoc(d.ref)));
+    const toAdd = editingAddonLinks.filter((row) => row.addon_id);
+    for (const row of toAdd) {
+      await addDoc(col, {
+        main_service_id: mainServiceId,
+        addon_id: row.addon_id,
+        custom_price: row.custom_price !== '' && row.custom_price != null ? Number(row.custom_price) : null,
+        is_recommended: !!row.is_recommended,
+      });
+    }
+  };
+
   const handleService = async () => {
     if (!serviceForm.name) return;
     const data = {
@@ -95,7 +112,9 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     if (updateData.order === undefined) delete updateData.order;
     if (editingServiceId) {
       await updateDoc(getDocPath('services', editingServiceId), updateData);
+      await saveServiceAddonLinks(editingServiceId);
       setEditingServiceId(null);
+      setEditingAddonLinks([]);
     } else {
       await addDoc(getCollectionPath('services'), data);
     }
@@ -110,6 +129,14 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
     setActiveTab('settings');
     setEditingServiceId(s.id);
     setServiceForm({ name: s.name, price: s.price, duration: s.duration, description: s.description || '' });
+    const links = serviceAddonLinks
+      .filter((l) => l.main_service_id === s.id)
+      .map((l) => ({
+        addon_id: l.addon_id,
+        custom_price: l.custom_price != null ? l.custom_price : '',
+        is_recommended: !!l.is_recommended,
+      }));
+    setEditingAddonLinks(links);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -327,6 +354,15 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
           </button>
           <button
             onClick={() => {
+              setActiveTab('addons');
+              setSearchTerm('');
+            }}
+            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'addons' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+          >
+            <Package size={16} /> Add-ony
+          </button>
+          <button
+            onClick={() => {
               setActiveTab('instagram');
               setSearchTerm('');
             }}
@@ -359,6 +395,7 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
             todayKey={todayKey}
           />
         )}
+        {activeTab === 'addons' && <AdminAddonsTab addons={addons} />}
         {activeTab === 'instagram' && <AdminInstagramTab />}
         {activeTab === 'settings' && (
           <AdminSettingsTab
@@ -386,7 +423,11 @@ const AdminView = ({ services, schedule, reservations, onLogout }) => {
             onCancelEdit={() => {
               setEditingServiceId(null);
               setServiceForm({ name: '', price: '', duration: '60', description: '' });
+              setEditingAddonLinks([]);
             }}
+            addons={addons}
+            editingAddonLinks={editingAddonLinks}
+            setEditingAddonLinks={setEditingAddonLinks}
           />
         )}
       </div>

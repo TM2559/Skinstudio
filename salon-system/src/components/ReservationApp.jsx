@@ -17,6 +17,8 @@ export default function ReservationApp({
   services,
   schedule,
   reservations,
+  addons = [],
+  serviceAddonLinks = [],
 }) {
   const [searchParams] = useSearchParams();
   const initialServiceId = searchParams.get('service') || null;
@@ -97,6 +99,8 @@ export default function ReservationApp({
               services={services}
               schedule={schedule}
               reservations={reservations}
+              addons={addons}
+              serviceAddonLinks={serviceAddonLinks}
               onLogout={() => {
                 setView('customer');
                 setAdminPassword('');
