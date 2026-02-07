@@ -35,6 +35,9 @@ const AdminSettingsTab = ({
   onDrop,
   draggedItemIndex,
   onCancelEdit,
+  addons = [],
+  editingAddonLinks = [],
+  setEditingAddonLinks,
 }) => (
   <div className="grid md:grid-cols-2 gap-10">
     <section>
@@ -153,6 +156,98 @@ const AdminSettingsTab = ({
           )}
         </div>
       </div>
+
+      {editingServiceId && setEditingAddonLinks && (
+        <div className="bg-stone-50 p-5 rounded-xl border border-stone-200 space-y-4 shadow-sm mb-4">
+          <h3 className="text-[10px] uppercase text-stone-400 font-bold tracking-widest">
+            Upsell konfigurace
+          </h3>
+          <p className="text-xs text-stone-500">
+            Přidejte add-ony, které se zákazníkovi nabídnou u této procedury. Přepsaná cena přepíše výchozí cenu add-onu.
+          </p>
+          <div className="space-y-3">
+            {editingAddonLinks.map((row, index) => {
+              const selectedAddon = addons.find((a) => a.id === row.addon_id);
+              const defaultPrice = selectedAddon?.default_price ?? '';
+              return (
+                <div
+                  key={index}
+                  className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-lg border border-stone-100"
+                >
+                  <select
+                    value={row.addon_id}
+                    onChange={(e) =>
+                      setEditingAddonLinks(
+                        editingAddonLinks.map((r, i) =>
+                          i === index ? { ...r, addon_id: e.target.value } : r
+                        )
+                      )}
+                    className="flex-1 min-w-[140px] p-2 border border-stone-200 rounded-lg text-sm bg-white"
+                  >
+                    <option value="">Vyberte add-on...</option>
+                    {addons
+                      .filter((a) => a.is_active !== false)
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name} ({a.default_price ?? 0} Kč)
+                        </option>
+                      ))}
+                  </select>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder={defaultPrice ? `Výchozí: ${defaultPrice}` : 'Cena'}
+                    value={row.custom_price}
+                    onChange={(e) =>
+                      setEditingAddonLinks(
+                        editingAddonLinks.map((r, i) =>
+                          i === index ? { ...r, custom_price: e.target.value } : r
+                        )
+                      )}
+                    className="w-24 p-2 border border-stone-200 rounded-lg text-sm"
+                  />
+                  <label className="flex items-center gap-1.5 text-xs text-stone-600 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={!!row.is_recommended}
+                      onChange={(e) =>
+                        setEditingAddonLinks(
+                          editingAddonLinks.map((r, i) =>
+                            i === index ? { ...r, is_recommended: e.target.checked } : r
+                          )
+                        )}
+                      className="rounded border-stone-300"
+                    />
+                    Doporučené
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingAddonLinks(editingAddonLinks.filter((_, i) => i !== index))
+                    }
+                    className="p-2 text-stone-300 hover:text-red-500"
+                    title="Odebrat"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              setEditingAddonLinks([
+                ...editingAddonLinks,
+                { addon_id: '', custom_price: '', is_recommended: false },
+              ])
+            }
+            className="w-full bg-stone-200 text-stone-700 py-2 rounded-lg font-bold text-[10px] uppercase flex items-center justify-center gap-2 hover:bg-stone-300 transition-all"
+          >
+            <Plus size={14} /> Přidat další add-on
+          </button>
+        </div>
+      )}
 
       <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scroll">
         {services.map((s, index) => (

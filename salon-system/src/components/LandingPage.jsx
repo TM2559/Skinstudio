@@ -210,11 +210,11 @@ export default function LandingPage({ services = [] }) {
               <ul className="space-y-4">
                 <li>
                   <a
-                    href="tel:+420123456789"
+                    href="tel:+420724875558"
                     className="flex items-center gap-4 font-normal text-[var(--skin-charcoal)] hover:text-[var(--skin-gold-dark)] transition-colors"
                   >
                     <Phone size={20} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
-                    +420 123 456 789
+                    +420 724 875 558
                   </a>
                 </li>
                 <li>

@@ -23,6 +23,13 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
   const [isSending, setIsSending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [selectedUpsells, setSelectedUpsells] = useState([]);
+
+  const handleUpsellToggle = (service, isActive) => {
+    setSelectedUpsells(prev =>
+      isActive ? [...prev, service] : prev.filter(u => u.id !== service.id)
+    );
+  };
 
   const clientDates = useMemo(() => {
     const dates = [];
@@ -138,6 +145,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
         setFormData({ name: '', phone: '', email: '' });
         setSelectedTime(null);
         setSelectedService(null);
+        setSelectedUpsells([]);
       }, 5000);
 
     } catch (err) {
@@ -157,26 +165,73 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
             1. Výběr procedury
           </h2>
           <div className="grid gap-3">
-            {services.map(s => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => { setSelectedService(s); setSelectedTime(null); }}
-                className={`p-4 rounded-xl border transition-all text-left relative shadow-sm ${
-                  selectedService?.id === s.id
-                    ? 'bg-[#F9F7F2] border border-stone-200 border-l-2'
-                    : 'bg-white border-gray-100 hover:border-stone-200'
-                }`}
-                style={selectedService?.id === s.id ? { borderLeftColor: 'var(--skin-gold-dark)' } : undefined}
-              >
-                <div className="flex justify-between items-start gap-4">
-                  <span className={`text-sm leading-tight ${selectedService?.id === s.id ? 'font-bold text-stone-900' : 'font-medium text-stone-800'}`}>{s.name}</span>
-                  <span className="text-[11px] text-stone-700 font-semibold bg-stone-100 px-2 py-1 rounded-lg shrink-0 whitespace-nowrap">
-                    {s.price} Kč
-                  </span>
+            {services.map(s => {
+              const isSelected = selectedService?.id === s.id;
+              const addons = s.available_addons ?? [];
+              return (
+                <div
+                  key={s.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => { setSelectedService(s); setSelectedTime(null); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedService(s); setSelectedTime(null); } }}
+                  className={`p-4 rounded-xl border transition-all text-left relative shadow-sm cursor-pointer ${
+                    isSelected
+                      ? 'bg-[#F9F7F2] border border-stone-200 border-l-2'
+                      : 'bg-white border-gray-100 hover:border-stone-200'
+                  }`}
+                  style={isSelected ? { borderLeftColor: 'var(--skin-gold-dark)' } : undefined}
+                >
+                  <div className="flex justify-between items-start gap-4">
+                    <span className={`text-sm leading-tight ${isSelected ? 'font-bold text-stone-900' : 'font-medium text-stone-800'}`}>{s.name}</span>
+                    <span className="text-[11px] text-stone-700 font-semibold bg-stone-100 px-2 py-1 rounded-lg shrink-0 whitespace-nowrap">
+                      {s.price} Kč
+                    </span>
+                  </div>
+                  {isSelected && addons.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-stone-100 space-y-2">
+                      {addons.map((upsell) => {
+                        const isUpsellActive = selectedUpsells.some((u) => u.id === upsell.id);
+                        const hasPrice = upsell.price != null && upsell.price !== '';
+                        return (
+                          <div
+                            key={upsell.id}
+                            className="flex justify-between items-center rounded-lg py-1 -mx-1 px-1 transition-colors hover:bg-black/5"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex flex-col justify-center min-w-0">
+                              <span className={`text-sm font-medium ${isUpsellActive ? 'text-stone-900' : 'text-stone-700'}`}>
+                                {upsell.name}
+                              </span>
+                              {hasPrice && (
+                                <span className="text-[10px] text-stone-400 font-light tracking-wide uppercase mt-0.5">
+                                  zvýhodněná cena k ošetření
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUpsellToggle(upsell, !isUpsellActive);
+                              }}
+                              className={`ml-4 rounded-full px-3 py-1 text-xs font-semibold transition-colors border flex-shrink-0 ${
+                                isUpsellActive
+                                  ? 'bg-stone-800 text-white border-stone-800'
+                                  : 'bg-white text-stone-800 border-stone-200 hover:border-stone-300'
+                              }`}
+                              aria-label={isUpsellActive ? 'Odebrat' : 'Přidat'}
+                            >
+                              {isUpsellActive ? '✓' : (hasPrice ? `+ ${upsell.price} Kč` : '+')}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -254,6 +309,22 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
             <div className="text-xs space-y-1 mb-4 border-b pb-4 border-stone-100 text-stone-600 font-medium">
               <div className="flex justify-between"><span>Služba:</span><span className="font-bold text-stone-900">{selectedService?.name || '-'}</span></div>
               <div className="flex justify-between"><span>Cena:</span><span className="font-bold text-stone-900">{selectedService?.price ? `${selectedService.price} Kč` : '-'}</span></div>
+              {selectedUpsells.length > 0 && (
+                <>
+                  {selectedUpsells.map((u) => (
+                    <div key={u.id} className="flex justify-between">
+                      <span>+ {u.name}:</span>
+                      <span className="font-bold text-stone-900">{u.price} Kč</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-medium">
+                    <span>Celkem (+ doplňky):</span>
+                    <span className="font-bold text-stone-900">
+                      {(selectedService?.price || 0) + selectedUpsells.reduce((sum, u) => sum + (u.price || 0), 0)} Kč
+                    </span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between"><span>Termín:</span><span className="font-bold text-stone-900">{Utils.formatDateDisplay(activeDateStr)} v {selectedTime || '-'}</span></div>
             </div>
 
