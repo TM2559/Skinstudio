@@ -121,25 +121,6 @@ export default function CosmeticsPage({ services = [] }) {
         </div>
       </section>
 
-      {/* Salon atmosphere video – silent ambient loop */}
-      <section
-        className="py-12 sm:py-16 px-4"
-        style={{ backgroundColor: COSMETICS_BG }}
-        aria-label="Atmosféra studia"
-      >
-        <div className="max-w-6xl mx-auto px-4">
-          <video
-            src="/salon_video.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full max-h-[60vh] object-cover rounded-2xl shadow-2xl opacity-100"
-            aria-label="Video atmosféry studia"
-          />
-        </div>
-      </section>
-
       {/* 3. Transformations ("Proměny") – directly after Philosophy */}
       <section
         id="promeny"
