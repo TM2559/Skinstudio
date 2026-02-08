@@ -26,6 +26,15 @@ jobs:
           VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
           VITE_INSTAGRAM_URL: ${{ secrets.VITE_INSTAGRAM_URL }}
 
+      - name: Deploy Storage Rules
+        working-directory: salon-system
+        env:
+          FIREBASE_SERVICE_ACCOUNT_TM_RESERVATIONS: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TM_RESERVATIONS }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_TM_RESERVATIONS" > "$HOME/firebase-key.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/firebase-key.json"
+          npx firebase-tools@latest deploy --only storage --project tm-reservations --non-interactive
+
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
