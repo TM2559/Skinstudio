@@ -163,6 +163,8 @@ export default function InstagramShowcase() {
                         key={typeof src === 'string' ? src : imgIndex}
                         src={src}
                         alt=""
+                        loading="lazy"
+                        decoding="async"
                         className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 transition-opacity ease-in-out ${durationClass} ${
                           activeIndices[slotIndex] === imgIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
                         }`}
