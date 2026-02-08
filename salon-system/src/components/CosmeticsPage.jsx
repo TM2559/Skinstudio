@@ -6,6 +6,7 @@ import { getCollectionPath } from '../firebaseConfig';
 import { GALLERY_COLLECTION, TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
 import { INSTAGRAM_URL } from '../firebaseConfig';
 import ComparisonSlider from './ComparisonSlider';
+import LazySection from './LazySection';
 
 const COSMETICS_BG = '#fdfbf7';
 
@@ -55,21 +56,26 @@ export default function CosmeticsPage({ services = [] }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: COSMETICS_BG }}>
-      {/* 1. Hero – minimal brand + CTA */}
+      {/* 1. Hero – Subtitle → Claim → Handwritten → CTA */}
       <section className="pt-14 sm:pt-20 pb-12 sm:pb-16 px-4 text-center">
         <div className="max-w-3xl mx-auto">
-          <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-wide text-[var(--skin-charcoal)]">
-            Skin Studio
-          </h1>
-          <p className="font-display font-semibold text-lg sm:text-xl text-stone-600 mt-2 tracking-wide">
-            Lucie Metelková
+          <p className="text-xs sm:text-sm font-sans uppercase tracking-[0.2em] text-stone-600 mb-3">
+            SKIN STUDIO LUCIE METELKOVÉ
           </p>
-          <Link
-            to="/rezervace"
-            className="skin-accent inline-flex items-center justify-center px-8 py-4 font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm mt-8"
-          >
-            Objednat termín
-          </Link>
+          <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-wide text-[var(--skin-charcoal)]">
+            Vaše pleť, vaše sebevědomí.
+          </h1>
+          <div className="flex flex-col items-center mt-4">
+            <p className="font-signature text-2xl sm:text-3xl text-stone-600 -rotate-2 mb-8">
+              S láskou k detailu, Lucie
+            </p>
+            <Link
+              to="/rezervace"
+              className="skin-accent inline-flex items-center justify-center px-8 py-4 font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm"
+            >
+              Objednat termín
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -112,6 +118,8 @@ export default function CosmeticsPage({ services = [] }) {
                 src="/lucie-portrait.jpg"
                 alt="Lucie Metelková – Skin Studio"
                 className="w-full max-w-sm md:max-w-md aspect-[3/4] md:aspect-[2/3] object-cover rounded-2xl shadow-2xl"
+                loading="lazy"
+                decoding="async"
               />
             </div>
           </div>
@@ -130,29 +138,31 @@ export default function CosmeticsPage({ services = [] }) {
           </h2>
           {transformations.length > 0 ? (
             <>
-              <div className="flex md:grid md:grid-cols-1 lg:grid-cols-2 overflow-x-auto snap-x snap-mandatory md:overflow-visible gap-4 md:gap-10 md:gap-y-12 px-4 pb-8 md:pb-0 -mx-4 md:mx-0 scrollbar-hide">
-                {transformations.map((item) => (
-                  <div
-                    key={item.id}
-                    className="min-w-[90vw] md:min-w-0 shrink-0 md:shrink snap-center space-y-3"
-                  >
-                    <ComparisonSlider
-                      beforeImage={item.imageBeforeUrl}
-                      afterImage={item.imageAfterUrl}
-                      altText={item.title || 'Před a po'}
-                      theme="light"
-                    />
-                    <h3 className="font-display font-semibold text-lg text-stone-700">
-                      {item.title}
-                    </h3>
-                    {item.description && (
-                      <p className="text-stone-600 text-sm leading-relaxed">
-                        {item.description}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <LazySection rootMargin="240px">
+                <div className="flex md:grid md:grid-cols-1 lg:grid-cols-2 overflow-x-auto snap-x snap-mandatory md:overflow-visible gap-4 md:gap-10 md:gap-y-12 px-4 pb-8 md:pb-0 -mx-4 md:mx-0 scrollbar-hide">
+                  {transformations.map((item) => (
+                    <div
+                      key={item.id}
+                      className="min-w-[90vw] md:min-w-0 shrink-0 md:shrink snap-center space-y-3"
+                    >
+                      <ComparisonSlider
+                        beforeImage={item.imageBeforeUrl}
+                        afterImage={item.imageAfterUrl}
+                        altText={item.title || 'Před a po'}
+                        theme="light"
+                      />
+                      <h3 className="font-display font-semibold text-lg text-stone-700">
+                        {item.title}
+                      </h3>
+                      {item.description && (
+                        <p className="text-stone-600 text-sm leading-relaxed">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </LazySection>
               {transformations.length > 1 && (
                 <p className="md:hidden text-center text-stone-400 text-xs mt-4">
                   Posuňte pro další
@@ -267,14 +277,15 @@ export default function CosmeticsPage({ services = [] }) {
             Moje práce
           </h2>
           {gallery.length > 0 ? (
-            <div
-              className="grid gap-4"
-              style={{
-                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                gridAutoRows: 'auto',
-              }}
-            >
-              {gallery.map((item) => (
+            <LazySection rootMargin="240px">
+              <div
+                className="grid gap-4"
+                style={{
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                  gridAutoRows: 'auto',
+                }}
+              >
+                {gallery.map((item) => (
                 <div
                   key={item.id}
                   className="rounded-2xl overflow-hidden bg-white border border-stone-100 shadow-sm hover:shadow-md transition-shadow"
@@ -284,6 +295,8 @@ export default function CosmeticsPage({ services = [] }) {
                       src={item.imageUrl}
                       alt={item.caption || 'Galerie'}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </div>
                   {item.caption && (
@@ -293,7 +306,8 @@ export default function CosmeticsPage({ services = [] }) {
                   )}
                 </div>
               ))}
-            </div>
+              </div>
+            </LazySection>
           ) : (
             <p className="text-center text-stone-500 text-sm py-12">
               Galerie fotek se zobrazí po přidání v administraci (Fotografie → Galerie).

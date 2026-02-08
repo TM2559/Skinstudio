@@ -26,21 +26,24 @@ export default function LandingPage({ services = [] }) {
 
   return (
     <>
-      {/* Hero – typografie jako hlavní bod zájmu */}
+      {/* Hero – Subtitle → Claim → Handwritten → CTA */}
       <section
         className="relative border-b overflow-hidden"
         style={{ backgroundColor: 'var(--skin-cream)', borderColor: 'var(--skin-beige-muted)' }}
       >
-        <div className="max-w-4xl mx-auto px-4 pt-14 sm:pt-20 pb-8 sm:pb-10 text-center">
-          <h1 className="font-display font-bold text-4xl sm:text-5xl tracking-wide text-[var(--skin-charcoal)]">
-            Skin Studio
-          </h1>
-          <p className="font-display font-semibold text-lg sm:text-xl text-stone-600 mt-2 tracking-wide">
-            Lucie Metelková
+        <div className="max-w-4xl mx-auto px-4 pt-14 sm:pt-20 pb-14 sm:pb-20 text-center">
+          <p className="text-xs sm:text-sm font-sans uppercase tracking-[0.2em] text-stone-600 mb-3">
+            SKIN STUDIO LUCIE METELKOVÉ
           </p>
-        </div>
-        <div className="max-w-4xl mx-auto px-4 pb-14 sm:pb-20 text-center">
-          <p className="body-text text-sm sm:text-base max-w-xl mx-auto mb-8 text-[#3d3730]">
+          <h1 className="font-display font-bold text-4xl sm:text-5xl tracking-wide text-[var(--skin-charcoal)]">
+            Vaše pleť, vaše sebevědomí.
+          </h1>
+          <div className="flex flex-col items-center mt-4">
+            <p className="font-signature text-2xl sm:text-3xl text-stone-600 -rotate-2 mb-8">
+              S láskou k detailu, Lucie
+            </p>
+          </div>
+          <p className="body-text text-sm sm:text-base max-w-xl mx-auto mt-4 mb-8 text-[#3d3730]">
             Odborná péče o pleť s <strong className="font-semibold">individuálním přístupem</strong> v <strong className="font-semibold">Uherském Brodě</strong>. Svěřte svou pleť do
             rukou profesionálky v příjemném a klidném prostředí.
           </p>
