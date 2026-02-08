@@ -26,22 +26,34 @@ export default function LandingPage({ services = [] }) {
 
   return (
     <>
-      {/* Hero – typografie jako hlavní bod zájmu */}
+      {/* Hero – video background + overlay, typografie a CTA */}
       <section
-        className="relative border-b overflow-hidden"
-        style={{ backgroundColor: 'var(--skin-cream)', borderColor: 'var(--skin-beige-muted)' }}
+        className="relative min-h-[85vh] sm:min-h-screen flex flex-col justify-center border-b overflow-hidden"
+        style={{ borderColor: 'var(--skin-beige-muted)' }}
+        aria-label="Úvod"
       >
-        <div className="max-w-4xl mx-auto px-4 pt-14 sm:pt-20 pb-8 sm:pb-10 text-center">
-          <h1 className="font-display font-bold text-4xl sm:text-5xl tracking-wide text-[var(--skin-charcoal)]">
+        {/* Video background */}
+        <video
+          src="/salon_video.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          aria-hidden
+        />
+        {/* Semi-transparent dark overlay for readability */}
+        <div className="absolute inset-0 bg-stone-950/50 z-10" aria-hidden />
+        {/* Content overlay */}
+        <div className="relative z-20 max-w-4xl mx-auto px-4 pt-14 sm:pt-20 pb-14 sm:pb-20 text-center">
+          <h1 className="font-display font-bold text-4xl sm:text-5xl tracking-wide text-white">
             Skin Studio
           </h1>
-          <p className="font-display font-semibold text-lg sm:text-xl text-stone-600 mt-2 tracking-wide">
+          <p className="font-display font-semibold text-lg sm:text-xl text-stone-100 mt-2 tracking-wide">
             Lucie Metelková
           </p>
-        </div>
-        <div className="max-w-4xl mx-auto px-4 pb-14 sm:pb-20 text-center">
-          <p className="body-text text-sm sm:text-base max-w-xl mx-auto mb-8 text-[#3d3730]">
-            Odborná péče o pleť s <strong className="font-semibold">individuálním přístupem</strong> v <strong className="font-semibold">Uherském Brodě</strong>. Svěřte svou pleť do
+          <p className="body-text text-sm sm:text-base max-w-xl mx-auto mt-6 sm:mt-8 mb-8 text-stone-200">
+            Odborná péče o pleť s <strong className="font-semibold text-white">individuálním přístupem</strong> v <strong className="font-semibold text-white">Uherském Brodě</strong>. Svěřte svou pleť do
             rukou profesionálky v příjemném a klidném prostředí.
           </p>
           <Link
