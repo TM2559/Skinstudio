@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
-import { onSnapshot } from 'firebase/firestore';
-import { getDocPath } from '../firebaseConfig';
+import { query, where, onSnapshot } from 'firebase/firestore';
+import { getCollectionPath } from '../firebaseConfig';
+import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
 import ComparisonSlider from './ComparisonSlider';
 import ReservationApp from './ReservationApp';
 
 const CATEGORY_PMU = 'PMU';
 
-const PMU_SLIDERS_CONFIG = 'pmuSliders';
-
-/** Jeden demo před/po slider, když v adminu ještě nic není */
+/** Demo před/po slider, když v adminu ještě nic není */
 const DEMO_SLIDER = {
   beforeImage: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&q=80',
   afterImage: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&q=80',
@@ -30,10 +29,12 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
   );
 
   useEffect(() => {
-    const docRef = getDocPath('config', PMU_SLIDERS_CONFIG);
-    const unsub = onSnapshot(docRef, (snap) => {
-      const data = snap.data();
-      setSliders(Array.isArray(data?.sliders) ? data.sliders : []);
+    const colT = getCollectionPath(TRANSFORMATIONS_COLLECTION);
+    const qT = query(colT, where('category', '==', PMU_CATEGORY));
+    const unsub = onSnapshot(qT, (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      setSliders(list);
     });
     return () => unsub();
   }, []);
@@ -44,9 +45,17 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
     setMenuOpen(false);
   };
 
+  const displaySliders = sliders.length > 0
+    ? sliders.map((item) => ({
+        beforeImage: item.imageBeforeUrl,
+        afterImage: item.imageAfterUrl,
+        altText: item.title || 'Před a po',
+      }))
+    : [DEMO_SLIDER];
+
   return (
     <div className="min-h-screen bg-[#0F0F0F] text-[#A1A1AA] font-sans antialiased">
-      {/* Dark theme header – transparent, white text */}
+      {/* Dark theme header – jako na main/produkci */}
       <header
         className="fixed top-0 left-0 right-0 z-50 bg-[#0F0F0F]/80 backdrop-blur-md border-b border-white/5"
         aria-label="Navigace"
@@ -149,7 +158,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
       </header>
 
       <main>
-        {/* Hero – full-screen, serif headline, gold CTA */}
+        {/* Hero – full-screen, jako na main */}
         <section className="min-h-screen flex flex-col items-center justify-center px-4 pt-16 text-center">
           <p className="font-display text-[#daa59c] text-sm uppercase tracking-[0.3em] mb-6">
             Permanent Make-Up
@@ -169,7 +178,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
           </button>
         </section>
 
-        {/* Philosophy – minimal text, plenty of dark space */}
+        {/* Filozofie – jako na main */}
         <section
           id="philosophy"
           className="scroll-mt-24 py-24 sm:py-32 px-4"
@@ -188,7 +197,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
           </div>
         </section>
 
-        {/* Portfolio – před/po slidery z adminu + doplňková mřížka */}
+        {/* Portfolio – před/po slidery (nový aspect ratio v ComparisonSlider), data z Fotografie → Proměny PMU */}
         <section
           id="portfolio"
           className="scroll-mt-24 py-24 sm:py-32 px-4"
@@ -197,17 +206,18 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             <h2 className="font-display text-2xl sm:text-3xl font-semibold text-white text-center mb-16">
               Portfolio
             </h2>
-            <div className={`grid gap-8 ${sliders.length > 0 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 max-w-2xl mx-auto'}`}>
-              {(sliders.length > 0 ? sliders : [DEMO_SLIDER]).map((item, index) => (
-                <div key={sliders.length > 0 ? `${item.beforeImage}-${index}` : 'demo'}>
+            <div className={`grid gap-8 ${displaySliders.length > 0 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 max-w-2xl mx-auto'}`}>
+              {displaySliders.map((item, index) => (
+                <div key={index}>
                   <ComparisonSlider
                     beforeImage={item.beforeImage}
                     afterImage={item.afterImage}
-                    altText={item.altText || 'Před a po'}
+                    altText={item.altText}
+                    theme="dark"
                   />
                   {sliders.length === 0 && (
                     <p className="text-center text-[#A1A1AA]/60 text-sm mt-4">
-                      Demo – vlastní před/po přidáte v adminu v záložce PMU.
+                      Demo – vlastní před/po přidáte v adminu v záložce Fotografie → Proměny (kategorie PMU).
                     </p>
                   )}
                 </div>
@@ -216,7 +226,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
           </div>
         </section>
 
-        {/* Pricing / Booking – dark card */}
+        {/* Ceník a rezervace – dark card jako na main */}
         <section
           id="cenik"
           className="scroll-mt-24 py-24 sm:py-32 px-4"
@@ -271,7 +281,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
           </div>
         </section>
 
-        {/* Rezervační widget – dark mode, pouze PMU služby */}
+        {/* Rezervační widget – dark mode jako na main */}
         <section id="rezervace-pmu" className="scroll-mt-24 py-24 sm:py-32 px-4">
           <div className="max-w-6xl mx-auto">
             <h2 className="font-display text-2xl sm:text-3xl font-semibold text-white text-center mb-12">
@@ -287,17 +297,17 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
               setLoginError={() => {}}
               handleLogoClick={() => {}}
               handleLogin={() => {}}
-              services={services}
+              services={pmuServices}
               schedule={schedule}
               reservations={reservations}
-              mode="dark"
               widgetOnly
+              mode="dark"
             />
           </div>
         </section>
       </main>
 
-      {/* Minimal footer */}
+      {/* Footer – jako na main */}
       <footer className="border-t border-white/5 py-8 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-4 text-[#A1A1AA]/60 text-xs uppercase tracking-widest">
           <Link to="/" className="hover:text-[#daa59c] transition-colors">

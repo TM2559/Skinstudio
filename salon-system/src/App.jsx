@@ -6,8 +6,8 @@ import { query, onSnapshot } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 
 import Layout from './components/Layout';
-import LandingPage from './components/LandingPage';
 import ReservationApp from './components/ReservationApp';
+import CosmeticsPage from './components/CosmeticsPage';
 import PMUPage from './components/PMUPage';
 import { auth, getCollectionPath } from './firebaseConfig';
 
@@ -97,6 +97,10 @@ export default function App() {
     };
   }, [user]);
 
+  const servicesStandardOnly = useMemo(() => {
+    return services.filter((s) => (s.category || 'STANDARD') === 'STANDARD');
+  }, [services]);
+
   const servicesWithAddons = useMemo(() => {
     return services.map((service) => {
       const links = serviceAddonLinks.filter((l) => l.main_service_id === service.id);
@@ -117,11 +121,6 @@ export default function App() {
       return { ...service, available_addons };
     });
   }, [services, addons, serviceAddonLinks]);
-
-  const servicesStandardOnly = useMemo(() => {
-    return services.filter((s) => (s.category || 'STANDARD') === 'STANDARD');
-  }, [services]);
-
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -147,7 +146,15 @@ export default function App() {
         path="/"
         element={
           <Layout>
-            <LandingPage services={servicesStandardOnly} />
+            <CosmeticsPage services={servicesStandardOnly} />
+          </Layout>
+        }
+      />
+      <Route
+        path="/kosmetika"
+        element={
+          <Layout>
+            <CosmeticsPage services={servicesStandardOnly} />
           </Layout>
         }
       />
@@ -177,9 +184,6 @@ export default function App() {
               handleLogin={handleLogin}
               services={servicesWithAddons}
               schedule={schedule}
-              setSchedule={setSchedule}
-              schedulePmu={schedulePmu}
-              setSchedulePmu={setSchedulePmu}
               reservations={reservations}
               addons={addons}
               serviceAddonLinks={serviceAddonLinks}

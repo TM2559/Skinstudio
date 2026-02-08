@@ -5,12 +5,13 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    // Galerie Instagram – čtení pro všechny, zápis jen pro přihlášené (admin)
     match /instagram-showcase/{allPaths=**} {
       allow read: if true;
       allow write: if isSignedIn();
     }
 
-    match /pmu-sliders/{allPaths=**} {
+    match /cosmetics/{allPaths=**} {
       allow read: if true;
       allow write: if isSignedIn();
     }
