@@ -183,7 +183,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
               Každý tah je promyšlen tak, aby podtrhl vaši přirozenou krásu.
             </p>
             <p className="mt-8 text-[#A1A1AA]/80 text-sm sm:text-base leading-relaxed">
-              Výběr pigmentů, technika i pooperační péče tvoří jeden celek. Svěřte se do rukou, které toto umění ovládají.
+              Výběr pigmentů, technika i následná péče tvoří jeden celek. Svěřte se do rukou, které toto umění ovládají.
             </p>
           </div>
         </section>
