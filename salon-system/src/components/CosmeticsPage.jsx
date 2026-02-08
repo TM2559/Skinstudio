@@ -56,21 +56,26 @@ export default function CosmeticsPage({ services = [] }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: COSMETICS_BG }}>
-      {/* 1. Hero – minimal brand + CTA */}
+      {/* 1. Hero – Subtitle → Claim → Handwritten → CTA */}
       <section className="pt-14 sm:pt-20 pb-12 sm:pb-16 px-4 text-center">
         <div className="max-w-3xl mx-auto">
-          <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-wide text-[var(--skin-charcoal)]">
-            Skin Studio
-          </h1>
-          <p className="font-display font-semibold text-lg sm:text-xl text-stone-600 mt-2 tracking-wide">
-            Lucie Metelková
+          <p className="text-xs sm:text-sm font-sans uppercase tracking-[0.2em] text-stone-600 mb-3">
+            SKIN STUDIO LUCIE METELKOVÉ
           </p>
-          <Link
-            to="/rezervace"
-            className="skin-accent inline-flex items-center justify-center px-8 py-4 font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm mt-8"
-          >
-            Objednat termín
-          </Link>
+          <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-wide text-[var(--skin-charcoal)]">
+            Vaše pleť, vaše sebevědomí.
+          </h1>
+          <div className="flex flex-col items-center mt-4">
+            <p className="font-signature text-2xl sm:text-3xl text-stone-600 -rotate-2 mb-8">
+              S láskou k detailu, Lucie
+            </p>
+            <Link
+              to="/rezervace"
+              className="skin-accent inline-flex items-center justify-center px-8 py-4 font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm"
+            >
+              Objednat termín
+            </Link>
+          </div>
         </div>
       </section>
 
