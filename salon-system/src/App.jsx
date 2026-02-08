@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { query, onSnapshot } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
@@ -12,6 +12,7 @@ import PMUPage from './components/PMUPage';
 import { auth, getCollectionPath } from './firebaseConfig';
 
 export default function App() {
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [reservations, setReservations] = useState([]);
@@ -24,6 +25,13 @@ export default function App() {
   const [adminPassword, setAdminPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [clicks, setClicks] = useState(0);
+
+  // Na stránce /rezervace vždy zobrazit rezervační formulář (ne admin)
+  useEffect(() => {
+    if (location.pathname === '/rezervace') {
+      setView('customer');
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     if (clicks > 0) {
