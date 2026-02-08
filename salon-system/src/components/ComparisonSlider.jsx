@@ -19,8 +19,8 @@ export default function ComparisonSlider({ beforeImage, afterImage, altText }) {
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
+        width="22"
+        height="22"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -28,24 +28,29 @@ export default function ComparisonSlider({ beforeImage, afterImage, altText }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <path d="M8 5v14M16 5v14M5 8h14M5 16h14" />
+        <path d="M11 17l-5-5 5-5" />
+        <path d="M18 17l5-5-5-5" />
       </svg>
     </div>
   );
 
+  const imageStyle = { objectFit: 'contain' };
+
   return (
-    <div className="rounded-xl overflow-hidden border border-white/10 bg-[#0F0F0F] aspect-[4/3] w-full">
+    <div className="rounded-xl overflow-hidden border border-white/10 bg-[#0F0F0F] aspect-[4/3] w-full [&_img]:object-contain">
       <ReactCompareSlider
         itemOne={
           <ReactCompareSliderImage
             src={beforeImage}
             alt={`${altText} – před`}
+            style={imageStyle}
           />
         }
         itemTwo={
           <ReactCompareSliderImage
             src={afterImage}
             alt={`${altText} – po`}
+            style={imageStyle}
           />
         }
         handle={handle}

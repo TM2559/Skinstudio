@@ -79,7 +79,9 @@ export default function AdminPMUSlidersTab() {
       setAltText('');
     } catch (err) {
       console.error(err);
-      setError('Nahrání se nezdařilo. Zkontrolujte pravidla Storage v Firebase.');
+      const code = err?.code || '';
+      const msg = err?.message || String(err);
+      setError(`Nahrání se nezdařilo. ${code ? `(${code}) ` : ''}${msg}. Zkontrolujte, že je Storage zapnuté a pravidla nasazená.`);
     } finally {
       setUploading(false);
     }
@@ -186,10 +188,10 @@ export default function AdminPMUSlidersTab() {
             >
               <div className="flex gap-2 flex-1 min-w-0">
                 <div className="w-24 h-24 rounded-lg overflow-hidden bg-stone-100 shrink-0">
-                  <img src={item.beforeImage} alt="" className="w-full h-full object-cover" />
+                  <img src={item.beforeImage} alt="" className="w-full h-full object-contain" />
                 </div>
                 <div className="w-24 h-24 rounded-lg overflow-hidden bg-stone-100 shrink-0">
-                  <img src={item.afterImage} alt="" className="w-full h-full object-cover" />
+                  <img src={item.afterImage} alt="" className="w-full h-full object-contain" />
                 </div>
                 <div className="min-w-0 flex-1 flex items-center">
                   <p className="text-sm text-stone-600 truncate" title={item.altText}>

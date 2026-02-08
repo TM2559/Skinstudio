@@ -13,13 +13,15 @@ const getEnv = (key) => {
 // V lokálním prostředí tyto proměnné neexistují, proto je kontrolujeme přes typeof
 const isCanvas = typeof __firebase_config !== 'undefined';
 
+const projectId = getEnv('VITE_FIREBASE_PROJECT_ID');
+const storageBucketEnv = getEnv('VITE_FIREBASE_STORAGE_BUCKET');
 const firebaseConfig = isCanvas
-  ? JSON.parse(__firebase_config) 
+  ? JSON.parse(__firebase_config)
   : {
       apiKey: getEnv('VITE_FIREBASE_API_KEY'),
       authDomain: getEnv('VITE_FIREBASE_AUTH_DOMAIN'),
-      projectId: getEnv('VITE_FIREBASE_PROJECT_ID'),
-      storageBucket: getEnv('VITE_FIREBASE_STORAGE_BUCKET'),
+      projectId,
+      storageBucket: storageBucketEnv || (projectId ? `${projectId}.appspot.com` : ''),
       messagingSenderId: getEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
       appId: getEnv('VITE_FIREBASE_APP_ID'),
     };

@@ -62,7 +62,9 @@ export default function AdminInstagramTab() {
       await save(newUrls);
     } catch (err) {
       console.error(err);
-      setError('Nahrání se nezdařilo. Zkontrolujte pravidla Storage v Firebase.');
+      const code = err?.code || '';
+      const msg = err?.message || String(err);
+      setError(`Nahrání se nezdařilo. ${code ? `(${code}) ` : ''}${msg}. Zkontrolujte, že je Storage zapnuté a pravidla nasazená.`);
     } finally {
       setUploading(false);
       e.target.value = '';
@@ -132,14 +134,14 @@ export default function AdminInstagramTab() {
               key={url}
               className="relative group bg-stone-100 rounded-xl overflow-hidden border border-stone-200"
             >
-              <div className="aspect-square">
+              <div className="aspect-square bg-stone-200">
                 <img
                   src={url}
                   alt=""
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </div>
-              {/* Na mobilu tlačítka pod obrázkem, na desktopu overlay při hoveru */}
+              {/* Na mobilu tlačítka pod obrázkem, na desktopu overlay při hoveru – jen šipky a smazat */}
               <div className="flex sm:absolute sm:inset-0 sm:bg-black/40 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity items-center justify-center gap-2 p-2 bg-stone-800/90 sm:bg-transparent">
                 <button
                   type="button"
@@ -167,9 +169,6 @@ export default function AdminInstagramTab() {
                 >
                   <Trash2 size={18} />
                 </button>
-              </div>
-              <div className="absolute top-2 left-2 p-1 rounded bg-black/50 text-white text-[10px] font-bold">
-                {index + 1}
               </div>
             </div>
           ))}
