@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package } from 'lucide-react';
+import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package, Image as ImageIcon } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { Utils } from '../utils/helpers';
 import { getCollectionPath, getDocPath, EMAILJS_CONFIG } from '../firebaseConfig';
@@ -9,6 +9,7 @@ import AdminHistoryTab from './admin/AdminHistoryTab';
 import AdminSettingsTab from './admin/AdminSettingsTab';
 import AdminAddonsTab from './admin/AdminAddonsTab';
 import AdminInstagramTab from './admin/AdminInstagramTab';
+import AdminPhotosTab from './admin/AdminPhotosTab';
 import ManualBookingModal from './admin/ManualBookingModal';
 import RemindersModal from './admin/RemindersModal';
 import OrderDetailModal from './admin/OrderDetailModal';
@@ -370,6 +371,15 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
           >
             <Instagram size={16} /> Instagram
           </button>
+          <button
+            onClick={() => {
+              setActiveTab('photos');
+              setSearchTerm('');
+            }}
+            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'photos' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+          >
+            <ImageIcon size={16} /> Fotografie
+          </button>
         </div>
       </div>
 
@@ -397,6 +407,7 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
         )}
         {activeTab === 'addons' && <AdminAddonsTab addons={addons} />}
         {activeTab === 'instagram' && <AdminInstagramTab />}
+        {activeTab === 'photos' && <AdminPhotosTab />}
         {activeTab === 'settings' && (
           <AdminSettingsTab
             adminDateInput={adminDateInput}

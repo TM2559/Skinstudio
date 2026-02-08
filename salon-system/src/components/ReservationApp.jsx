@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { Loader2, Lock } from 'lucide-react';
 import CustomerView from './CustomerView';
 import AdminView from './AdminView';
@@ -19,9 +19,15 @@ export default function ReservationApp({
   reservations,
   addons = [],
   serviceAddonLinks = [],
+  widgetOnly = false,
+  mode = 'light',
 }) {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const initialServiceId = searchParams.get('service') || null;
+  // PMU page must always use dark widget (bg-stone-950, rose gold accents)
+  const isPmuRoute = widgetOnly && location.pathname === '/pmu';
+  const isDark = mode === 'dark' || isPmuRoute;
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -30,12 +36,33 @@ export default function ReservationApp({
     );
   }
 
+  const cardClass = isDark
+    ? 'rounded-2xl overflow-hidden border border-stone-800 bg-stone-950 shadow-xl'
+    : 'rounded-xl sm:rounded-2xl shadow-lg overflow-hidden';
+  const cardStyle = isDark ? {} : { backgroundColor: 'var(--skin-white)', border: '1px solid var(--skin-beige-muted)' };
+  const innerClass = isDark ? 'p-4 sm:p-8 bg-stone-950' : 'p-4 sm:p-10 bg-white';
+
+  if (widgetOnly) {
+    return (
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6">
+        <div className={cardClass} style={cardStyle}>
+          <div className={innerClass}>
+            <CustomerView
+              services={services}
+              schedule={schedule}
+              reservations={reservations}
+              initialServiceId={initialServiceId}
+              theme={isDark ? 'dark' : 'light'}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-3 sm:px-4 py-8">
-      <div
-        className="rounded-xl sm:rounded-2xl shadow-lg overflow-hidden"
-        style={{ backgroundColor: 'var(--skin-white)', border: '1px solid var(--skin-beige-muted)' }}
-      >
+      <div className={cardClass} style={cardStyle}>
         {/* Banner – typografické logo */}
         <div
           className="w-full border-b py-6 sm:py-8 cursor-default select-none active:opacity-95 transition-opacity text-center"
@@ -51,7 +78,7 @@ export default function ReservationApp({
           </span>
         </div>
 
-        <div className="p-4 sm:p-10 bg-white">
+        <div className={innerClass}>
           {view === 'customer' && (
             <CustomerView
               services={services}

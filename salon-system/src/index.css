@@ -21,6 +21,9 @@
 }
 
 @layer components {
+  .font-signature {
+    font-family: 'Sacramento', cursive;
+  }
   .skin-bg {
     background-color: var(--skin-cream);
   }
@@ -61,5 +64,20 @@
   .input-focus:focus {
     outline: none;
     box-shadow: 0 0 0 2px var(--skin-gold);
+  }
+
+  /* Před/po slider – portrait (4/5), cover aby vertikální fotky vyplnily rámeček */
+  .comparison-slider-contain [data-rcs="image"] {
+    object-fit: cover !important;
+    object-position: center center;
+  }
+
+  /* Karusel Proměny – skrytí scrollbaru na mobilu */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }

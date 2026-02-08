@@ -4,8 +4,9 @@ import { addDoc } from "firebase/firestore";
 import { Utils } from '../utils/helpers';
 import { getCollectionPath, EMAILJS_CONFIG } from '../firebaseConfig';
 
-const CustomerView = ({ services, schedule, reservations, onBookingSuccess, initialServiceId }) => {
+const CustomerView = ({ services, schedule, reservations, onBookingSuccess, initialServiceId, theme = 'light' }) => {
   const ADMIN_EMAIL = "info@skinstudio.cz";
+  const isDark = theme === 'dark';
 
   const [selectedService, setSelectedService] = useState(null);
   const hasAppliedInitialService = useRef(false);
@@ -160,8 +161,13 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
     <div className="flex flex-col gap-10 md:grid md:grid-cols-2 md:gap-12">
       <div className="flex flex-col gap-10">
         <div>
-          <h2 className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-6 flex items-center gap-2 border-b border-stone-100 pb-2">
-            <span className="w-5 h-5 rounded-full text-white flex items-center justify-center text-[8px]" style={{ backgroundColor: 'var(--skin-gold-dark)' }}>1</span>
+          <h2 className={`text-[10px] font-bold uppercase tracking-widest mb-6 flex items-center gap-2 border-b pb-2 ${isDark ? 'text-stone-300 border-stone-800' : 'text-stone-500 border-stone-100'}`}>
+            <span
+              className={`w-5 h-5 rounded-full text-white flex items-center justify-center text-[8px] ${isDark ? 'bg-gradient-to-r from-[#B37E76] via-[#D49A91] to-[#B37E76] border border-[#D49A91]/20' : ''}`}
+              style={!isDark ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}
+            >
+              1
+            </span>
             1. Výběr procedury
           </h2>
           <div className="grid gap-3">
@@ -176,35 +182,39 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
                   onClick={() => { setSelectedService(s); setSelectedTime(null); }}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedService(s); setSelectedTime(null); } }}
                   className={`p-4 rounded-xl border transition-all text-left relative shadow-sm cursor-pointer ${
-                    isSelected
-                      ? 'bg-[#F9F7F2] border border-stone-200 border-l-2'
-                      : 'bg-white border-gray-100 hover:border-stone-200'
+                    isDark
+                      ? isSelected
+                        ? 'bg-stone-900 border-[#D49A91]/70 border-l-4 border-l-[#D49A91]'
+                        : 'bg-stone-900 border-stone-800 hover:border-stone-700'
+                      : isSelected
+                        ? 'bg-[#F9F7F2] border border-stone-200 border-l-2'
+                        : 'bg-white border-gray-100 hover:border-stone-200'
                   }`}
-                  style={isSelected ? { borderLeftColor: 'var(--skin-gold-dark)' } : undefined}
+                  style={!isDark && isSelected ? { borderLeftColor: 'var(--skin-gold-dark)' } : undefined}
                 >
                   <div className="flex justify-between items-start gap-4">
-                    <span className={`text-sm leading-tight ${isSelected ? 'font-bold text-stone-900' : 'font-medium text-stone-800'}`}>{s.name}</span>
-                    <span className="text-[11px] text-stone-700 font-semibold bg-stone-100 px-2 py-1 rounded-lg shrink-0 whitespace-nowrap">
+                    <span className={`text-sm leading-tight ${isDark ? (isSelected ? 'font-bold text-white' : 'font-medium text-stone-200') : isSelected ? 'font-bold text-stone-900' : 'font-medium text-stone-800'}`}>{s.name}</span>
+                    <span className={`text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap ${isDark ? 'text-[#daa59c] bg-stone-800' : 'text-stone-700 bg-stone-100'}`}>
                       {s.price} Kč
                     </span>
                   </div>
                   {isSelected && addons.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-stone-100 space-y-2">
+                    <div className={`mt-4 pt-3 border-t space-y-2 ${isDark ? 'border-stone-800' : 'border-stone-100'}`}>
                       {addons.map((upsell) => {
                         const isUpsellActive = selectedUpsells.some((u) => u.id === upsell.id);
                         const hasPrice = upsell.price != null && upsell.price !== '';
                         return (
                           <div
                             key={upsell.id}
-                            className="flex justify-between items-center rounded-lg py-1 -mx-1 px-1 transition-colors hover:bg-black/5"
+                            className={`flex justify-between items-center rounded-lg py-1 -mx-1 px-1 transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex flex-col justify-center min-w-0">
-                              <span className={`text-sm font-medium ${isUpsellActive ? 'text-stone-900' : 'text-stone-700'}`}>
+                              <span className={`text-sm font-medium ${isDark ? (isUpsellActive ? 'text-white' : 'text-stone-300') : isUpsellActive ? 'text-stone-900' : 'text-stone-700'}`}>
                                 {upsell.name}
                               </span>
                               {hasPrice && (
-                                <span className="text-[10px] text-stone-400 font-light tracking-wide uppercase mt-0.5">
+                                <span className={`text-[10px] font-light tracking-wide uppercase mt-0.5 ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>
                                   zvýhodněná cena k ošetření
                                 </span>
                               )}
@@ -216,9 +226,13 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
                                 handleUpsellToggle(upsell, !isUpsellActive);
                               }}
                               className={`ml-4 rounded-full px-3 py-1 text-xs font-semibold transition-colors border flex-shrink-0 ${
-                                isUpsellActive
-                                  ? 'bg-stone-800 text-white border-stone-800'
-                                  : 'bg-white text-stone-800 border-stone-200 hover:border-stone-300'
+                                isDark
+                                  ? isUpsellActive
+                                    ? 'bg-[#B37E76]/90 text-white border-[#D49A91]/50'
+                                    : 'bg-stone-800 text-stone-200 border-stone-700 hover:border-stone-600'
+                                  : isUpsellActive
+                                    ? 'bg-stone-800 text-white border-stone-800'
+                                    : 'bg-white text-stone-800 border-stone-200 hover:border-stone-300'
                               }`}
                               aria-label={isUpsellActive ? 'Odebrat' : 'Přidat'}
                             >
@@ -237,20 +251,23 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
 
         {/* Krok 2: Datum */}
         <div className={!selectedService ? 'opacity-20 pointer-events-none' : ''}>
-          <h2 className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-6 border-b border-stone-100 pb-2">2. Termín</h2>
+          <h2 className={`text-[10px] font-bold uppercase tracking-widest mb-6 border-b pb-2 ${isDark ? 'text-stone-300 border-stone-800' : 'text-stone-500 border-stone-100'}`}>2. Termín</h2>
           <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
-            {clientDates.length === 0 && <p className="text-xs text-stone-400">Momentálně nejsou vypsány žádné termíny.</p>}
+            {clientDates.length === 0 && <p className={`text-xs ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>Momentálně nejsou vypsány žádné termíny.</p>}
             {clientDates.map(d => {
               const key = Utils.formatDateKey(d);
+              const isActive = activeDateStr === key;
               return (
                 <button
                   key={key}
                   type="button"
                   onClick={() => { setSelectedDateStr(key); setSelectedTime(null); }}
                   className={`flex-shrink-0 flex flex-col items-center justify-center w-16 h-24 rounded-xl border transition-all shadow-sm ${
-                    activeDateStr === key ? 'text-white border-[var(--skin-gold-dark)]' : 'bg-white text-stone-500 border-gray-100'
+                    isDark
+                      ? isActive ? 'bg-[#B37E76]/90 text-white border-[#D49A91]/60' : 'bg-stone-900 text-stone-300 border-stone-800 hover:border-stone-700'
+                      : isActive ? 'text-white border-[var(--skin-gold-dark)]' : 'bg-white text-stone-500 border-gray-100'
                   }`}
-                  style={activeDateStr === key ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}
+                  style={!isDark && isActive ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}
                 >
                   <span className="text-[10px] font-bold uppercase tracking-tighter">
                     {d.toLocaleDateString('cs-CZ', { weekday: 'short' })}
@@ -269,63 +286,66 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
 
         {/* Krok 3: Čas */}
         <div className={!activeDateStr ? 'opacity-20 pointer-events-none' : ''}>
-          <h2 className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-6 border-b border-stone-100 pb-2">3. Čas</h2>
+          <h2 className={`text-[10px] font-bold uppercase tracking-widest mb-6 border-b pb-2 ${isDark ? 'text-stone-300 border-stone-800' : 'text-stone-500 border-stone-100'}`}>3. Čas</h2>
           {availableSlots.length > 0 && <p className="text-[10px] text-stone-400 mb-3 italic" />}
 
           <div className="grid grid-cols-3 gap-3">
-            {availableSlots.length === 0 && <p className="col-span-3 text-xs text-stone-400">Pro tento den už není volno.</p>}
-            {availableSlots.map(t => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setSelectedTime(t)}
-                className={`py-3 rounded-lg text-sm border transition-all ${
-                  selectedTime === t
-                    ? 'text-white border-[var(--skin-gold-dark)]'
-                    : 'bg-white border-stone-200 text-stone-700 hover:bg-[#F9F7F2] hover:border-stone-300'
-                }`}
-                style={selectedTime === t ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}
-              >
-                {t}
-              </button>
-            ))}
+            {availableSlots.length === 0 && <p className={`col-span-3 text-xs ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>Pro tento den už není volno.</p>}
+            {availableSlots.map(t => {
+              const isTimeSelected = selectedTime === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setSelectedTime(t)}
+                  className={`py-3 rounded-lg text-sm border transition-all ${
+                    isDark
+                      ? isTimeSelected ? 'text-white border-[#D49A91]/60 bg-[#B37E76]/90' : 'bg-stone-900 border-stone-800 text-stone-200 hover:border-stone-700'
+                      : isTimeSelected ? 'text-white border-[var(--skin-gold-dark)]' : 'bg-white border-stone-200 text-stone-700 hover:bg-[#F9F7F2] hover:border-stone-300'
+                  }`}
+                  style={!isDark && isTimeSelected ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}
+                >
+                  {t}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      <div className="p-8 rounded-2xl border border-stone-100 bg-white shadow-lg h-fit md:sticky md:top-4">
-        <h2 className="text-lg font-display font-semibold mb-6 border-b border-stone-100 pb-4 text-stone-800">
-          <Sparkles className="inline-block text-stone-400 mr-2" size={16} /> Rezervace
+      <div className={`p-8 rounded-2xl border shadow-lg h-fit md:sticky md:top-4 ${isDark ? 'bg-stone-950 border-stone-800' : 'border-stone-100 bg-white'}`}>
+        <h2 className={`text-lg font-display font-semibold mb-6 border-b pb-4 ${isDark ? 'text-[#daa59c] border-stone-800' : 'text-stone-800 border-stone-100'}`}>
+          <Sparkles className={`inline-block mr-2 ${isDark ? 'text-[#D49A91]' : 'text-stone-400'}`} size={16} /> Rezervace
         </h2>
 
         {isSuccess ? (
           <div className="text-center py-10 animate-in zoom-in">
-            <CheckCircle size={32} className="mx-auto text-green-600 mb-3" />
-            <p className="font-bold text-xl font-display text-stone-900">Potvrzeno</p>
-            <p className="text-xs text-stone-500 mt-2">Detaily byly odeslány na váš e-mail.</p>
+            <CheckCircle size={32} className={`mx-auto mb-3 ${isDark ? 'text-[#D49A91]' : 'text-green-600'}`} />
+            <p className={`font-bold text-xl font-display ${isDark ? 'text-white' : 'text-stone-900'}`}>Potvrzeno</p>
+            <p className={`text-xs mt-2 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>Detaily byly odeslány na váš e-mail.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className={`space-y-4 ${!selectedTime ? 'opacity-40 pointer-events-none' : ''}`}>
-            <div className="text-xs space-y-1 mb-4 border-b pb-4 border-stone-100 text-stone-600 font-medium">
-              <div className="flex justify-between"><span>Služba:</span><span className="font-bold text-stone-900">{selectedService?.name || '-'}</span></div>
-              <div className="flex justify-between"><span>Cena:</span><span className="font-bold text-stone-900">{selectedService?.price ? `${selectedService.price} Kč` : '-'}</span></div>
+            <div className={`text-xs space-y-1 mb-4 border-b pb-4 font-medium ${isDark ? 'border-stone-800 text-stone-400' : 'border-stone-100 text-stone-600'}`}>
+              <div className="flex justify-between"><span>Služba:</span><span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{selectedService?.name || '-'}</span></div>
+              <div className="flex justify-between"><span>Cena:</span><span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{selectedService?.price ? `${selectedService.price} Kč` : '-'}</span></div>
               {selectedUpsells.length > 0 && (
                 <>
                   {selectedUpsells.map((u) => (
                     <div key={u.id} className="flex justify-between">
                       <span>+ {u.name}:</span>
-                      <span className="font-bold text-stone-900">{u.price} Kč</span>
+                      <span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{u.price} Kč</span>
                     </div>
                   ))}
                   <div className="flex justify-between font-medium">
                     <span>Celkem (+ doplňky):</span>
-                    <span className="font-bold text-stone-900">
+                    <span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>
                       {(selectedService?.price || 0) + selectedUpsells.reduce((sum, u) => sum + (u.price || 0), 0)} Kč
                     </span>
                   </div>
                 </>
               )}
-              <div className="flex justify-between"><span>Termín:</span><span className="font-bold text-stone-900">{Utils.formatDateDisplay(activeDateStr)} v {selectedTime || '-'}</span></div>
+              <div className="flex justify-between"><span>Termín:</span><span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{Utils.formatDateDisplay(activeDateStr)} v {selectedTime || '-'}</span></div>
             </div>
 
             <input
@@ -334,7 +354,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
               placeholder="Vaše jméno"
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className="input-focus w-full p-3 rounded-lg border border-stone-200 bg-white text-sm font-medium"
+              className={`w-full p-3 rounded-lg border text-sm font-medium ${isDark ? 'bg-stone-900 border-stone-800 text-stone-200 placeholder-stone-500 focus:ring-[#D49A91]/50 focus:border-[#D49A91]' : 'input-focus border-stone-200 bg-white'}`}
             />
             <input
               required
@@ -342,7 +362,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
               placeholder="Telefon"
               value={formData.phone}
               onChange={e => setFormData({ ...formData, phone: e.target.value })}
-              className="input-focus w-full p-3 rounded-lg border border-stone-200 bg-white text-sm font-medium"
+              className={`w-full p-3 rounded-lg border text-sm font-medium ${isDark ? 'bg-stone-900 border-stone-800 text-stone-200 placeholder-stone-500 focus:ring-[#D49A91]/50 focus:border-[#D49A91]' : 'input-focus border-stone-200 bg-white'}`}
             />
             <input
               required
@@ -350,13 +370,13 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
               placeholder="E-mail pro potvrzení"
               value={formData.email}
               onChange={e => setFormData({ ...formData, email: e.target.value })}
-              className="input-focus w-full p-3 rounded-lg border border-stone-200 bg-white text-sm font-medium"
+              className={`w-full p-3 rounded-lg border text-sm font-medium ${isDark ? 'bg-stone-900 border-stone-800 text-stone-200 placeholder-stone-500 focus:ring-[#D49A91]/50 focus:border-[#D49A91]' : 'input-focus border-stone-200 bg-white'}`}
             />
 
             <button
               type="submit"
               disabled={isSending}
-              className="skin-accent w-full py-4 rounded-full font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full py-4 rounded-full font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${isDark ? 'bg-gradient-to-r from-[#B37E76] via-[#D49A91] to-[#B37E76] text-white border border-[#D49A91]/30 hover:opacity-90' : 'skin-accent'}`}
             >
               {isSending ? (
                 <span className="flex items-center justify-center gap-2">

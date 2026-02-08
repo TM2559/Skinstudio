@@ -6,12 +6,12 @@ import InstagramShowcase from './InstagramShowcase';
 
 const getNav = () => {
   const items = [
-    { label: 'O studiu', to: '/', hash: 'o-nas' },
-    { label: 'Procedury a ceník', to: '/', hash: 'procedury' },
-    { label: 'Rezervace', to: '/rezervace', cta: true },
-    { label: 'Kontakt', to: '/', hash: 'kontakt' },
+    { label: 'KOSMETIKA', to: '/kosmetika' },
+    { label: 'PERMANENTNÍ MAKE-UP', to: '/pmu' },
+    { label: 'KONTAKT', to: '/', hash: 'kontakt' },
   ];
-  if (INSTAGRAM_URL) items.push({ label: 'Instagram', to: '/', hash: 'instagram' });
+  if (INSTAGRAM_URL) items.push({ label: 'Instagram', to: '/', hash: 'instagram', iconOnly: true });
+  items.push({ label: 'REZERVACE', to: '/rezervace', cta: true });
   return items;
 };
 const NAV = getNav();
@@ -34,9 +34,9 @@ export default function Layout({ children }) {
   };
 
   const linkClass =
-    'text-sm font-semibold uppercase tracking-widest transition-colors text-stone-600 hover:text-[var(--skin-gold-dark)]';
+    'text-xs xl:text-sm font-semibold uppercase tracking-widest transition-colors text-stone-600 hover:text-[var(--skin-gold-dark)] whitespace-nowrap';
   const ctaClass =
-    'skin-accent text-sm font-semibold uppercase tracking-widest px-4 py-2 rounded-full';
+    'skin-accent text-xs xl:text-sm font-semibold uppercase tracking-widest px-3 xl:px-4 py-2 rounded-full whitespace-nowrap';
 
   return (
     <div className="min-h-screen font-sans flex flex-col" style={{ backgroundColor: 'var(--skin-cream)' }}>
@@ -47,17 +47,40 @@ export default function Layout({ children }) {
           borderColor: 'rgba(0,0,0,0.05)',
         }}
       >
-        <div className="max-w-4xl mx-auto px-4 flex items-center justify-between h-16">
+        <div className="max-w-5xl mx-auto px-4 flex items-center justify-between h-16 gap-4">
           <Link
             to="/"
-            className="font-display font-bold text-2xl tracking-wide text-[var(--skin-charcoal)] hover:text-stone-700 transition-colors shrink-0"
+            className="font-display font-bold text-xl sm:text-2xl tracking-wide text-[var(--skin-charcoal)] hover:text-stone-700 transition-colors shrink-0"
             aria-label="Skin Studio – Domů"
           >
             Skin Studio
           </Link>
 
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-3 xl:gap-4 shrink min-w-0">
             {NAV.map((item) => {
+              if (item.iconOnly) {
+                const href = isHome ? `#${item.hash}` : `/#${item.hash}`;
+                return isHome ? (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => scrollTo(item.hash)}
+                    className={linkClass}
+                    aria-label="Instagram"
+                  >
+                    <Instagram size={20} strokeWidth={1.5} />
+                  </button>
+                ) : (
+                  <Link
+                    key={item.label}
+                    to={href}
+                    className={linkClass}
+                    aria-label="Instagram"
+                  >
+                    <Instagram size={20} strokeWidth={1.5} />
+                  </Link>
+                );
+              }
               if (item.hash) {
                 return isHome ? (
                   <button
@@ -92,7 +115,7 @@ export default function Layout({ children }) {
 
           <button
             type="button"
-            className="md:hidden p-2 text-stone-600 hover:text-[var(--skin-gold-dark)] transition-colors"
+            className="lg:hidden p-2 text-stone-600 hover:text-[var(--skin-gold-dark)] transition-colors shrink-0"
             onClick={() => setMenuOpen((o) => !o)}
             aria-label="Menu"
           >
@@ -102,13 +125,37 @@ export default function Layout({ children }) {
 
         {menuOpen && (
           <div
-            className="md:hidden border-t px-4 py-3 flex flex-col gap-1"
+            className="lg:hidden border-t px-4 py-3 flex flex-col gap-1"
             style={{
               backgroundColor: 'rgba(253, 251, 247, 0.98)',
               borderColor: 'rgba(0,0,0,0.05)',
             }}
           >
             {NAV.map((item) => {
+              if (item.iconOnly) {
+                const href = isHome ? `#${item.hash}` : `/#${item.hash}`;
+                return isHome ? (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => scrollTo(item.hash)}
+                    className="py-3 text-stone-600 hover:text-[var(--skin-gold-dark)] transition-colors"
+                    aria-label="Instagram"
+                  >
+                    <Instagram size={22} strokeWidth={1.5} />
+                  </button>
+                ) : (
+                  <Link
+                    key={item.label}
+                    to={href}
+                    className="py-3 inline-block text-stone-600 hover:text-[var(--skin-gold-dark)] transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                    aria-label="Instagram"
+                  >
+                    <Instagram size={22} strokeWidth={1.5} />
+                  </Link>
+                );
+              }
               if (item.hash) {
                 return isHome ? (
                   <button
