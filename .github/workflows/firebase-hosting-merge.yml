@@ -26,10 +26,11 @@ jobs:
           VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
           VITE_INSTAGRAM_URL: ${{ secrets.VITE_INSTAGRAM_URL }}
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_TM_RESERVATIONS }}'
-          channelId: live
-          projectId: tm-reservations
-          entryPoint: salon-system
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_TM_RESERVATIONS }}'
+
+      - name: Deploy to Firebase Hosting (live)
+        working-directory: salon-system
+        run: npx firebase-tools deploy --only hosting --project tm-reservations --non-interactive
