@@ -29,12 +29,14 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showManualBooking, setShowManualBooking] = useState(false);
   const [manualForm, setManualForm] = useState({
+    category: null,
     serviceId: '',
     date: Utils.getLocalISODate(),
     time: '',
     name: '',
     phone: '',
     email: '',
+    sendNotification: true,
   });
   const [isManualSubmitting, setIsManualSubmitting] = useState(false);
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
@@ -58,7 +60,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     const filtered = sorted.filter(
       (r) =>
         r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.phone.includes(searchTerm) ||
+        (r.phone && r.phone.includes(searchTerm)) ||
         (r.email && r.email.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     const selectedDateKey = Utils.getDateKeyFromISO(adminDateInput);
@@ -213,12 +215,17 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   };
 
   const handleExportCalendar = (order) => {
+    const contact = [
+      `Klient: ${order.name}`,
+      order.phone != null && order.phone !== '' ? `Tel: ${order.phone}` : null,
+      order.email != null && order.email !== '' ? `Email: ${order.email}` : null,
+    ].filter(Boolean).join('\n');
     Utils.downloadICSFile(
       order.date,
       order.time,
       order.duration || 60,
       `Skin Studio: ${order.serviceName} (${order.name})`,
-      `Klient: ${order.name}\nTel: ${order.phone}\nEmail: ${order.email}`
+      contact || `Klient: ${order.name}`
     );
   };
 
@@ -288,16 +295,26 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
 
   const handleManualSubmit = async (e) => {
     e.preventDefault();
-    if (!manualForm.serviceId || !manualForm.time || !manualForm.email) return;
+    if (!manualForm.serviceId || !manualForm.time || !manualForm.name) return;
+    const sendNotification = manualForm.sendNotification !== false;
+    if (sendNotification) {
+      const hasContact = (manualForm.phone || '').trim() || (manualForm.email || '').trim();
+      if (!hasContact) {
+        alert('Pro odeslání potvrzení vyplňte alespoň telefon nebo e-mail.');
+        return;
+      }
+    }
     setIsManualSubmitting(true);
     const selectedSrv = services.find((s) => s.id === manualForm.serviceId);
+    const phone = (manualForm.phone || '').trim() || null;
+    const email = (manualForm.email || '').trim() || null;
     try {
       await addDoc(getCollectionPath('reservations'), {
         date: manualDateKey,
         time: manualForm.time,
         name: manualForm.name,
-        phone: manualForm.phone,
-        email: manualForm.email,
+        phone,
+        email,
         serviceName: selectedSrv?.name || 'Manual Booking',
         duration: parseInt(selectedSrv?.duration || 60),
         price: selectedSrv?.price || 0,
@@ -305,14 +322,39 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
         reminderSent: false,
         source: 'admin',
       });
+      if (sendNotification && EMAILJS_CONFIG.PUBLIC_KEY && email) {
+        try {
+          await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              service_id: EMAILJS_CONFIG.SERVICE_ID,
+              template_id: EMAILJS_CONFIG.CONFIRM_TEMPLATE,
+              user_id: EMAILJS_CONFIG.PUBLIC_KEY,
+              template_params: {
+                name: manualForm.name,
+                to_email: email,
+                date: Utils.formatDateDisplay(manualDateKey),
+                time: manualForm.time,
+                service: selectedSrv?.name || 'Manual Booking',
+                reply_to: 'rezervace@skinstudio.cz',
+              },
+            }),
+          });
+        } catch (notifErr) {
+          console.error(notifErr);
+        }
+      }
       setShowManualBooking(false);
       setManualForm({
+        category: null,
         serviceId: '',
         date: Utils.getLocalISODate(),
         time: '',
         name: '',
         phone: '',
         email: '',
+        sendNotification: true,
       });
       setActiveTab('bookings');
       if (manualForm.date !== adminDateInput) {
@@ -349,13 +391,13 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           </div>
         </div>
 
-        <div className="flex gap-6 text-sm font-medium overflow-x-auto no-scrollbar">
+        <div className="mobile-carousel-strip flex gap-6 text-sm font-medium">
           <button
             onClick={() => {
               setActiveTab('bookings');
               setSearchTerm('');
             }}
-            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'bookings' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'bookings' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
           >
             <Calendar size={16} /> Rezervace
           </button>
@@ -364,7 +406,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('shifts');
               setSearchTerm('');
             }}
-            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'shifts' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'shifts' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
           >
             <Clock size={16} /> Směny
           </button>
@@ -373,7 +415,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('services');
               setSearchTerm('');
             }}
-            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'services' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'services' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
           >
             <Scissors size={16} /> Služby
           </button>
@@ -382,7 +424,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('history');
               setSearchTerm('');
             }}
-            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'history' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'history' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
           >
             <Archive size={16} /> Archiv
           </button>
@@ -391,7 +433,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('addons');
               setSearchTerm('');
             }}
-            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'addons' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'addons' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
           >
             <Package size={16} /> Add-ony
           </button>
@@ -400,7 +442,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('instagram');
               setSearchTerm('');
             }}
-            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'instagram' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'instagram' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
           >
             <Instagram size={16} /> Instagram
           </button>
@@ -409,7 +451,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('photos');
               setSearchTerm('');
             }}
-            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'photos' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'photos' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
           >
             <ImageIcon size={16} /> Fotografie
           </button>

@@ -21,21 +21,32 @@ const OrderDetailModal = ({ order, onClose, onExportCalendar, onDelete }) => {
           <div className="flex gap-3 items-center">
             <CalendarDays size={16} /> <span>{Utils.formatDateDisplay(order.date)}, {order.time}</span>
           </div>
-          <div className="flex gap-3 items-center">
-            <Phone size={16} /> <a href={`tel:${order.phone}`} className="hover:underline">{order.phone}</a>
-          </div>
-          <div className="flex gap-3 items-center">
-            <Mail size={16} /> <a href={`mailto:${order.email}`} className="hover:underline truncate w-48 block">{order.email}</a>
-          </div>
+          {order.phone && (
+            <div className="flex gap-3 items-center">
+              <Phone size={16} /> <a href={`tel:${order.phone}`} className="hover:underline">{order.phone}</a>
+            </div>
+          )}
+          {order.email && (
+            <div className="flex gap-3 items-center">
+              <Mail size={16} /> <a href={`mailto:${order.email}`} className="hover:underline truncate w-48 block">{order.email}</a>
+            </div>
+          )}
+          {!order.phone && !order.email && (
+            <div className="text-stone-400 text-xs">Bez kontaktu</div>
+          )}
         </div>
 
         <div className="flex gap-3 mb-3">
-          <a href={`tel:${order.phone}`} className="flex-1 bg-stone-800 text-white py-3 rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors">
-            <Phone size={14} /> Zavolat
-          </a>
-          <a href={`mailto:${order.email}`} className="flex-1 bg-white border border-stone-200 text-stone-800 py-3 rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest hover:bg-stone-50 transition-colors">
-            <Mail size={14} /> E-mail
-          </a>
+          {order.phone && (
+            <a href={`tel:${order.phone}`} className="flex-1 bg-stone-800 text-white py-3 rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors">
+              <Phone size={14} /> Zavolat
+            </a>
+          )}
+          {order.email && (
+            <a href={`mailto:${order.email}`} className={`${order.phone ? 'flex-1' : 'w-full'} bg-white border border-stone-200 text-stone-800 py-3 rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest hover:bg-stone-50 transition-colors`}>
+              <Mail size={14} /> E-mail
+            </a>
+          )}
         </div>
 
         <button

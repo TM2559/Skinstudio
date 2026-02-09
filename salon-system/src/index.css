@@ -11,6 +11,7 @@
   --skin-charcoal: #2f2f2f;
   --skin-beige-muted: #d3cfc6;
   --skin-white: #fdfcfa;
+  --pmu-color: #E6B8A2;
 }
 
 @layer base {
@@ -79,5 +80,46 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Mobile Carousel – peek, scroll-snap, touch-friendly (no JS) */
+  .mobile-carousel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    gap: 1rem;
+    padding-right: 20px;
+    padding-bottom: 1rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .mobile-carousel::-webkit-scrollbar {
+    display: none;
+  }
+  .mobile-carousel-item {
+    flex: 0 0 85%;
+    width: 85%;
+    scroll-snap-align: start;
+    min-width: 0;
+  }
+
+  /* Horizontal strip (tabs, date chips) – snap + touch, no 85% width */
+  .mobile-carousel-strip {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .mobile-carousel-strip::-webkit-scrollbar {
+    display: none;
+  }
+  .mobile-carousel-strip-item {
+    scroll-snap-align: start;
+    flex-shrink: 0;
   }
 }
