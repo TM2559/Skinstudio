@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { CheckCircle, Sparkles, Loader2 } from 'lucide-react';
 import { addDoc } from "firebase/firestore";
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getApp } from 'firebase/app';
 import { Utils } from '../utils/helpers';
 import { getCollectionPath, EMAILJS_CONFIG } from '../firebaseConfig';
 
@@ -136,6 +138,22 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
                 }
             })
             });
+        }
+      }
+
+      if (formData.phone && formData.phone.trim()) {
+        try {
+          const functions = getFunctions(getApp(), 'europe-west1');
+          const sendConfirmationSms = httpsCallable(functions, 'sendConfirmationSms');
+          await sendConfirmationSms({
+            phone: formData.phone,
+            name: formData.name,
+            date: activeDateStr,
+            time: selectedTime,
+            serviceName: selectedService.name,
+          });
+        } catch (err) {
+          console.error('SMS potvrzení:', err);
         }
       }
 

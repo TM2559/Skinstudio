@@ -21,8 +21,8 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   const [activeTab, setActiveTab] = useState('bookings');
   const [searchTerm, setSearchTerm] = useState('');
   const [adminDateInput, setAdminDateInput] = useState(Utils.getLocalISODate());
-  const [workStart, setWorkStart] = useState('09:00');
-  const [workEnd, setWorkEnd] = useState('17:00');
+  const [workStart, _setWorkStart] = useState('09:00');
+  const [workEnd, _setWorkEnd] = useState('17:00');
   const [editingServiceId, setEditingServiceId] = useState(null);
   const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60', description: '', category: 'STANDARD' });
   const [showReminderModal, setShowReminderModal] = useState(false);
@@ -75,7 +75,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   const dayData = schedule[currentDayKey];
   const periods = dayData?.periods || (dayData?.start ? [{ start: dayData.start, end: dayData.end }] : []);
 
-  const handleShift = async (action, index) => {
+  const _handleShift = async (action, index) => {
     if (action === 'add') {
       const newP = [...periods, { start: workStart, end: workEnd }].sort(
         (a, b) => Utils.timeToMinutes(a.start) - Utils.timeToMinutes(b.start)
@@ -233,7 +233,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     let smsErrors = [];
     if (withPhone.length > 0) {
       try {
-        const functions = getFunctions(getApp(), 'europe-central1');
+        const functions = getFunctions(getApp(), 'europe-west1');
         const sendReminderSms = httpsCallable(functions, 'sendReminderSms');
         const { data } = await sendReminderSms({
           reservations: withPhone.map((r) => ({
@@ -259,7 +259,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           reason: code === 'functions/failed-precondition'
             ? 'BulkGate není nakonfigurován. V functions/.env nastav BULKGATE_APPLICATION_ID a BULKGATE_APPLICATION_TOKEN a znovu nasaď (firebase deploy --only functions).'
             : code === 'functions/unavailable' || code === 'functions/not-found'
-              ? 'Cloud Function nedostupná. Zkontroluj: firebase deploy --only functions a region europe-central1.'
+              ? 'Cloud Function nedostupná. Zkontroluj: firebase deploy --only functions a region europe-west1.'
               : detail || 'Neznámá chyba při odesílání SMS.'
         }];
       }
@@ -354,6 +354,21 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
         reminderSent: false,
         source: 'admin',
       });
+      if (manualForm.phone && manualForm.phone.trim()) {
+        try {
+          const functions = getFunctions(getApp(), 'europe-west1');
+          const sendConfirmationSms = httpsCallable(functions, 'sendConfirmationSms');
+          await sendConfirmationSms({
+            phone: manualForm.phone,
+            name: manualForm.name,
+            date: manualDateKey,
+            time: manualForm.time,
+            serviceName: selectedSrv?.name || 'Manual Booking',
+          });
+        } catch (err) {
+          console.error('SMS potvrzení:', err);
+        }
+      }
       setShowManualBooking(false);
       setManualForm({
         serviceId: '',

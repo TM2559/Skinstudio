@@ -1,6 +1,9 @@
 # Cloud Functions – BulkGate SMS
 
-Funkce `sendReminderSms` odesílá SMS připomínky přes [BulkGate](https://www.bulkgate.com/) (HTTP Simple API).
+- **`sendConfirmationSms`** – jedna SMS klientovi hned po vytvoření rezervace (web i manuální v adminu).
+- **`sendReminderSms`** – připomínky zítřejších rezervací z adminu (tlačítko Připomínky).
+
+Obojí přes [BulkGate](https://www.bulkgate.com/) (HTTP Simple API).
 
 ## Nastavení
 
@@ -24,12 +27,11 @@ Funkce `sendReminderSms` odesílá SMS připomínky přes [BulkGate](https://www
 
 - **V prohlížeči** po kliknutí na „Odeslat“ u připomínek uvidíš v alertu konkrétní chybu (BulkGate ne nakonfigurován, funkce nedostupná, nebo text od BulkGate API).
 - **BulkGate není nakonfigurován** → doplň `BULKGATE_APPLICATION_ID` a `BULKGATE_APPLICATION_TOKEN` do `functions/.env` a znovu spusť `firebase deploy --only functions`.
-- **Funkce nedostupná / not-found** → ověř, že jsou funkce nasazené v regionu **europe-central1** (Firebase Console → Functions).
+- **Funkce nedostupná / not-found** → ověř, že jsou funkce nasazené v regionu **europe-west1** (Firebase Console → Functions).
 - **BulkGate API chyba** (Invalid phone number, Unknown identity, …) → ověř v BulkGate portálu Application ID a Token; čísla musí být v mezinárodním formátu (420…).
 - **Logy** → Firebase Console → Functions → sendReminderSms → Logs; nebo `firebase functions:log`.
 
 ## Chování
 
-- Admin v aplikaci zvolí „Připomínky“ pro zítřek. Pro rezervace s vyplněným telefonem se zavolá tato funkce.
-- Funkce pro každou rezervaci s platným číslem (E.164, 420…) odešle SMS přes BulkGate a v Firestore nastaví `reminderSent: true`.
-- Rezervace pouze s e-mailem dál zpracovává frontend (EmailJS).
+- **Potvrzení:** Po odeslání rezervace (CustomerView nebo manuální v adminu) se při vyplněném telefonu zavolá `sendConfirmationSms`. Text s plnou diakritikou (správná čeština), datum ve formátu „D. M.“ (např. 14. 2.), šablona: „Potvrzujeme vaši rezervaci.“ + SLUŽBA / TERMÍN + „Těšíme se na vás.“
+- **Připomínky:** Admin zvolí „Připomínky“ pro zítřek; pro rezervace s telefonem se zavolá `sendReminderSms`, odešle se SMS a nastaví `reminderSent: true`. Rezervace jen s e-mailem řeší frontend (EmailJS).
