@@ -10,11 +10,12 @@ import Layout from './Layout';
 vi.mock('../firebaseConfig', () => ({ INSTAGRAM_URL: '' }));
 vi.mock('./InstagramShowcase', () => ({ default: () => null }));
 
+const mockUseLocation = vi.fn(() => ({ pathname: '/rezervace' }));
 vi.mock('react-router-dom', () => ({
   Link: ({ to, children, onClick, className, ...rest }) => (
     <a href={to} onClick={onClick} className={className} {...rest}>{children}</a>
   ),
-  useLocation: () => ({ pathname: '/rezervace' }),
+  useLocation: () => mockUseLocation(),
 }));
 
 describe('Layout', () => {
@@ -39,5 +40,14 @@ describe('Layout', () => {
     render(<Layout><span>Content</span></Layout>);
     const link = screen.getByRole('link', { name: 'REZERVACE' });
     expect(() => fireEvent.click(link)).not.toThrow();
+  });
+
+  it('when on Kosmetika page with setView, clicking REZERVACE calls setView("customer")', () => {
+    mockUseLocation.mockReturnValueOnce({ pathname: '/kosmetika' });
+    const setView = vi.fn();
+    render(<Layout setView={setView}><span>Content</span></Layout>);
+    const link = screen.getByRole('link', { name: 'REZERVACE' });
+    fireEvent.click(link);
+    expect(setView).toHaveBeenCalledWith('customer');
   });
 });

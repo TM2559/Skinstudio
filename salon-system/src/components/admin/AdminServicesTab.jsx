@@ -47,6 +47,18 @@ const AdminServicesTab = ({
         onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
         className="w-full p-3 border rounded-lg text-sm"
       />
+      <div>
+        <label htmlFor="service-category" className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Kategorie</label>
+        <select
+          id="service-category"
+          value={serviceForm.category ?? 'STANDARD'}
+          onChange={(e) => setServiceForm({ ...serviceForm, category: e.target.value })}
+          className="w-full p-3 border rounded-lg text-sm bg-white"
+        >
+          <option value="STANDARD">Kosmetika</option>
+          <option value="PMU">PMU (permanentní make-up)</option>
+        </select>
+      </div>
       <div className="flex gap-2">
         <input
           type="number"
@@ -222,14 +234,17 @@ const AdminServicesTab = ({
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-bold text-stone-800">{s.name}</span>
-                <div className="flex gap-2 mt-1">
+                <div className="flex gap-2 mt-1 flex-wrap items-center">
                   <span className="text-[10px] font-bold text-stone-500">{s.price} Kč</span>
                   <span className="text-[10px] text-stone-300">{s.duration} min</span>
+                  <span className="text-[10px] text-stone-400">
+                    {(s.category || 'STANDARD') === 'PMU' ? 'PMU' : 'Kosmetika'}
+                  </span>
                 </div>
               </div>
             </div>
             <div className="flex gap-1">
-              <button onClick={() => onStartEdit(s)} className="p-2 text-stone-400 hover:text-stone-800">
+              <button type="button" onClick={() => onStartEdit(s)} className="p-2 text-stone-400 hover:text-stone-800" data-testid="edit-service" aria-label={`Upravit ${s.name}`}>
                 <Edit2 size={14} />
               </button>
               <button onClick={() => onDeleteService(s.id)} className="p-2 text-stone-300 hover:text-red-500">

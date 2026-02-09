@@ -28,6 +28,7 @@ Testuje funkce z `src/utils/helpers.js`: převody času, formátování dat a lo
 
 ### 1.3 Datum – formátování
 
+
 | Test | Co se testuje |
 |------|----------------|
 | **formatDateKey formats Date to DD-MM-YYYY** | `formatDateKey(new Date(2026, 0, 15))` → `"15-01-2026"`. |
@@ -104,11 +105,50 @@ Testuje **ReservationApp**: přepínání view (customer / login), přihlášen�
 
 ---
 
+## 3.5. `src/components/Layout.test.jsx` – navigace a odkaz Rezervace
+
+Testuje **Layout**: odkaz REZERVACE a volání `setView('customer')` při kliknutí, aby po přihlášení do admina při přechodu z jiné stránky (např. Kosmetika) na Rezervace zůstal zobrazen rezervační formulář, ne admin.
+
+| Test | Co se testuje |
+|------|----------------|
+| **renders REZERVACE link** | V navigaci je odkaz „REZERVACE“. |
+| **calls setView("customer") when REZERVACE link is clicked** | Při předaném `setView` a kliknutí na REZERVACE se volá `setView('customer')`. |
+| **does not throw when setView is not provided and REZERVACE is clicked** | Bez `setView` klik na REZERVACE nevyhodí chybu. |
+| **when on Kosmetika page with setView, clicking REZERVACE calls setView("customer")** | Na stránce /kosmetika s předaným `setView` klik na REZERVACE volá `setView('customer')` (oprava chyby: po přihlášení do admina přechod Kosmetika → Rezervace má zobrazit formulář). |
+
+---
+
+## 4. `src/components/admin/AdminServicesTab.test.jsx` – záložka Služby (admin)
+
+Testuje komponentu **AdminServicesTab**: formulář pro novou/upravovanou službu, tlačítko Zrušit, volání onStartEdit při kliknutí na Upravit.
+
+| Test | Co se testuje |
+|------|----------------|
+| **renders list of services and form for new service** | Zobrazení nadpisu Služby, „Nový produkt / Služba“, seznam služeb a prázdný formulář s tlačítkem „+ Přidat“. |
+| **when editingServiceId is set shows "Upravit produkt" and form filled with service data** | V režimu úpravy: nadpis „Upravit produkt“, tlačítka „Uložit změny“ a „Zrušit“, pole Název a Cena vyplněná dle serviceForm. |
+| **calls onCancelEdit when Zrušit is clicked** | Klik na „Zrušit“ volá onCancelEdit. |
+| **calls onStartEdit with service when edit button is clicked on a service row** | Klik na tlačítko „Upravit“ u služby (aria-label „Upravit Klasická masáž“) volá onStartEdit s příslušným objektem služby. |
+
+---
+
+## 5. `src/components/AdminView.test.jsx` – admin panel a úprava služby
+
+Testuje **AdminView** s mockovaným Firebase: po kliknutí na záložku Služby a na „Upravit“ u služby musí zůstat zobrazen formulář pro úpravu (ne prázdná obrazovka).
+
+| Test | Co se testuje |
+|------|----------------|
+| **after clicking Služby and then Edit on a service, edit form is visible (not blank screen)** | Klik na záložku „Služby“, pak na „Upravit“ u první služby → zobrazí se „Upravit produkt“, „Uložit změny“, „Zrušit“ a pole Název s hodnotou služby. Ověřuje opravu chyby, kdy se dříve přepínalo na neexistující záložku „settings“ a obrazovka zůstala prázdná. |
+
+---
+
 ## Shrnutí
 
 - **helpers.test.js**: 15 testů (čas, datum, getSmartSlots, Google Calendar).
 - **CustomerView.test.jsx**: 10 testů (render, výběr služby/termínu/času, formulář, odeslání, initialServiceId, dark theme).
 - **ReservationApp.test.jsx**: 7 testů (customer/login view, handleLogin, setView, loading, widgetOnly).
+- **AdminServicesTab.test.jsx**: 4 testy (seznam služeb, režim úpravy, Zrušit, onStartEdit).
+- **AdminView.test.jsx**: 1 test (úprava služby nezobrazí prázdnou obrazovku).
+- **Layout.test.jsx**: 4 testy (odkaz REZERVACE, setView při kliku, chování na stránce Kosmetika).
 
-**Celkem: 32 testů.**  
+**Celkem: 42 testů.**  
 Pro běh testů bez watch režimu: `npx vitest run`.

@@ -145,7 +145,7 @@ export default function App() {
       <Route
         path="/"
         element={
-          <Layout>
+          <Layout setView={setView}>
             <CosmeticsPage services={servicesStandardOnly} />
           </Layout>
         }
@@ -153,7 +153,7 @@ export default function App() {
       <Route
         path="/kosmetika"
         element={
-          <Layout>
+          <Layout setView={setView}>
             <CosmeticsPage services={servicesStandardOnly} />
           </Layout>
         }
