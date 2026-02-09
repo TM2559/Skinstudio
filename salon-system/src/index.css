@@ -88,7 +88,7 @@
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
+    touch-action: pan-x;
     gap: 1rem;
     padding-right: 20px;
     padding-bottom: 1rem;
@@ -111,7 +111,7 @@
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
+    touch-action: pan-x;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
