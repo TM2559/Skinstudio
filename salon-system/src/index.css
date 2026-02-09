@@ -133,4 +133,41 @@
     scroll-snap-align: start;
     flex-shrink: 0;
   }
+
+  /* Proměny karusel – pagination tečky (minimalistické) */
+  .carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    transition: background-color 0.3s;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+  }
+  .dot:hover {
+    background-color: #b0b0b0;
+  }
+  .dot-active,
+  .dot.dot-active {
+    background-color: #1a1a1a;
+  }
+
+  /* Před/po – menší, decentní handle (max 32px) */
+  .comparison-slider-handle {
+    flex-shrink: 0;
+  }
+
+  /* Žádné postranní šipky na karuselu – navigace jen swipe + tečky */
+  .carousel-nav-button,
+  .slick-prev,
+  .slick-next {
+    display: none !important;
+  }
 }

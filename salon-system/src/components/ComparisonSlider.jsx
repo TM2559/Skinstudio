@@ -17,17 +17,17 @@ export default function ComparisonSlider({ beforeImage, afterImage, altText, the
   const isLight = theme === 'light';
   const handle = (
     <div
-      className={`flex items-center justify-center w-10 h-10 rounded-full ${
+      className={`comparison-slider-handle flex items-center justify-center w-8 h-8 rounded-full ${
         isLight
-          ? 'bg-white text-stone-600 border border-stone-200 shadow-md shadow-stone-300/40'
-          : 'bg-gradient-to-r from-[#B37E76] via-[#D49A91] to-[#B37E76] text-white border border-[#D49A91]/20 shadow-lg shadow-[#B37E76]/30 ring-2 ring-white/20'
+          ? 'bg-white/95 text-stone-500 border border-stone-200/80 shadow-sm'
+          : 'bg-gradient-to-r from-[#B37E76] via-[#D49A91] to-[#B37E76] text-white border border-[#D49A91]/20 shadow-md ring-1 ring-white/20'
       }`}
       aria-hidden
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="22"
-        height="22"
+        width="14"
+        height="14"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

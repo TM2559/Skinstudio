@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Phone, Mail, Instagram, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, MapPin, Phone, Mail, Instagram, ChevronDown, ChevronUp } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
 import { getCollectionPath } from '../firebaseConfig';
 import { GALLERY_COLLECTION, TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
@@ -24,6 +24,7 @@ export default function CosmeticsPage({ services = [] }) {
   const [gallery, setGallery] = useState([]);
   const [expandedServiceId, setExpandedServiceId] = useState(null);
   const promenyCarouselRef = useRef(null);
+  const [promenyActiveIndex, setPromenyActiveIndex] = useState(0);
 
   useEffect(() => {
     const hash = window.location.hash?.slice(1);
@@ -54,6 +55,21 @@ export default function CosmeticsPage({ services = [] }) {
     });
     return () => unsubG();
   }, []);
+
+  // Sync pagination dot with carousel scroll position (mobile)
+  useEffect(() => {
+    const el = promenyCarouselRef.current;
+    if (!el || transformations.length <= 1) return;
+    const onScroll = () => {
+      const itemWidth = el.offsetWidth * 0.85 + 16;
+      const index = Math.round(el.scrollLeft / itemWidth);
+      const clamped = Math.min(Math.max(0, index), transformations.length - 1);
+      setPromenyActiveIndex(clamped);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [transformations.length]);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: COSMETICS_BG }}>
@@ -140,36 +156,9 @@ export default function CosmeticsPage({ services = [] }) {
           {transformations.length > 0 ? (
             <>
               <LazySection rootMargin="240px">
-                <div className="relative">
-                  {transformations.length > 1 && (
-                    <>
-                      <button
-                        type="button"
-                        aria-label="Předchozí proměna"
-                        onClick={() => {
-                          const el = promenyCarouselRef.current;
-                          if (el) el.scrollBy({ left: -el.offsetWidth * 0.9, behavior: 'smooth' });
-                        }}
-                        className="md:hidden absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md border border-stone-200 flex items-center justify-center text-stone-600 -ml-2"
-                      >
-                        <ChevronLeft size={22} />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="Další proměna"
-                        onClick={() => {
-                          const el = promenyCarouselRef.current;
-                          if (el) el.scrollBy({ left: el.offsetWidth * 0.9, behavior: 'smooth' });
-                        }}
-                        className="md:hidden absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md border border-stone-200 flex items-center justify-center text-stone-600 -mr-2"
-                      >
-                        <ChevronRight size={22} />
-                      </button>
-                    </>
-                  )}
                 <div
                   ref={promenyCarouselRef}
-                  className="mobile-carousel md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-4 md:gap-10 md:gap-y-12 px-4 pb-8 md:pb-0 -mx-4 md:mx-0"
+                  className="mobile-carousel carousel-track md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-4 md:gap-10 md:gap-y-12 px-4 pb-2 md:pb-0 -mx-4 md:mx-0"
                 >
                   {transformations.map((item) => (
                     <div
@@ -193,13 +182,26 @@ export default function CosmeticsPage({ services = [] }) {
                     </div>
                   ))}
                 </div>
-                </div>
+                {transformations.length > 1 && (
+                  <div className="carousel-dots mt-4 flex justify-center gap-2 md:hidden">
+                    {transformations.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        aria-label={`Proměna ${i + 1}`}
+                        aria-current={promenyActiveIndex === i ? 'true' : undefined}
+                        onClick={() => {
+                          const el = promenyCarouselRef.current;
+                          if (!el) return;
+                          const itemWidth = el.offsetWidth * 0.85 + 16;
+                          el.scrollTo({ left: i * itemWidth, behavior: 'smooth' });
+                        }}
+                        className={`dot h-2 w-2 rounded-full transition-colors duration-300 ${promenyActiveIndex === i ? 'dot-active' : ''}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </LazySection>
-              {transformations.length > 1 && (
-                <p className="md:hidden text-center text-stone-400 text-xs mt-4">
-                  Posuňte pro další
-                </p>
-              )}
             </>
           ) : (
             <p className="text-center text-stone-500 text-sm py-12">
