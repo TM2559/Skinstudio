@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Phone, Mail, Instagram, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, MapPin, Phone, Mail, Instagram, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
 import { getCollectionPath } from '../firebaseConfig';
 import { GALLERY_COLLECTION, TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
@@ -23,6 +23,7 @@ export default function CosmeticsPage({ services = [] }) {
   const [transformations, setTransformations] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [expandedServiceId, setExpandedServiceId] = useState(null);
+  const promenyCarouselRef = useRef(null);
 
   useEffect(() => {
     const hash = window.location.hash?.slice(1);
@@ -139,7 +140,37 @@ export default function CosmeticsPage({ services = [] }) {
           {transformations.length > 0 ? (
             <>
               <LazySection rootMargin="240px">
-                <div className="mobile-carousel md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-4 md:gap-10 md:gap-y-12 px-4 pb-8 md:pb-0 -mx-4 md:mx-0">
+                <div className="relative">
+                  {transformations.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        aria-label="Předchozí proměna"
+                        onClick={() => {
+                          const el = promenyCarouselRef.current;
+                          if (el) el.scrollBy({ left: -el.offsetWidth * 0.9, behavior: 'smooth' });
+                        }}
+                        className="md:hidden absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md border border-stone-200 flex items-center justify-center text-stone-600 -ml-2"
+                      >
+                        <ChevronLeft size={22} />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Další proměna"
+                        onClick={() => {
+                          const el = promenyCarouselRef.current;
+                          if (el) el.scrollBy({ left: el.offsetWidth * 0.9, behavior: 'smooth' });
+                        }}
+                        className="md:hidden absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md border border-stone-200 flex items-center justify-center text-stone-600 -mr-2"
+                      >
+                        <ChevronRight size={22} />
+                      </button>
+                    </>
+                  )}
+                <div
+                  ref={promenyCarouselRef}
+                  className="mobile-carousel md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-4 md:gap-10 md:gap-y-12 px-4 pb-8 md:pb-0 -mx-4 md:mx-0"
+                >
                   {transformations.map((item) => (
                     <div
                       key={item.id}
@@ -161,6 +192,7 @@ export default function CosmeticsPage({ services = [] }) {
                       )}
                     </div>
                   ))}
+                </div>
                 </div>
               </LazySection>
               {transformations.length > 1 && (

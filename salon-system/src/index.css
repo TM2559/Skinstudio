@@ -85,7 +85,8 @@
   /* Mobile Carousel – peek, scroll-snap, touch-friendly (no JS) */
   .mobile-carousel {
     display: flex;
-    overflow-x: auto;
+    overflow-x: scroll;
+    overflow-y: hidden;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x;
@@ -94,6 +95,11 @@
     padding-bottom: 1rem;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    width: 100%;
+    min-width: 0;
+    /* iOS: vytvoří scroll vrstvu pro spolehlivější touch scroll */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
   }
   .mobile-carousel::-webkit-scrollbar {
     display: none;
@@ -103,6 +109,11 @@
     width: 85%;
     scroll-snap-align: start;
     min-width: 0;
+    touch-action: pan-x;
+  }
+  /* Před/po slider uvnitř karuselu – swipe má posouvat karusel, ne jen handle */
+  .mobile-carousel .comparison-slider-contain {
+    touch-action: pan-x;
   }
 
   /* Horizontal strip (tabs, date chips) – snap + touch, no 85% width */
