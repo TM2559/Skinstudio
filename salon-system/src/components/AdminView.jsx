@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package, Image as ImageIcon, Scissors } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getApp } from 'firebase/app';
 import { Utils } from '../utils/helpers';
-import { getCollectionPath, getDocPath, EMAILJS_CONFIG } from '../firebaseConfig';
+import { getCollectionPath, getDocPath, EMAILJS_CONFIG, FIRESTORE_RESERVATIONS_PREFIX } from '../firebaseConfig';
 
 import AdminBookingsTab from './admin/AdminBookingsTab';
 import AdminHistoryTab from './admin/AdminHistoryTab';
@@ -224,8 +226,47 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
 
   const handleReminders = async () => {
     setIsSendingReminders(true);
-    let count = 0;
+    let emailCount = 0;
+    let smsCount = 0;
+
+    const withPhone = remindersList.filter((r) => r.phone && r.phone.trim());
+    let smsErrors = [];
+    if (withPhone.length > 0) {
+      try {
+        const functions = getFunctions(getApp(), 'europe-central1');
+        const sendReminderSms = httpsCallable(functions, 'sendReminderSms');
+        const { data } = await sendReminderSms({
+          reservations: withPhone.map((r) => ({
+            id: r.id,
+            phone: r.phone,
+            name: r.name,
+            date: r.date,
+            time: r.time,
+            serviceName: r.serviceName,
+          })),
+          firestoreReservationsPrefix: FIRESTORE_RESERVATIONS_PREFIX || undefined,
+        });
+        smsCount = data?.sent ?? 0;
+        if (data?.errors?.length) {
+          smsErrors = data.errors;
+          console.warn('BulkGate chyby:', data.errors);
+        }
+      } catch (e) {
+        console.error('SMS připomínky:', e);
+        const code = e.code || (e.details && e.details.code);
+        const detail = e.message || (e.details && e.details.message) || '';
+        smsErrors = [{
+          reason: code === 'functions/failed-precondition'
+            ? 'BulkGate není nakonfigurován. V functions/.env nastav BULKGATE_APPLICATION_ID a BULKGATE_APPLICATION_TOKEN a znovu nasaď (firebase deploy --only functions).'
+            : code === 'functions/unavailable' || code === 'functions/not-found'
+              ? 'Cloud Function nedostupná. Zkontroluj: firebase deploy --only functions a region europe-central1.'
+              : detail || 'Neznámá chyba při odesílání SMS.'
+        }];
+      }
+    }
+
     for (const res of remindersList) {
+      if (!res.email) continue;
       try {
         if (EMAILJS_CONFIG.PUBLIC_KEY) {
           await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -247,21 +288,29 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           });
         }
         await updateDoc(getDocPath('reservations', res.id), { reminderSent: true });
-        count++;
+        emailCount++;
       } catch (e) {
         console.error(e);
       }
     }
+
     setIsSendingReminders(false);
     setShowReminderModal(false);
-    alert(`Odesláno ${count} připomínek.`);
+    const parts = [];
+    if (smsCount > 0) parts.push(`${smsCount} SMS`);
+    if (emailCount > 0) parts.push(`${emailCount} e-mailů`);
+    let msg = parts.length ? `Odesláno: ${parts.join(', ')}.` : 'Žádné připomínky k odeslání.';
+    if (smsErrors.length > 0) {
+      msg += `\n\nSMS chyby: ${smsErrors.map((e) => e.reason || JSON.stringify(e)).join('; ')}`;
+    }
+    alert(msg);
   };
 
   const openReminders = () => {
     const tmr = new Date();
     tmr.setDate(tmr.getDate() + 1);
     const key = Utils.formatDateKey(tmr);
-    setRemindersList(reservations.filter((r) => r.date === key && !r.reminderSent && r.email));
+    setRemindersList(reservations.filter((r) => r.date === key && !r.reminderSent && (r.email || (r.phone && r.phone.trim()))));
     setShowReminderModal(true);
   };
 

@@ -57,3 +57,6 @@ export const getDocPath = (colName, docId) =>
   isCanvas 
     ? doc(db, 'artifacts', appId, 'public', 'data', colName, docId)
     : doc(db, colName, docId);
+
+/** Prefix pro cestu k rezervacím ve Firestore (pro Cloud Function sendReminderSms). */
+export const FIRESTORE_RESERVATIONS_PREFIX = isCanvas ? `artifacts/${appId}/public/data` : '';
