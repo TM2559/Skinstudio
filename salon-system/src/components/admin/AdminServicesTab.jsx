@@ -52,7 +52,17 @@ const AdminServicesTab = ({
         <select
           id="service-category"
           value={serviceForm.category ?? 'STANDARD'}
-          onChange={(e) => setServiceForm({ ...serviceForm, category: e.target.value })}
+          onChange={(e) => {
+            const newCategory = e.target.value;
+            const isPmu = newCategory === 'PMU';
+            const pmuDurations = ['180', '210', '240', '270'];
+            const standardDurations = ['30', '60', '90', '120'];
+            const currentDuration = String(serviceForm.duration ?? '60');
+            const duration = isPmu
+              ? (pmuDurations.includes(currentDuration) ? currentDuration : '180')
+              : (standardDurations.includes(currentDuration) ? currentDuration : '60');
+            setServiceForm({ ...serviceForm, category: newCategory, duration });
+          }}
           className="w-full p-3 border rounded-lg text-sm bg-white"
         >
           <option value="STANDARD">Kosmetika</option>
@@ -72,10 +82,21 @@ const AdminServicesTab = ({
           onChange={(e) => setServiceForm({ ...serviceForm, duration: e.target.value })}
           className="flex-1 p-3 border rounded-lg text-sm bg-white"
         >
-          <option value="30">30 min</option>
-          <option value="60">60 min</option>
-          <option value="90">90 min</option>
-          <option value="120">120 min</option>
+          {(serviceForm.category || 'STANDARD') === 'PMU' ? (
+            <>
+              <option value="180">3 h</option>
+              <option value="210">3,5 h</option>
+              <option value="240">4 h</option>
+              <option value="270">4,5 h</option>
+            </>
+          ) : (
+            <>
+              <option value="30">30 min</option>
+              <option value="60">60 min</option>
+              <option value="90">90 min</option>
+              <option value="120">120 min</option>
+            </>
+          )}
         </select>
       </div>
       <div>

@@ -152,10 +152,15 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     if (confirm('Smazat tuto proceduru?')) await deleteDoc(getDocPath('services', id));
   };
 
+  const PMU_DURATIONS = [180, 210, 240, 270];
   const startEdit = (s) => {
     setActiveTab('services');
     setEditingServiceId(s.id);
-    setServiceForm({ name: s.name, price: s.price, duration: s.duration, description: s.description || '', category: s.category || 'STANDARD' });
+    const category = s.category || 'STANDARD';
+    const duration = category === 'PMU' && !PMU_DURATIONS.includes(Number(s.duration))
+      ? 180
+      : s.duration;
+    setServiceForm({ name: s.name, price: s.price, duration, description: s.description || '', category });
     const links = serviceAddonLinks
       .filter((l) => l.main_service_id === s.id)
       .map((l) => ({
