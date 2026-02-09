@@ -367,9 +367,18 @@ const AdminSettingsTab = ({
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-bold text-stone-800">{s.name}</span>
-                <div className="flex gap-2 mt-1">
+                <div className="flex gap-2 mt-1 flex-wrap items-center">
                   <span className="text-[10px] font-bold text-stone-500">{s.price} Kč</span>
                   <span className="text-[10px] text-stone-300">{s.duration} min</span>
+                  <span
+                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                      (s.category || 'STANDARD') === 'PMU'
+                        ? 'bg-[#B37E76]/20 text-[#8B5A52]'
+                        : 'bg-stone-200 text-stone-600'
+                    }`}
+                  >
+                    {(s.category || 'STANDARD') === 'PMU' ? 'PMU' : 'Kosmetika'}
+                  </span>
                 </div>
               </div>
             </div>

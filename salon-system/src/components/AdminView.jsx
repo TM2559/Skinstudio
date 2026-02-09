@@ -21,7 +21,7 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
   const [workStart, setWorkStart] = useState('09:00');
   const [workEnd, setWorkEnd] = useState('17:00');
   const [editingServiceId, setEditingServiceId] = useState(null);
-  const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60', description: '' });
+  const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60', description: '', category: 'STANDARD' });
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [remindersList, setRemindersList] = useState([]);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
@@ -107,6 +107,7 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
       price: parseInt(serviceForm.price) || 0,
       duration: parseInt(serviceForm.duration),
       description: (serviceForm.description || '').trim(),
+      category: serviceForm.category || 'STANDARD',
       order: editingServiceId ? undefined : services.length,
     };
     const updateData = { ...data };
@@ -119,7 +120,7 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
     } else {
       await addDoc(getCollectionPath('services'), data);
     }
-    setServiceForm({ name: '', price: '', duration: '60', description: '' });
+    setServiceForm({ name: '', price: '', duration: '60', description: '', category: 'STANDARD' });
   };
 
   const handleDeleteService = async (id) => {
@@ -129,7 +130,7 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
   const startEdit = (s) => {
     setActiveTab('settings');
     setEditingServiceId(s.id);
-    setServiceForm({ name: s.name, price: s.price, duration: s.duration, description: s.description || '' });
+    setServiceForm({ name: s.name, price: s.price, duration: s.duration, description: s.description || '', category: s.category || 'STANDARD' });
     const links = serviceAddonLinks
       .filter((l) => l.main_service_id === s.id)
       .map((l) => ({
