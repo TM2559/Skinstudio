@@ -134,28 +134,34 @@
     flex-shrink: 0;
   }
 
-  /* Proměny karusel – pagination tečky (minimalistické) */
+  /* Proměny karusel – pagination tečky (minimalistické), vždy vidět i na mobilu */
   .carousel-dots {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 8px;
     margin-top: 16px;
+    padding-bottom: 8px;
+    min-height: 24px;
   }
-  .dot {
+  .carousel-dots .dot {
     width: 8px;
     height: 8px;
+    min-width: 8px;
+    min-height: 8px;
     border-radius: 50%;
     background-color: #e0e0e0;
     transition: background-color 0.3s;
     padding: 0;
     border: none;
     cursor: pointer;
+    flex-shrink: 0;
   }
-  .dot:hover {
+  .carousel-dots .dot:hover {
     background-color: #b0b0b0;
   }
-  .dot-active,
-  .dot.dot-active {
+  .carousel-dots .dot-active,
+  .carousel-dots .dot.dot-active {
     background-color: #1a1a1a;
   }
 

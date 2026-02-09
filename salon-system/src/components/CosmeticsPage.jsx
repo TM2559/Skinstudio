@@ -182,21 +182,22 @@ export default function CosmeticsPage({ services = [] }) {
                     </div>
                   ))}
                 </div>
-                {transformations.length > 1 && (
-                  <div className="carousel-dots mt-4 flex justify-center gap-2 md:hidden">
+                {transformations.length >= 1 && (
+                  <div className="carousel-dots" role="tablist" aria-label="Proměny">
                     {transformations.map((_, i) => (
                       <button
                         key={i}
                         type="button"
+                        role="tab"
                         aria-label={`Proměna ${i + 1}`}
-                        aria-current={promenyActiveIndex === i ? 'true' : undefined}
+                        aria-selected={promenyActiveIndex === i}
                         onClick={() => {
                           const el = promenyCarouselRef.current;
                           if (!el) return;
                           const itemWidth = el.offsetWidth * 0.85 + 16;
                           el.scrollTo({ left: i * itemWidth, behavior: 'smooth' });
                         }}
-                        className={`dot h-2 w-2 rounded-full transition-colors duration-300 ${promenyActiveIndex === i ? 'dot-active' : ''}`}
+                        className={`dot ${promenyActiveIndex === i ? 'dot-active' : ''}`}
                       />
                     ))}
                   </div>
