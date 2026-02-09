@@ -139,11 +139,11 @@ export default function CosmeticsPage({ services = [] }) {
           {transformations.length > 0 ? (
             <>
               <LazySection rootMargin="240px">
-                <div className="flex md:grid md:grid-cols-1 lg:grid-cols-2 overflow-x-auto snap-x snap-mandatory md:overflow-visible gap-4 md:gap-10 md:gap-y-12 px-4 pb-8 md:pb-0 -mx-4 md:mx-0 scrollbar-hide">
+                <div className="mobile-carousel md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-4 md:gap-10 md:gap-y-12 px-4 pb-8 md:pb-0 -mx-4 md:mx-0">
                   {transformations.map((item) => (
                     <div
                       key={item.id}
-                      className="min-w-[90vw] md:min-w-0 shrink-0 md:shrink snap-center space-y-3"
+                      className="mobile-carousel-item md:min-w-0 md:shrink-0 md:flex-none md:w-auto space-y-3"
                     >
                       <ComparisonSlider
                         beforeImage={item.imageBeforeUrl}

@@ -252,7 +252,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
         {/* Krok 2: Datum */}
         <div className={!selectedService ? 'opacity-20 pointer-events-none' : ''}>
           <h2 className={`text-[10px] font-bold uppercase tracking-widest mb-6 border-b pb-2 ${isDark ? 'text-stone-300 border-stone-800' : 'text-stone-500 border-stone-100'}`}>2. Termín</h2>
-          <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
+          <div className="mobile-carousel-strip flex gap-3 pb-4">
             {clientDates.length === 0 && <p className={`text-xs ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>Momentálně nejsou vypsány žádné termíny.</p>}
             {clientDates.map(d => {
               const key = Utils.formatDateKey(d);
@@ -262,7 +262,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
                   key={key}
                   type="button"
                   onClick={() => { setSelectedDateStr(key); setSelectedTime(null); }}
-                  className={`flex-shrink-0 flex flex-col items-center justify-center w-16 h-24 rounded-xl border transition-all shadow-sm ${
+                  className={`mobile-carousel-strip-item flex flex-col items-center justify-center w-16 h-24 rounded-xl border transition-all shadow-sm ${
                     isDark
                       ? isActive ? 'bg-[#B37E76]/90 text-white border-[#D49A91]/60' : 'bg-stone-900 text-stone-300 border-stone-800 hover:border-stone-700'
                       : isActive ? 'text-white border-[var(--skin-gold-dark)]' : 'bg-white text-stone-500 border-gray-100'
