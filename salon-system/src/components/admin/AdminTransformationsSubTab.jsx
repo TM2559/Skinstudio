@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { addDoc, deleteDoc, query, where, onSnapshot } from 'firebase/firestore';
+import { addDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { Upload, Trash2, ImageIcon } from 'lucide-react';
 import { storage, getCollectionPath, getDocPath } from '../../firebaseConfig';
 import { COSMETICS_CATEGORY, PMU_CATEGORY, TRANSFORMATIONS_COLLECTION, STORAGE_TRANSFORMATIONS_PREFIX } from '../../constants/cosmetics';
@@ -19,19 +19,23 @@ export default function AdminTransformationsSubTab() {
   const [itemsPmu, setItemsPmu] = useState([]);
 
   const colRef = getCollectionPath(TRANSFORMATIONS_COLLECTION);
-  const qCosmetics = query(colRef, where('category', '==', COSMETICS_CATEGORY));
-  const qPmu = query(colRef, where('category', '==', PMU_CATEGORY));
 
   useEffect(() => {
-    const unsubC = onSnapshot(qCosmetics, (snap) => {
-      setItemsCosmetics(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      setLoading(false);
-    }, (err) => { console.error(err); setError('Nepodařilo se načíst proměny.'); setLoading(false); });
-    const unsubP = onSnapshot(qPmu, (snap) => {
-      setItemsPmu(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      setLoading(false);
-    }, (err) => { console.error(err); setError('Nepodařilo se načíst proměny.'); setLoading(false); });
-    return () => { unsubC(); unsubP(); };
+    const unsub = onSnapshot(
+      colRef,
+      (snap) => {
+        const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setItemsCosmetics(all.filter((item) => (item.category || COSMETICS_CATEGORY) === COSMETICS_CATEGORY));
+        setItemsPmu(all.filter((item) => item.category === PMU_CATEGORY));
+        setLoading(false);
+      },
+      (err) => {
+        console.error(err);
+        setError('Nepodařilo se načíst proměny.');
+        setLoading(false);
+      }
+    );
+    return () => unsub();
   }, []);
 
   const items = useMemo(() => {
