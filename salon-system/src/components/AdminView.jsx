@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package, Image as ImageIcon } from 'lucide-react';
+import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package, Image as ImageIcon, Scissors } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { Utils } from '../utils/helpers';
 import { getCollectionPath, getDocPath, EMAILJS_CONFIG } from '../firebaseConfig';
 
 import AdminBookingsTab from './admin/AdminBookingsTab';
 import AdminHistoryTab from './admin/AdminHistoryTab';
-import AdminSettingsTab from './admin/AdminSettingsTab';
+import AdminShiftsTab from './admin/AdminShiftsTab';
+import AdminServicesTab from './admin/AdminServicesTab';
 import AdminAddonsTab from './admin/AdminAddonsTab';
 import AdminInstagramTab from './admin/AdminInstagramTab';
 import AdminPhotosTab from './admin/AdminPhotosTab';
@@ -14,7 +15,7 @@ import ManualBookingModal from './admin/ManualBookingModal';
 import RemindersModal from './admin/RemindersModal';
 import OrderDetailModal from './admin/OrderDetailModal';
 
-const AdminView = ({ services, schedule, reservations, addons = [], serviceAddonLinks = [], onLogout }) => {
+const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons = [], serviceAddonLinks = [], onLogout }) => {
   const [activeTab, setActiveTab] = useState('bookings');
   const [searchTerm, setSearchTerm] = useState('');
   const [adminDateInput, setAdminDateInput] = useState(Utils.getLocalISODate());
@@ -82,6 +83,28 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
       const newP = periods.filter((_, i) => i !== index);
       const ref = getDocPath('schedule', currentDayKey);
       newP.length === 0 ? await deleteDoc(ref) : await setDoc(ref, { periods: newP });
+    }
+  };
+
+  const handleSaveDay = async (dateKey, type, periodsToSave) => {
+    const scheduleRef = getDocPath('schedule', dateKey);
+    const schedulePmuRef = getDocPath('schedule_pmu', dateKey);
+    if (type === 'closed') {
+      await Promise.all([deleteDoc(scheduleRef).catch(() => {}), deleteDoc(schedulePmuRef).catch(() => {})]);
+    } else if (type === 'kosmetika') {
+      if (periodsToSave.length > 0) {
+        await setDoc(scheduleRef, { periods: periodsToSave });
+      } else {
+        await deleteDoc(scheduleRef).catch(() => {});
+      }
+      await deleteDoc(schedulePmuRef).catch(() => {});
+    } else if (type === 'pmu') {
+      if (periodsToSave.length > 0) {
+        await setDoc(schedulePmuRef, { periods: periodsToSave });
+      } else {
+        await deleteDoc(schedulePmuRef).catch(() => {});
+      }
+      await deleteDoc(scheduleRef).catch(() => {});
     }
   };
 
@@ -337,12 +360,21 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
           </button>
           <button
             onClick={() => {
-              setActiveTab('settings');
+              setActiveTab('shifts');
               setSearchTerm('');
             }}
-            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'settings' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'shifts' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
           >
-            <Clock size={16} /> Směny a Služby
+            <Clock size={16} /> Směny
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('services');
+              setSearchTerm('');
+            }}
+            className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'services' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+          >
+            <Scissors size={16} /> Služby
           </button>
           <button
             onClick={() => {
@@ -408,16 +440,15 @@ const AdminView = ({ services, schedule, reservations, addons = [], serviceAddon
         {activeTab === 'addons' && <AdminAddonsTab addons={addons} />}
         {activeTab === 'instagram' && <AdminInstagramTab />}
         {activeTab === 'photos' && <AdminPhotosTab />}
-        {activeTab === 'settings' && (
-          <AdminSettingsTab
-            adminDateInput={adminDateInput}
-            setAdminDateInput={setAdminDateInput}
-            workStart={workStart}
-            setWorkStart={setWorkStart}
-            workEnd={workEnd}
-            setWorkEnd={setWorkEnd}
-            periods={periods}
-            onShift={handleShift}
+        {activeTab === 'shifts' && (
+          <AdminShiftsTab
+            schedule={schedule}
+            schedulePmu={schedulePmu}
+            onSaveDay={handleSaveDay}
+          />
+        )}
+        {activeTab === 'services' && (
+          <AdminServicesTab
             services={services}
             editingServiceId={editingServiceId}
             serviceForm={serviceForm}

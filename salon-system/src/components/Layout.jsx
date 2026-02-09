@@ -16,7 +16,7 @@ const getNav = () => {
 };
 const NAV = getNav();
 
-export default function Layout({ children }) {
+export default function Layout({ children, setView }) {
   const location = useLocation();
   const isHome = location.pathname === '/';
   const [menuOpen, setMenuOpen] = useState(false);
@@ -106,6 +106,7 @@ export default function Layout({ children }) {
                   key={item.label}
                   to={item.to}
                   className={item.cta ? ctaClass : linkClass}
+                  onClick={item.to === '/rezervace' ? () => setView?.('customer') : undefined}
                 >
                   {item.label}
                 </Link>
@@ -182,7 +183,10 @@ export default function Layout({ children }) {
                   key={item.label}
                   to={item.to}
                   className={item.cta ? `inline-flex ${ctaClass} justify-center my-1` : `py-3 text-sm font-semibold uppercase tracking-widest text-stone-600 hover:text-[var(--skin-gold-dark)] transition-colors block`}
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    if (item.to === '/rezervace') setView?.('customer');
+                  }}
                 >
                   {item.label}
                 </Link>

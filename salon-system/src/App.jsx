@@ -171,7 +171,7 @@ export default function App() {
       <Route
         path="/rezervace"
         element={
-          <Layout>
+          <Layout setView={setView}>
             <ReservationApp
               loading={false}
               view={view}
@@ -184,6 +184,7 @@ export default function App() {
               handleLogin={handleLogin}
               services={servicesWithAddons}
               schedule={schedule}
+              schedulePmu={schedulePmu}
               reservations={reservations}
               addons={addons}
               serviceAddonLinks={serviceAddonLinks}

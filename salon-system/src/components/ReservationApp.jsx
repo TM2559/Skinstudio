@@ -16,6 +16,7 @@ export default function ReservationApp({
   handleLogin,
   services,
   schedule,
+  schedulePmu = {},
   reservations,
   addons = [],
   serviceAddonLinks = [],
@@ -125,6 +126,7 @@ export default function ReservationApp({
             <AdminView
               services={services}
               schedule={schedule}
+              schedulePmu={schedulePmu}
               reservations={reservations}
               addons={addons}
               serviceAddonLinks={serviceAddonLinks}

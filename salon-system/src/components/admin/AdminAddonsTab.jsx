@@ -69,7 +69,7 @@ const AdminAddonsTab = ({ addons, onAddonsChange }) => {
         <Package size={18} className="text-stone-400" /> Správa add-onů
       </h2>
       <p className="text-xs text-stone-500 mb-6">
-        Add-ony jsou doplňkové služby (např. barvení obočí, maska). Cenu a doporučení pro konkrétní hlavní službu nastavíte v sekci „Směny a Služby“ u dané procedury.
+        Add-ony jsou doplňkové služby (např. barvení obočí, maska). Cenu a doporučení pro konkrétní hlavní službu nastavíte v záložce „Služby“ u dané procedury.
       </p>
 
       <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-4 shadow-sm mb-6">

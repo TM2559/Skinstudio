@@ -19,7 +19,34 @@ export const Utils = {
   },
   
   formatDateDisplay: (dateKey) => dateKey ? dateKey.replace(/-/g, '/') : "",
-  
+
+  /** dateKey DD-MM-YYYY → krátký den v týdnu (Po, Út, …) */
+  getDayOfWeekShort: (dateKey) => {
+    if (!dateKey) return '';
+    const [d, m, y] = dateKey.split('-').map(Number);
+    const day = new Date(y, m - 1, d).getDay();
+    const labels = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
+    return labels[day] || '';
+  },
+
+  /** dateKey → "Po 02/02" pro zobrazení v seznamu směn */
+  formatDateWithDayShort: (dateKey) => {
+    if (!dateKey) return '';
+    const [d, m, y] = dateKey.split('-').map(Number);
+    const dayIdx = new Date(y, m - 1, d).getDay();
+    const labels = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
+    return `${labels[dayIdx] || ''} ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
+  },
+
+  /** dateKey → "Úterý 03/02" pro nadpis editace */
+  formatDateWithDayLong: (dateKey) => {
+    if (!dateKey) return '';
+    const [d, m, y] = dateKey.split('-').map(Number);
+    const dayIdx = new Date(y, m - 1, d).getDay();
+    const labels = ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'];
+    return `${labels[dayIdx] || ''} ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
+  },
+
   getDateKeyFromISO: (isoDate) => {
     if (!isoDate) return "";
     const [y, m, d] = isoDate.split('-').map(Number);
