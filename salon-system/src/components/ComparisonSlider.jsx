@@ -1,9 +1,11 @@
 import React from 'react';
 import { ReactCompareSlider, ReactCompareSliderImage } from 'react-compare-slider';
+import { ImageIcon } from 'lucide-react';
 
 /**
  * Before/After comparison slider.
  * theme: 'dark' = PMU (gold handle), 'light' = Cosmetics (white handle, soft shadow).
+ * When image URLs are missing, shows a placeholder instead of broken images.
  *
  * @typedef {Object} ComparisonProps
  * @property {string} beforeImage - URL of the "before" image
@@ -12,8 +14,38 @@ import { ReactCompareSlider, ReactCompareSliderImage } from 'react-compare-slide
  * @property {'dark'|'light'} [theme] - 'dark' (default) or 'light' for cosmetics/medical
  */
 
+function PlaceholderBlock({ theme }) {
+  const isLight = theme === 'light';
+  return (
+    <div
+      className={`w-full aspect-[4/5] max-h-[65vh] md:max-h-[600px] min-h-[280px] flex items-center justify-center rounded-xl ${
+        isLight ? 'bg-stone-100 text-stone-400' : 'bg-stone-800/50 text-stone-500'
+      }`}
+    >
+      <div className="flex flex-col items-center gap-2">
+        <ImageIcon size={40} strokeWidth={1.5} />
+        <span className="text-sm">Obrázek není k dispozici</span>
+      </div>
+    </div>
+  );
+}
+
 /** @type {React.FC<ComparisonProps>} */
 export default function ComparisonSlider({ beforeImage, afterImage, altText, theme = 'dark' }) {
+  const hasImages = beforeImage && afterImage && beforeImage.trim() && afterImage.trim();
+
+  if (!hasImages) {
+    return (
+      <div
+        className={`comparison-slider-contain rounded-xl overflow-hidden w-full flex flex-col items-stretch ${
+          theme === 'light' ? 'border border-stone-200 bg-stone-50' : 'border border-white/10 bg-[#0F0F0F]'
+        }`}
+      >
+        <PlaceholderBlock theme={theme} />
+      </div>
+    );
+  }
+
   const isLight = theme === 'light';
   const handle = (
     <div
@@ -54,14 +86,14 @@ export default function ComparisonSlider({ beforeImage, afterImage, altText, the
           itemOne={
             <ReactCompareSliderImage
               src={beforeImage}
-              alt={`${altText} – před`}
+              alt="Před"
               style={imageStyle}
             />
           }
           itemTwo={
             <ReactCompareSliderImage
               src={afterImage}
-              alt={`${altText} – po`}
+              alt="Po"
               style={imageStyle}
             />
           }
