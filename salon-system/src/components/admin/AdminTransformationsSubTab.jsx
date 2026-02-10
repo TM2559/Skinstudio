@@ -8,7 +8,7 @@ import CategoryToggle from './CategoryToggle';
 
 // Client-side image optimization before upload to Storage.
 // Keeps quality high, but limits max dimension so loading is much faster.
-async function createOptimizedImageFile(file, maxSize = 1600, quality = 0.85) {
+export async function createOptimizedImageFile(file, maxSize = 1600, quality = 0.85) {
   if (!file) return file;
 
   return new Promise((resolve, reject) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
@@ -19,6 +19,8 @@ const DEMO_SLIDER = {
 export default function PMUPage({ services = [], schedule = {}, reservations = [] }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sliders, setSliders] = useState([]);
+  const pmuCarouselRef = useRef(null);
+  const [pmuActiveIndex, setPmuActiveIndex] = useState(0);
 
   const pmuServices = useMemo(
     () =>
@@ -38,6 +40,21 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
     });
     return () => unsub();
   }, []);
+
+  // Sync pagination dots with horizontal scroll position (mobile carousel)
+  useEffect(() => {
+    const el = pmuCarouselRef.current;
+    if (!el || displaySliders.length <= 1) return;
+    const onScroll = () => {
+      const itemWidth = el.offsetWidth * 0.85 + 16;
+      const index = Math.round(el.scrollLeft / itemWidth);
+      const clamped = Math.min(Math.max(0, index), displaySliders.length - 1);
+      setPmuActiveIndex(clamped);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [sliders.length]);
 
   const scrollTo = (id) => {
     const el = document.getElementById(id);
@@ -206,9 +223,15 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             <h2 className="font-display text-2xl sm:text-3xl font-semibold text-white text-center mb-16">
               Portfolio
             </h2>
-            <div className={`grid gap-8 ${displaySliders.length > 0 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 max-w-2xl mx-auto'}`}>
+            <div
+              ref={pmuCarouselRef}
+              className={`mobile-carousel carousel-track md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-8 md:gap-10 md:gap-y-12 -mx-4 px-4 md:mx-0 md:px-0`}
+            >
               {displaySliders.map((item, index) => (
-                <div key={index}>
+                <div
+                  key={index}
+                  className="mobile-carousel-item md:min-w-0 md:shrink-0 md:flex-none md:w-auto space-y-4"
+                >
                   <ComparisonSlider
                     beforeImage={item.beforeImage}
                     afterImage={item.afterImage}
@@ -223,6 +246,26 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                 </div>
               ))}
             </div>
+            {displaySliders.length >= 1 && (
+              <div className="carousel-dots" role="tablist" aria-label="PMU proměny">
+                {displaySliders.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    role="tab"
+                    aria-label={`Proměna ${i + 1}`}
+                    aria-selected={pmuActiveIndex === i}
+                    onClick={() => {
+                      const el = pmuCarouselRef.current;
+                      if (!el) return;
+                      const itemWidth = el.offsetWidth * 0.85 + 16;
+                      el.scrollTo({ left: i * itemWidth, behavior: 'smooth' });
+                    }}
+                    className={`dot ${pmuActiveIndex === i ? 'dot-active' : ''}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
