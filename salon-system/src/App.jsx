@@ -9,6 +9,7 @@ import Layout from './components/Layout';
 import ReservationApp from './components/ReservationApp';
 import CosmeticsPage from './components/CosmeticsPage';
 import PMUPage from './components/PMUPage';
+import { filterCosmeticsServices } from './utils/helpers';
 import { auth, getCollectionPath } from './firebaseConfig';
 
 export default function App() {
@@ -130,6 +131,12 @@ export default function App() {
     });
   }, [services, addons, serviceAddonLinks]);
 
+  /** Služby s addony pouze pro kosmetiku (STANDARD) – na /rezervace jen kosmetika, ne PMU. */
+  const servicesStandardWithAddons = useMemo(
+    () => filterCosmeticsServices(servicesWithAddons),
+    [servicesWithAddons]
+  );
+
   const handleLogin = (e) => {
     e.preventDefault();
     if (adminPassword === 'salon123') {
@@ -190,7 +197,7 @@ export default function App() {
               setLoginError={setLoginError}
               handleLogoClick={handleLogoClick}
               handleLogin={handleLogin}
-              services={servicesWithAddons}
+              services={servicesStandardWithAddons}
               schedule={schedule}
               schedulePmu={schedulePmu}
               reservations={reservations}

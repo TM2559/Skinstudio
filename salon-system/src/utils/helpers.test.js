@@ -1,9 +1,48 @@
 /**
  * Unit testy pro src/utils/helpers.js
- * Testují převody času, formátování dat a logiku volných slotů (getSmartSlots).
+ * Testují převody času, formátování dat, filtraci služeb (kosmetika vs PMU) a logiku volných slotů (getSmartSlots).
  */
 import { describe, it, expect } from 'vitest';
-import { Utils } from './helpers';
+import { filterCosmeticsServices, Utils } from './helpers';
+
+describe('filterCosmeticsServices', () => {
+  // Na /rezervace (kosmetika) se smí zobrazit jen STANDARD – PMU služby se tam nesmí dostat.
+  it('returns only STANDARD (cosmetics) services, excludes PMU', () => {
+    const mixed = [
+      { id: 'c1', name: 'Čištění pleti', category: 'STANDARD' },
+      { id: 'p1', name: 'PMU obočí', category: 'PMU' },
+      { id: 'c2', name: 'Masáž', category: 'STANDARD' },
+    ];
+    const result = filterCosmeticsServices(mixed);
+    expect(result).toHaveLength(2);
+    expect(result.map((s) => s.id)).toEqual(['c1', 'c2']);
+    expect(result.some((s) => s.category === 'PMU')).toBe(false);
+  });
+
+  it('treats missing category as STANDARD (cosmetics)', () => {
+    const withMissing = [
+      { id: 'a', name: 'Služba bez category', category: undefined },
+      { id: 'b', name: 'PMU', category: 'PMU' },
+    ];
+    const result = filterCosmeticsServices(withMissing);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('a');
+  });
+
+  it('returns empty array for empty or non-array input', () => {
+    expect(filterCosmeticsServices([])).toEqual([]);
+    expect(filterCosmeticsServices(null)).toEqual([]);
+    expect(filterCosmeticsServices(undefined)).toEqual([]);
+  });
+
+  it('returns all when all are STANDARD', () => {
+    const all = [
+      { id: '1', name: 'A', category: 'STANDARD' },
+      { id: '2', name: 'B' },
+    ];
+    expect(filterCosmeticsServices(all)).toHaveLength(2);
+  });
+});
 
 describe('Utils Helper Functions', () => {
   // --- Čas: převod řetězec ↔ minuty ---

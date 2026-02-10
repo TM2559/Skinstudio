@@ -1,9 +1,10 @@
 /**
  * Testy komponenty ReservationApp – kontejner rezervací (customer / login / admin).
- * Testuje: výchozí view, přihlašovací formulář, widgetOnly režim. React Router je mockován.
+ * Testuje: výchozí view, přihlašovací formulář, widgetOnly režim, že na rezervaci (kosmetika) neproniknou PMU služby.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { filterCosmeticsServices } from '../utils/helpers';
 import ReservationApp from './ReservationApp';
 
 vi.mock('react-router-dom', () => ({
@@ -95,5 +96,24 @@ describe('ReservationApp', () => {
   it('renders CustomerView with services in widgetOnly', () => {
     renderApp({ ...defaultProps, widgetOnly: true });
     expect(screen.getByText('Masáž')).toBeInTheDocument();
+  });
+
+  // Rezervace (kosmetika): když se předají jen služby filtrované na STANDARD, PMU služba se nezobrazí.
+  it('does not show PMU services when passed only cosmetics (STANDARD) services', () => {
+    const mixedServices = [
+      { id: 'c1', name: 'Čištění pleti', category: 'STANDARD', duration: 30, price: 500 },
+      { id: 'p1', name: 'PMU obočí', category: 'PMU', duration: 120, price: 3000 },
+    ];
+    const cosmeticsOnly = filterCosmeticsServices(mixedServices);
+    expect(cosmeticsOnly).toHaveLength(1);
+    expect(cosmeticsOnly[0].name).toBe('Čištění pleti');
+
+    renderApp({
+      ...defaultProps,
+      services: cosmeticsOnly,
+      schedule: defaultSchedule,
+    });
+    expect(screen.getByText('Čištění pleti')).toBeInTheDocument();
+    expect(screen.queryByText('PMU obočí')).not.toBeInTheDocument();
   });
 });

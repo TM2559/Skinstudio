@@ -918,7 +918,6 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
           )}
 
           <div className="grid grid-cols-3 gap-3">
-            {availableSlots.length === 0 && <p className="col-span-3 text-xs text-stone-400">Pro tento den už není volno.</p>}
             {availableSlots.map(t => (
               <button 
                 key={t} 
@@ -929,6 +928,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess }) =>
               </button>
             ))}
           </div>
+          {/* Permanentní CTA: „Nenašli jste vhodný termín?…“ + tel. vždy pod sekcí 3. Čas */}
         </div>
       </div>
 

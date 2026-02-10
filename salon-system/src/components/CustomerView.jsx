@@ -66,6 +66,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
     return map;
   }, [clientDates, selectedService, schedule, reservations]);
 
+  // --- ZMĚNA: Použití chytré logiky (getSmartSlots) ---
   const availableSlots = useMemo(() => {
     if (!activeDateStr || !selectedService) return [];
     const dayData = schedule[activeDateStr];
@@ -313,7 +314,6 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
           {availableSlots.length > 0 && <p className="text-[10px] text-stone-400 mb-3 italic" />}
 
           <div className="grid grid-cols-3 gap-3">
-            {availableSlots.length === 0 && <p className={`col-span-3 text-xs ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>Pro tento den už není volno.</p>}
             {availableSlots.map(t => {
               const isTimeSelected = selectedTime === t;
               return (
@@ -332,6 +332,20 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
                 </button>
               );
             })}
+          </div>
+
+          {/* Permanentní kontaktní CTA (PMU i Kosmetika – vždy viditelný, bez rámečku) */}
+          <div style={{ marginTop: '30px' }}>
+            <p className="mb-1.5 text-[14px]" style={{ color: '#cccccc' }}>
+              Nenašli jste vhodný termín? Zavolejte a najdeme řešení společně.
+            </p>
+            <a
+              href="tel:+420724875558"
+              className="text-[#a88a7d] hover:underline hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-[#a88a7d]/50 rounded"
+              style={{ fontSize: '16px', fontWeight: 600 }}
+            >
+              +420 724 875 558
+            </a>
           </div>
         </div>
       </div>
