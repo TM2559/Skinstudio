@@ -114,6 +114,10 @@
     .mobile-carousel [data-rcs="root"] {
       touch-action: pan-x !important;
     }
+    /* Handle před/po: tah musí jít na slider, ne na karusel */
+    .mobile-carousel [data-rcs="handle-container"] {
+      touch-action: none !important;
+    }
     /* Celá oblast pod obrázky (text + padding) má být swipeovatelná */
     .mobile-carousel-item .mobile-carousel-swipe-zone {
       touch-action: pan-x;
