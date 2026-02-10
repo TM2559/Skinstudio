@@ -232,7 +232,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
               {displaySliders.map((item, index) => (
                 <div
                   key={index}
-                  className="mobile-carousel-item md:min-w-0 md:shrink-0 md:flex-none md:w-auto space-y-4"
+                  className="mobile-carousel-item md:min-w-0 md:shrink-0 md:flex-none md:w-auto flex flex-col md:block space-y-4"
                 >
                   <ComparisonSlider
                     beforeImage={item.beforeImage}
@@ -245,6 +245,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                       Demo – vlastní před/po přidáte v adminu v záložce Fotografie → Proměny (kategorie PMU).
                     </p>
                   )}
+                  <div className="mobile-carousel-swipe-zone md:hidden pb-2 flex-shrink-0" aria-hidden />
                 </div>
               ))}
             </div>

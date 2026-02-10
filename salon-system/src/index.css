@@ -110,6 +110,15 @@
       min-width: 0;
       touch-action: pan-x;
     }
+    /* Knihovna dává [data-rcs=root] touch-action: none – přepis, ať jde swipe na karusel */
+    .mobile-carousel [data-rcs="root"] {
+      touch-action: pan-x !important;
+    }
+    /* Celá oblast pod obrázky (text + padding) má být swipeovatelná */
+    .mobile-carousel-item .mobile-carousel-swipe-zone {
+      touch-action: pan-x;
+      min-height: 48px;
+    }
   }
 
   /* Horizontal strip (tabs, date chips) – snap + touch, no 85% width */

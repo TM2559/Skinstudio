@@ -99,7 +99,7 @@ export default function CosmeticsPage({ services = [] }) {
           <img
             src="/lucie-portrait.jpg"
             alt="Lucie Metelková – Skin Studio"
-            className="w-full h-full object-cover object-[50%_35%]"
+            className="w-full h-full object-cover object-[50%_75%]"
             loading="eager"
             decoding="async"
           />
@@ -156,9 +156,9 @@ export default function CosmeticsPage({ services = [] }) {
                   {transformations.map((item) => (
                     <div
                       key={item.id}
-                      className="mobile-carousel-item md:min-w-0 md:shrink-0 md:flex-none md:w-auto space-y-3"
+                      className="mobile-carousel-item md:min-w-0 md:shrink-0 md:flex-none md:w-auto flex flex-col md:block"
                     >
-                      <div className="space-y-2">
+                      <div className="order-2 md:order-1 space-y-2">
                         <h3 className="font-display font-semibold text-lg text-stone-800">
                           {item.title || 'Před a po'}
                         </h3>
@@ -168,12 +168,15 @@ export default function CosmeticsPage({ services = [] }) {
                           </p>
                         )}
                       </div>
-                      <ComparisonSlider
-                        beforeImage={item.imageBeforeUrl}
-                        afterImage={item.imageAfterUrl}
-                        altText={item.title || 'Před a po'}
-                        theme="light"
-                      />
+                      <div className="order-1 md:order-2">
+                        <ComparisonSlider
+                          beforeImage={item.imageBeforeUrl}
+                          afterImage={item.imageAfterUrl}
+                          altText={item.title || 'Před a po'}
+                          theme="light"
+                        />
+                      </div>
+                      <div className="order-3 mobile-carousel-swipe-zone md:hidden pb-2" aria-hidden />
                     </div>
                   ))}
                 </div>
