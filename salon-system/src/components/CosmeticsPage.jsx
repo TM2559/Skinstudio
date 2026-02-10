@@ -99,7 +99,7 @@ export default function CosmeticsPage({ services = [] }) {
           <img
             src="/lucie-portrait.jpg"
             alt="Lucie Metelková – Skin Studio"
-            className="w-full h-full object-cover object-[50%_75%]"
+            className="w-full h-full object-cover object-[50%_65%]"
             loading="eager"
             decoding="async"
           />

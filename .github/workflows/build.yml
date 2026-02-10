@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+  workflow_dispatch:  # Ruční spuštění v záložce Actions
 jobs:
   build:
     runs-on: ubuntu-latest
