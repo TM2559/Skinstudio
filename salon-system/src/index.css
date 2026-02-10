@@ -110,8 +110,14 @@
       min-width: 0;
       touch-action: pan-x;
     }
+    /* Aby swipe šel na karusel: obrázek nechytá touch, jen handle zůstane klikací */
     .mobile-carousel .comparison-slider-contain {
       touch-action: pan-x;
+      pointer-events: none;
+    }
+    .mobile-carousel .comparison-slider-contain .comparison-slider-handle,
+    .mobile-carousel .comparison-slider-contain [data-rcs="handle-container"] {
+      pointer-events: auto;
     }
   }
 
