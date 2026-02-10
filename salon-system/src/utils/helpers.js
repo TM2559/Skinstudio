@@ -1,3 +1,9 @@
+/** Služby s category === 'STANDARD' (nebo bez category) = kosmetika. PMU má category 'PMU'. */
+export function filterCosmeticsServices(services) {
+  if (!Array.isArray(services)) return [];
+  return services.filter((s) => (s.category || 'STANDARD') === 'STANDARD');
+}
+
 export const Utils = {
   timeToMinutes: (timeStr) => {
     if (!timeStr) return 0;
