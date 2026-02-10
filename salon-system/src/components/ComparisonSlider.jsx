@@ -1,6 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ReactCompareSlider, ReactCompareSliderImage } from 'react-compare-slider';
 import { ImageIcon } from 'lucide-react';
+
+const MOBILE_BREAKPOINT = 767;
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= MOBILE_BREAKPOINT : false
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
+    const update = () => setIsMobile(mql.matches);
+    mql.addEventListener('change', update);
+    update();
+    return () => mql.removeEventListener('change', update);
+  }, []);
+  return isMobile;
+}
 
 /**
  * Before/After comparison slider.
@@ -32,6 +48,7 @@ function PlaceholderBlock({ theme }) {
 
 /** @type {React.FC<ComparisonProps>} */
 export default function ComparisonSlider({ beforeImage, afterImage, altText, theme = 'dark' }) {
+  const isMobile = useIsMobile();
   const hasImages = beforeImage && afterImage && beforeImage.trim() && afterImage.trim();
 
   if (!hasImages) {
@@ -98,6 +115,7 @@ export default function ComparisonSlider({ beforeImage, afterImage, altText, the
             />
           }
           handle={handle}
+          onlyHandleDraggable={isMobile}
           className="!absolute inset-0 w-full h-full"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         />

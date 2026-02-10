@@ -85,8 +85,8 @@ export default function CosmeticsPage({ services = [] }) {
           <p className="mt-4 font-signature text-2xl sm:text-3xl text-stone-600 -rotate-2">
             S láskou k detailu, Lucie
           </p>
-          <p className="mt-6 text-gray-800 max-w-prose" style={{ lineHeight: 1.6 }}>
-            Odborná péče o pleť s individuálním přístupem v Uherském Brodě. Svěřte svou pleť do rukou profesionálky v příjemném a klidném prostředí.
+          <p className="mt-6 text-gray-600 max-w-prose" style={{ lineHeight: 1.6 }}>
+            Vytvořila jsem místo, kde se čas točí jen kolem vás. Mým cílem není vás měnit, ale vyzdvihnout to nejkrásnější ve vás.
           </p>
           <Link
             to="/rezervace"
@@ -99,7 +99,7 @@ export default function CosmeticsPage({ services = [] }) {
           <img
             src="/lucie-portrait.jpg"
             alt="Lucie Metelková – Skin Studio"
-            className="w-full h-full object-cover object-top"
+            className="w-full h-full object-cover object-[50%_35%]"
             loading="eager"
             decoding="async"
           />
