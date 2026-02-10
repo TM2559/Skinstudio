@@ -81,38 +81,38 @@
     display: none;
   }
 
-  /* Mobile Carousel – peek, scroll-snap, touch-friendly (no JS) */
-  .mobile-carousel {
-    display: flex;
-    overflow-x: scroll;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x;
-    gap: 1rem;
-    padding-right: 20px;
-    padding-bottom: 1rem;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    width: 100%;
-    min-width: 0;
-    /* iOS: vytvoří scroll vrstvu pro spolehlivější touch scroll */
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-  }
-  .mobile-carousel::-webkit-scrollbar {
-    display: none;
-  }
-  .mobile-carousel-item {
-    flex: 0 0 85%;
-    width: 85%;
-    scroll-snap-align: start;
-    min-width: 0;
-    touch-action: pan-x;
-  }
-  /* Před/po slider uvnitř karuselu – swipe má posouvat karusel, ne jen handle */
-  .mobile-carousel .comparison-slider-contain {
-    touch-action: pan-x;
+  /* Mobile Carousel – jen pod md, aby na mobilu vždy fungoval (redesign nesmí ho přepsat) */
+  @media (max-width: 767px) {
+    .mobile-carousel {
+      display: flex;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      gap: 1rem;
+      padding-right: 20px;
+      padding-bottom: 1rem;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      width: 100%;
+      min-width: 0;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+    }
+    .mobile-carousel::-webkit-scrollbar {
+      display: none;
+    }
+    .mobile-carousel-item {
+      flex: 0 0 85%;
+      width: 85%;
+      scroll-snap-align: start;
+      min-width: 0;
+      touch-action: pan-x;
+    }
+    .mobile-carousel .comparison-slider-contain {
+      touch-action: pan-x;
+    }
   }
 
   /* Horizontal strip (tabs, date chips) – snap + touch, no 85% width */

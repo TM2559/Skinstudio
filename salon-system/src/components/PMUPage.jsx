@@ -227,7 +227,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             </h2>
             <div
               ref={pmuCarouselRef}
-              className={`mobile-carousel carousel-track md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-8 md:gap-10 md:gap-y-12 -mx-4 px-4 md:mx-0 md:px-0`}
+              className="mobile-carousel flex overflow-x-auto md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-8 md:gap-10 md:gap-y-12 -mx-4 px-4 md:mx-0 md:px-0 min-h-[320px] md:min-h-0"
             >
               {displaySliders.map((item, index) => (
                 <div

@@ -151,7 +151,7 @@ export default function CosmeticsPage({ services = [] }) {
               <LazySection rootMargin="240px">
                 <div
                   ref={promenyCarouselRef}
-                  className="mobile-carousel carousel-track md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-4 md:gap-10 md:gap-y-12 px-4 pb-2 md:pb-0 -mx-4 md:mx-0"
+                  className="mobile-carousel flex overflow-x-auto md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-4 md:gap-10 md:gap-y-12 px-4 pb-2 md:pb-0 -mx-4 md:mx-0 min-h-[320px] md:min-h-0"
                 >
                   {transformations.map((item) => (
                     <div
