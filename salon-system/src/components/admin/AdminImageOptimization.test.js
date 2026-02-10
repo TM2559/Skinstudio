@@ -82,9 +82,16 @@ describe('createOptimizedImageFile', () => {
     expect(canvas.height).toBe(800); // 4000x2000 -> 1600x800 keeps 2:1 ratio
   });
 
-  it('returns original file when no DOM context is available', async () => {
-    // Force getContext to fail
-    dom.restore();
+  it('returns original file when getContext("2d") is null (no canvas context)', async () => {
+    // Keep Image mock so onload fires; only make canvas return no context
+    const originalCreateElement = document.createElement;
+    document.createElement = (tag) => {
+      if (tag === 'canvas') {
+        return { width: 0, height: 0, getContext: () => null };
+      }
+      return originalCreateElement.call(document, tag);
+    };
+
     const original = new File([new Uint8Array([1, 2, 3])], 'photo.jpg', {
       type: 'image/jpeg',
     });
