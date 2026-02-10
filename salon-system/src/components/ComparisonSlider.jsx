@@ -49,7 +49,7 @@ export default function ComparisonSlider({ beforeImage, afterImage, altText, the
   const isLight = theme === 'light';
   const handle = (
     <div
-      className={`comparison-slider-handle flex items-center justify-center w-8 h-8 rounded-full ${
+      className={`comparison-slider-handle flex items-center justify-center min-w-[44px] min-h-[44px] w-11 h-11 rounded-full touch-manipulation ${
         isLight
           ? 'bg-white/95 text-stone-500 border border-stone-200/80 shadow-sm'
           : 'bg-gradient-to-r from-[#B37E76] via-[#D49A91] to-[#B37E76] text-white border border-[#D49A91]/20 shadow-md ring-1 ring-white/20'

@@ -8,7 +8,7 @@ import { INSTAGRAM_URL } from '../firebaseConfig';
 import ComparisonSlider from './ComparisonSlider';
 import LazySection from './LazySection';
 
-const COSMETICS_BG = '#fdfbf7';
+const COSMETICS_BG = '#F9F8F6';
 
 /** Remove parenthetical meta-commentary from description text. */
 function cleanDescription(text) {
@@ -73,73 +73,66 @@ export default function CosmeticsPage({ services = [] }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: COSMETICS_BG }}>
-      {/* 1. Hero – Subtitle → Claim → Handwritten → CTA */}
-      <section className="pt-14 sm:pt-20 pb-12 sm:pb-16 px-4 text-center">
-        <div className="max-w-3xl mx-auto">
+      {/* 1. Hero – viewport-height grid, text left centered, image right; no scroll */}
+      <section className="grid grid-cols-1 md:grid-cols-2 grid-rows-[40vh_1fr] md:grid-rows-none h-screen max-h-[1080px] w-full overflow-hidden">
+        <div className="flex flex-col justify-center items-start px-8 md:px-24 h-full bg-[#F9F8F6] order-2 md:order-1 min-h-0">
           <p className="text-xs sm:text-sm font-sans uppercase tracking-[0.2em] text-stone-600 mb-3">
             SKIN STUDIO LUCIE METELKOVÉ
           </p>
-          <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-wide text-[var(--skin-charcoal)]">
+          <h1 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl leading-tight tracking-wide text-[var(--skin-charcoal)]">
             Vaše pleť, vaše sebevědomí.
           </h1>
-          <div className="flex flex-col items-center mt-4">
-            <p className="font-signature text-2xl sm:text-3xl text-stone-600 -rotate-2 mb-8">
-              S láskou k detailu, Lucie
-            </p>
-            <Link
-              to="/rezervace"
-              className="skin-accent inline-flex items-center justify-center px-8 py-4 font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm"
-            >
-              Objednat termín
-            </Link>
-          </div>
+          <p className="mt-4 font-signature text-2xl sm:text-3xl text-stone-600 -rotate-2">
+            S láskou k detailu, Lucie
+          </p>
+          <p className="mt-6 text-gray-800 max-w-prose" style={{ lineHeight: 1.6 }}>
+            Odborná péče o pleť s individuálním přístupem v Uherském Brodě. Svěřte svou pleť do rukou profesionálky v příjemném a klidném prostředí.
+          </p>
+          <Link
+            to="/rezervace"
+            className="skin-accent mt-8 inline-flex items-center justify-center px-8 py-4 font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm w-fit"
+          >
+            Objednat termín
+          </Link>
+        </div>
+        <div className="relative h-full w-full order-1 md:order-2 min-h-0">
+          <img
+            src="/lucie-portrait.jpg"
+            alt="Lucie Metelková – Skin Studio"
+            className="object-cover h-full w-full object-center"
+            loading="eager"
+            decoding="async"
+          />
         </div>
       </section>
 
-      {/* 2. Philosophy / About ("O studiu") – organic text on beige + portrait */}
+      {/* 2. Filozofie – text-only, centered, no duplicate portrait */}
       <section
         id="o-nas"
-        className="scroll-mt-20 py-28 px-4 sm:px-6"
+        className="scroll-mt-20 py-24 px-4 sm:px-6"
         style={{ backgroundColor: 'var(--skin-cream-dark)' }}
       >
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start">
-            {/* Left: text directly on beige, no card */}
-            <div className="order-2 md:order-1">
-              <h2 className="font-display text-2xl font-bold mb-6 text-stone-800 md:mb-8">
-                Filozofie
-              </h2>
-              <div className="body-text text-left text-stone-700 space-y-6 leading-relaxed">
-                <p>
-                  Jmenuji se Lucie Metelková a kosmetika je pro mě víc než jen práce – je to spojení odbornosti, relaxace a preciznosti. Kladu absolutní důraz na čistotu, špičkové postupy a bezpečí vaší pleti.
-                </p>
-                <p>
-                  V mém studiu v <strong className="font-semibold text-stone-800">Uherském Brodě</strong> nenajdete „pásovou výrobu“. Každá pleť je jedinečná, a proto je i každé mé ošetření 100% individuální. Ať už řešíme akné, vrásky, nebo jen toužíte po dokonalém obočí díky laminaci, mým cílem je, abyste odcházela nejen krásnější, ale i dokonale odpočatá.
-                </p>
-                <p>
-                  Zastavte se a dopřejte si svůj „Me Time“ okamžik v prostředí, kde se čas točí jen kolem vás.
-                </p>
-              </div>
-              <div className="flex justify-end mt-8">
-                <p
-                  className="font-signature text-4xl text-stone-800 -rotate-3 inline-block"
-                  aria-label="Lucie Metelková"
-                >
-                  Lucie
-                </p>
-              </div>
-            </div>
-            {/* Right: larger portrait on desktop, rounded + shadow on image only */}
-            <div className="order-1 md:order-2 flex justify-center md:justify-end w-full">
-              <img
-                src="/lucie-portrait.jpg"
-                alt="Lucie Metelková – Skin Studio"
-                className="w-full max-w-sm md:max-w-md aspect-[3/4] md:aspect-[2/3] object-cover rounded-2xl shadow-2xl"
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="font-display text-2xl font-bold mb-6 text-stone-800 md:mb-8">
+            Filozofie
+          </h2>
+          <div className="body-text text-stone-700 space-y-6 leading-relaxed">
+            <p>
+              Jmenuji se Lucie Metelková a kosmetika je pro mě víc než jen práce – je to spojení odbornosti, relaxace a preciznosti. Kladu absolutní důraz na čistotu, špičkové postupy a bezpečí vaší pleti.
+            </p>
+            <p>
+              V mém studiu v <strong className="font-semibold text-stone-800">Uherském Brodě</strong> nenajdete „pásovou výrobu“. Každá pleť je jedinečná, a proto je i každé mé ošetření 100% individuální. Ať už řešíme akné, vrásky, nebo jen toužíte po dokonalém obočí díky laminaci, mým cílem je, abyste odcházela nejen krásnější, ale i dokonale odpočatá.
+            </p>
+            <p>
+              Zastavte se a dopřejte si svůj „Me Time“ okamžik v prostředí, kde se čas točí jen kolem vás.
+            </p>
           </div>
+          <p
+            className="font-signature text-4xl text-stone-800 -rotate-3 inline-block mt-8"
+            aria-label="Lucie Metelková"
+          >
+            Lucie
+          </p>
         </div>
       </section>
 
@@ -165,20 +158,22 @@ export default function CosmeticsPage({ services = [] }) {
                       key={item.id}
                       className="mobile-carousel-item md:min-w-0 md:shrink-0 md:flex-none md:w-auto space-y-3"
                     >
+                      <div className="space-y-2">
+                        <h3 className="font-display font-semibold text-lg text-stone-800">
+                          {item.title || 'Před a po'}
+                        </h3>
+                        {item.description && (
+                          <p className="text-gray-800 text-sm leading-relaxed max-w-prose">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
                       <ComparisonSlider
                         beforeImage={item.imageBeforeUrl}
                         afterImage={item.imageAfterUrl}
                         altText={item.title || 'Před a po'}
                         theme="light"
                       />
-                      <h3 className="font-display font-semibold text-lg text-stone-700">
-                        {item.title}
-                      </h3>
-                      {item.description && (
-                        <p className="text-stone-600 text-sm leading-relaxed">
-                          {item.description}
-                        </p>
-                      )}
                     </div>
                   ))}
                 </div>

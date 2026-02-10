@@ -38,19 +38,18 @@
     color: #6b6560;
   }
   .skin-accent {
-    background-color: var(--skin-gold-dark);
+    background-color: #8C5E35;
     color: white;
     border-radius: 9999px;
     letter-spacing: 0.05em;
     transition: background-color 0.2s ease, transform 0.2s ease;
   }
   .skin-accent:hover {
-    background-color: #8a6b32;
-    color: white;
-    transform: translateY(-2px);
+    background-color: #754d29;
+    transform: scale(1.05);
   }
   .skin-accent:active {
-    transform: translateY(0);
+    transform: scale(0.98);
   }
   .skin-border {
     border-color: var(--skin-beige-muted);
