@@ -72,7 +72,7 @@ export default function LandingPage({ services = [] }) {
           >
             <div className="body-text text-left mb-8 text-[#2f2f2f] space-y-6" style={{ lineHeight: 1.7 }}>
               <p>
-                Jmenuji se Lucie Metelková a kosmetika je pro mě víc než jen práce – je to spojení odbornosti, relaxace a preciznosti. Kladu absolutní důraz na čistotu, špičkové postupy a bezpečí vaší pleti.
+                Jmenuji se Lucie Metelková a kosmetika je pro mě víc než jen práce – je to spojení odbornosti, relaxace a preciznosti. Kladu absolutní důraz na čistotu, špičkové postupy a zdraví vaší pleti.
               </p>
               <p>
                 V mém studiu v <strong className="font-semibold">Uherském Brodě</strong> nenajdete „pásovou výrobu“. Každá pleť je jedinečná, a proto je i každé mé ošetření 100% individuální. Ať už řešíme akné, vrásky, nebo jen toužíte po dokonalém obočí díky laminaci, mým cílem je, abyste odcházela nejen krásnější, ale i dokonale odpočatá.

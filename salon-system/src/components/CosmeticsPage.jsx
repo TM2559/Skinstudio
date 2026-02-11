@@ -99,7 +99,7 @@ export default function CosmeticsPage({ services = [] }) {
           <img
             src="/lucie-portrait.jpg"
             alt="Lucie Metelková – Skin Studio"
-            className="w-full h-full object-cover object-[50%_65%]"
+            className="w-full h-full object-cover object-[50%_50%]"
             loading="eager"
             decoding="async"
           />
@@ -118,7 +118,7 @@ export default function CosmeticsPage({ services = [] }) {
           </h2>
           <div className="body-text text-stone-700 space-y-6 leading-relaxed">
             <p>
-              Jmenuji se Lucie Metelková a kosmetika je pro mě víc než jen práce – je to spojení odbornosti, relaxace a preciznosti. Kladu absolutní důraz na čistotu, špičkové postupy a bezpečí vaší pleti.
+              Jmenuji se Lucie Metelková a kosmetika je pro mě víc než jen práce – je to spojení odbornosti, relaxace a preciznosti. Kladu absolutní důraz na čistotu, špičkové postupy a zdraví vaší pleti.
             </p>
             <p>
               V mém studiu v <strong className="font-semibold text-stone-800">Uherském Brodě</strong> nenajdete „pásovou výrobu“. Každá pleť je jedinečná, a proto je i každé mé ošetření 100% individuální. Ať už řešíme akné, vrásky, nebo jen toužíte po dokonalém obočí díky laminaci, mým cílem je, abyste odcházela nejen krásnější, ale i dokonale odpočatá.
