@@ -206,12 +206,12 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
               Filozofie
             </h2>
             <div className="text-left">
-              <p className="text-[#A1A1AA] leading-relaxed text-base sm:text-lg max-w-2xl">
-                Trvalé líčení není o výrazné kresbě — je o jemnosti, symetrii a dlouhodobé spokojenosti.
-                Každý tah je promyšlen tak, aby podtrhl vaši přirozenou krásu.
+              <h3 className="text-xl font-serif text-gray-900 mb-4">Jemnost, která zůstává</h3>
+              <p className="mt-4 text-gray-500 leading-relaxed">
+                Permanentní make-up vnímám jako neviditelného pomocníka. Jeho úkolem není přebít vaši tvář, ale tiše podtrhnout to, co je na ní krásné.
               </p>
-              <p className="mt-8 text-[#A1A1AA]/80 text-sm sm:text-base leading-relaxed max-w-2xl">
-                Výběr pigmentů, technika i následná péče tvoří jeden celek. Svěřte se do rukou, které toto umění ovládají.
+              <p className="mt-4 text-gray-600 leading-relaxed">
+                Pracuji tak, aby výsledek působil vzdušně a přirozeně. Cílem je, abyste se ráno probudila s pocitem, že jste upravená, ale stále jste to vy.
               </p>
             </div>
           </div>
