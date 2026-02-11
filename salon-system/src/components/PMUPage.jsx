@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Phone, Mail, MapPin, Instagram } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
+import { INSTAGRAM_URL } from '../firebaseConfig';
 import { getCollectionPath } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
 import ComparisonSlider from './ComparisonSlider';
@@ -301,14 +302,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                         key={service.id}
                         className={`flex justify-between items-baseline py-4 px-3 -mx-3 rounded-lg transition-colors duration-300 hover:bg-white/5 ${!isLast ? 'border-b border-white/5' : ''}`}
                       >
-                        <span>
-                          {service.name}
-                          {service.duration ? (
-                            <span className="ml-2 text-[#A1A1AA]/70 text-sm">
-                              ({service.duration} min)
-                            </span>
-                          ) : null}
-                        </span>
+                        <span>{service.name}</span>
                         <span className="font-display text-[#C48F83] font-medium">{priceText}</span>
                       </li>
                     );
@@ -355,14 +349,99 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
         </section>
       </main>
 
-      {/* Footer – jako na main */}
-      <footer className="border-t border-white/5 py-8 px-4">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-4 text-[#A1A1AA]/60 text-xs uppercase tracking-widest">
-          <Link to="/" className="hover:text-[#C48F83] transition-colors">
-            Skin Studio
-          </Link>
-          <span>·</span>
-          <span>© 2026</span>
+      {/* Footer – Kontakt, navigace */}
+      <footer className="border-t border-white/5">
+        <div className="max-w-6xl mx-auto px-4 py-12 sm:py-16 grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
+          <div>
+            <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-2">
+              Skin Studio
+            </h3>
+            <p className="text-[#A1A1AA] font-medium mb-2">Lucie Metelková</p>
+            <p className="text-[#A1A1AA]/80 text-sm leading-relaxed">
+              Prémiová péče o pleť a permanentní make-up v srdci Uherského Brodu.
+            </p>
+          </div>
+          <div>
+            <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-4">
+              Navigace
+            </h3>
+            <nav className="flex flex-col gap-2">
+              <Link to="/" className="text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm">
+                Domů
+              </Link>
+              <button
+                type="button"
+                onClick={() => scrollTo('philosophy')}
+                className="text-left text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm"
+              >
+                Filozofie
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollTo('portfolio')}
+                className="text-left text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm"
+              >
+                Portfolio
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollTo('cenik')}
+                className="text-left text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm"
+              >
+                Ceník
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollTo('rezervace-pmu')}
+                className="text-left text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm"
+              >
+                Rezervace
+              </button>
+            </nav>
+          </div>
+          <div>
+            <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-4">
+              Kontakt
+            </h3>
+            <address className="not-italic space-y-2 text-sm text-[#A1A1AA]">
+              <p className="flex items-center gap-2">
+                <MapPin size={16} className="shrink-0 text-[#C48F83]" aria-hidden />
+                Masarykovo náměstí 72 (Budova ČSOB – 2. patro), Uherský Brod
+              </p>
+              <p className="flex items-center gap-2">
+                <Mail size={16} className="shrink-0 text-[#C48F83]" aria-hidden />
+                <a href="mailto:lucie@skinstudio.cz" className="hover:text-[#C48F83] transition-colors">
+                  lucie@skinstudio.cz
+                </a>
+              </p>
+              <p className="flex items-center gap-2">
+                <Phone size={16} className="shrink-0 text-[#C48F83]" aria-hidden />
+                <a href="tel:+420724875558" className="hover:text-[#C48F83] transition-colors">
+                  +420 724 875 558
+                </a>
+              </p>
+              {INSTAGRAM_URL && (
+                <p className="flex items-center gap-2 pt-1">
+                  <Instagram size={16} className="shrink-0 text-[#C48F83]" aria-hidden />
+                  <a
+                    href={INSTAGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-[#C48F83] transition-colors"
+                  >
+                    Instagram
+                  </a>
+                </p>
+              )}
+            </address>
+          </div>
+        </div>
+        <div className="border-t border-white/5">
+          <div className="max-w-6xl mx-auto px-4 py-4">
+            <p className="text-[#A1A1AA]/60 text-xs text-center">
+              © 2026 Skin Studio Lucie Metelková
+            </p>
+          </div>
         </div>
       </footer>
     </div>
