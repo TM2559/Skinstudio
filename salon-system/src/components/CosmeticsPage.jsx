@@ -74,8 +74,8 @@ export default function CosmeticsPage({ services = [] }) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: COSMETICS_BG }}>
       {/* 1. Hero – mobile: text first, compact image strip; desktop: split, viewport height */}
-      <section className="grid grid-cols-1 md:grid-cols-2 grid-rows-[auto_350px] md:grid-rows-none md:h-screen md:max-h-[1080px] w-full overflow-hidden min-h-0">
-        <div className="flex flex-col justify-center items-start px-8 md:px-24 h-full min-h-0 bg-[#F9F8F6] order-1 md:order-1 py-10 md:py-0">
+      <section className="grid grid-cols-1 md:grid-cols-2 grid-rows-[auto_400px] md:grid-rows-none md:h-screen md:max-h-[1080px] w-full overflow-hidden min-h-0">
+        <div className="flex flex-col justify-center items-start px-8 md:px-24 h-full min-h-0 bg-[#F9F8F6] order-1 md:order-1 py-8 md:py-0">
           <p className="text-xs sm:text-sm font-sans uppercase tracking-[0.2em] text-stone-600 mb-3">
             SKIN STUDIO LUCIE METELKOVÉ
           </p>
@@ -95,7 +95,7 @@ export default function CosmeticsPage({ services = [] }) {
             Objednat termín
           </Link>
         </div>
-        <div className="relative w-full h-[350px] md:h-full order-2 md:order-2 min-h-0">
+        <div className="relative w-full h-[400px] md:h-full order-2 md:order-2 min-h-0">
           <img
             src="/lucie-portrait.jpg"
             alt="Lucie Metelková – Skin Studio"
