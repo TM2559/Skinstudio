@@ -24,27 +24,6 @@ export default function CosmeticsPage({ services = [] }) {
   const [expandedServiceId, setExpandedServiceId] = useState(null);
   const promenyCarouselRef = useRef(null);
   const [promenyActiveIndex, setPromenyActiveIndex] = useState(0);
-  const [autoCarouselPage, setAutoCarouselPage] = useState(0);
-  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)');
-    const handler = () => setIsDesktop(mq.matches);
-    handler();
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
-  const totalCarouselPages = Math.max(1, Math.ceil(transformations.length / 3));
-
-  useEffect(() => {
-    if (!isDesktop || transformations.length === 0 || isCarouselPaused) return;
-    const id = setInterval(() => {
-      setAutoCarouselPage((p) => (p + 1) % totalCarouselPages);
-    }, 5000);
-    return () => clearInterval(id);
-  }, [isDesktop, transformations.length, isCarouselPaused, totalCarouselPages]);
 
   useEffect(() => {
     const hash = window.location.hash?.slice(1);
@@ -81,7 +60,7 @@ export default function CosmeticsPage({ services = [] }) {
     const el = promenyCarouselRef.current;
     if (!el || transformations.length <= 1) return;
     const onScroll = () => {
-      const itemWidth = el.offsetWidth * 0.85 + 16;
+      const itemWidth = el.offsetWidth * 0.85 + 24; /* 85vw + gap-6 */
       const index = Math.round(el.scrollLeft / itemWidth);
       const clamped = Math.min(Math.max(0, index), transformations.length - 1);
       setPromenyActiveIndex(clamped);
@@ -171,22 +150,13 @@ export default function CosmeticsPage({ services = [] }) {
               <LazySection rootMargin="240px">
                 <div
                   ref={promenyCarouselRef}
-                  className="relative overflow-x-auto md:overflow-hidden snap-x snap-mandatory pb-4 px-4 -mx-4 md:mx-0 md:px-0 min-h-[320px] md:min-h-0"
-                  onMouseEnter={() => setIsCarouselPaused(true)}
-                  onMouseLeave={() => setIsCarouselPaused(false)}
+                  className="transformations-scroll flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory px-4 -mx-4 md:mx-0 md:px-0 min-h-[320px]"
                 >
-                  <div
-                    id="carousel-track"
-                    className="flex gap-4 md:gap-0 transition-[transform] duration-700 ease-out will-change-[transform]"
-                    style={{
-                      width: isDesktop && transformations.length ? `${(transformations.length / 3) * 100}%` : undefined,
-                      transform: isDesktop ? `translate3d(-${autoCarouselPage * (100 / totalCarouselPages)}%, 0, 0)` : undefined,
-                    }}
-                  >
+                  <div id="carousel-track" className="flex gap-6 flex-shrink-0">
                     {transformations.map((item) => (
                       <div
                         key={item.id}
-                        className="w-[85vw] shrink-0 snap-center flex flex-col md:w-1/3 md:shrink-0 md:block md:px-2"
+                        className="w-[85vw] md:w-[400px] flex-shrink-0 snap-center flex flex-col"
                       >
                       <div className="order-2 md:order-1 space-y-2">
                         <h3 className="font-display font-semibold text-lg text-stone-800">
@@ -223,7 +193,7 @@ export default function CosmeticsPage({ services = [] }) {
                         onClick={() => {
                           const el = promenyCarouselRef.current;
                           if (!el) return;
-                          const itemWidth = el.offsetWidth * 0.85 + 16;
+                          const itemWidth = el.offsetWidth * 0.85 + 24; /* 85vw + gap-6 */
                           el.scrollTo({ left: i * itemWidth, behavior: 'smooth' });
                         }}
                         className={`dot ${promenyActiveIndex === i ? 'dot-active' : ''}`}

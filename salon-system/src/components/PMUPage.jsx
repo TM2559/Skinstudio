@@ -21,9 +21,6 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
   const [sliders, setSliders] = useState([]);
   const pmuCarouselRef = useRef(null);
   const [pmuActiveIndex, setPmuActiveIndex] = useState(0);
-  const [autoCarouselPage, setAutoCarouselPage] = useState(0);
-  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
 
   const pmuServices = useMemo(
     () =>
@@ -44,14 +41,6 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
     return () => unsub();
   }, []);
 
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)');
-    const handler = () => setIsDesktop(mq.matches);
-    handler();
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
   const displaySliders = sliders.length > 0
     ? sliders.map((item) => ({
         beforeImage: item.imageBeforeUrl,
@@ -60,22 +49,12 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
       }))
     : [DEMO_SLIDER];
 
-  const totalCarouselPages = Math.max(1, Math.ceil(displaySliders.length / 3));
-
-  useEffect(() => {
-    if (!isDesktop || displaySliders.length === 0 || isCarouselPaused) return;
-    const id = setInterval(() => {
-      setAutoCarouselPage((p) => (p + 1) % totalCarouselPages);
-    }, 5000);
-    return () => clearInterval(id);
-  }, [isDesktop, displaySliders.length, isCarouselPaused, totalCarouselPages]);
-
-  // Sync pagination dots with horizontal scroll position (mobile carousel)
+  // Sync pagination dots with horizontal scroll position (mobile)
   useEffect(() => {
     const el = pmuCarouselRef.current;
     if (!el || displaySliders.length <= 1) return;
     const onScroll = () => {
-      const itemWidth = el.offsetWidth * 0.85 + 16;
+      const itemWidth = el.offsetWidth * 0.85 + 24; /* 85vw + gap-6 */
       const index = Math.round(el.scrollLeft / itemWidth);
       const clamped = Math.min(Math.max(0, index), displaySliders.length - 1);
       setPmuActiveIndex(clamped);
@@ -248,22 +227,13 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             </h2>
             <div
               ref={pmuCarouselRef}
-              className="relative overflow-x-auto md:overflow-hidden snap-x snap-mandatory pb-4 px-4 -mx-4 md:mx-0 md:px-0 min-h-[320px] md:min-h-0"
-              onMouseEnter={() => setIsCarouselPaused(true)}
-              onMouseLeave={() => setIsCarouselPaused(false)}
+              className="transformations-scroll flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory px-4 -mx-4 md:mx-0 md:px-0 min-h-[320px]"
             >
-              <div
-                id="carousel-track"
-                className="flex gap-4 md:gap-0 transition-[transform] duration-700 ease-out will-change-[transform]"
-                style={{
-                  width: isDesktop && displaySliders.length ? `${(displaySliders.length / 3) * 100}%` : undefined,
-                  transform: isDesktop ? `translate3d(-${autoCarouselPage * (100 / totalCarouselPages)}%, 0, 0)` : undefined,
-                }}
-              >
+              <div id="carousel-track" className="flex gap-6 flex-shrink-0">
                 {displaySliders.map((item, index) => (
                   <div
                     key={index}
-                    className="w-[85vw] shrink-0 snap-center flex flex-col md:w-1/3 md:shrink-0 md:block md:px-2 space-y-4"
+                    className="flex-shrink-0 w-[85vw] md:w-[400px] snap-center flex flex-col space-y-4"
                   >
                     <ComparisonSlider
                       beforeImage={item.beforeImage}
@@ -293,7 +263,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                     onClick={() => {
                       const el = pmuCarouselRef.current;
                       if (!el) return;
-                      const itemWidth = el.offsetWidth * 0.85 + 16;
+                      const itemWidth = el.offsetWidth * 0.85 + 24; /* 85vw + gap-6 */
                       el.scrollTo({ left: i * itemWidth, behavior: 'smooth' });
                     }}
                     className={`dot ${pmuActiveIndex === i ? 'dot-active' : ''}`}
