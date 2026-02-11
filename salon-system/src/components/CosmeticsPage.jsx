@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Phone, Mail, Instagram, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
 import { getCollectionPath } from '../firebaseConfig';
 import { GALLERY_COLLECTION, TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
-import { INSTAGRAM_URL } from '../firebaseConfig';
 import ComparisonSlider from './ComparisonSlider';
 import LazySection from './LazySection';
 
@@ -25,6 +24,27 @@ export default function CosmeticsPage({ services = [] }) {
   const [expandedServiceId, setExpandedServiceId] = useState(null);
   const promenyCarouselRef = useRef(null);
   const [promenyActiveIndex, setPromenyActiveIndex] = useState(0);
+  const [autoCarouselPage, setAutoCarouselPage] = useState(0);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = () => setIsDesktop(mq.matches);
+    handler();
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  const totalCarouselPages = Math.max(1, Math.ceil(transformations.length / 3));
+
+  useEffect(() => {
+    if (!isDesktop || transformations.length === 0 || isCarouselPaused) return;
+    const id = setInterval(() => {
+      setAutoCarouselPage((p) => (p + 1) % totalCarouselPages);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [isDesktop, transformations.length, isCarouselPaused, totalCarouselPages]);
 
   useEffect(() => {
     const hash = window.location.hash?.slice(1);
@@ -151,13 +171,23 @@ export default function CosmeticsPage({ services = [] }) {
               <LazySection rootMargin="240px">
                 <div
                   ref={promenyCarouselRef}
-                  className="mobile-carousel flex overflow-x-auto md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-4 md:gap-10 md:gap-y-12 px-4 pb-2 md:pb-0 -mx-4 md:mx-0 min-h-[320px] md:min-h-0"
+                  className="relative overflow-x-auto md:overflow-hidden snap-x snap-mandatory pb-4 px-4 -mx-4 md:mx-0 md:px-0 min-h-[320px] md:min-h-0"
+                  onMouseEnter={() => setIsCarouselPaused(true)}
+                  onMouseLeave={() => setIsCarouselPaused(false)}
                 >
-                  {transformations.map((item) => (
-                    <div
-                      key={item.id}
-                      className="mobile-carousel-item md:min-w-0 md:shrink-0 md:flex-none md:w-auto flex flex-col md:block"
-                    >
+                  <div
+                    id="carousel-track"
+                    className="flex gap-4 md:gap-0 transition-[transform] duration-700 ease-out will-change-[transform]"
+                    style={{
+                      width: isDesktop && transformations.length ? `${(transformations.length / 3) * 100}%` : undefined,
+                      transform: isDesktop ? `translate3d(-${autoCarouselPage * (100 / totalCarouselPages)}%, 0, 0)` : undefined,
+                    }}
+                  >
+                    {transformations.map((item) => (
+                      <div
+                        key={item.id}
+                        className="w-[85vw] shrink-0 snap-center flex flex-col md:w-1/3 md:shrink-0 md:block md:px-2"
+                      >
                       <div className="order-2 md:order-1 space-y-2">
                         <h3 className="font-display font-semibold text-lg text-stone-800">
                           {item.title || 'Před a po'}
@@ -177,11 +207,12 @@ export default function CosmeticsPage({ services = [] }) {
                         />
                       </div>
                       <div className="order-3 mobile-carousel-swipe-zone md:hidden pb-2" aria-hidden />
-                    </div>
-                  ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 {transformations.length >= 1 && (
-                  <div className="carousel-dots" role="tablist" aria-label="Proměny">
+                  <div className="carousel-dots md:hidden" role="tablist" aria-label="Proměny">
                     {transformations.map((_, i) => (
                       <button
                         key={i}
@@ -349,8 +380,8 @@ export default function CosmeticsPage({ services = [] }) {
         </div>
       </section>
 
-      {/* 6. Booking CTA */}
-      <section className="py-24 px-4 text-center" style={{ backgroundColor: COSMETICS_BG }}>
+      {/* 6. Booking CTA (#kontakt for nav) */}
+      <section id="kontakt" className="scroll-mt-20 py-24 px-4 text-center" style={{ backgroundColor: COSMETICS_BG }}>
         <div className="max-w-xl mx-auto">
           <p className="text-stone-600 mb-6">
             Chcete podobný výsledek? Domluvte si konzultaci.
@@ -364,50 +395,6 @@ export default function CosmeticsPage({ services = [] }) {
         </div>
       </section>
 
-      {/* 7. Footer – address, phone, Instagram link, copyright (#kontakt for nav) */}
-      <footer
-        id="kontakt"
-        className="scroll-mt-20 py-24 px-4 border-t border-stone-200/80"
-        style={{ backgroundColor: '#F9F7F2' }}
-      >
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-8 sm:gap-12 text-center sm:text-left">
-            <a
-              href="tel:+420724875558"
-              className="flex items-center gap-2 font-normal text-[var(--skin-charcoal)] hover:text-[var(--skin-gold-dark)] transition-colors"
-            >
-              <Phone size={18} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
-              +420 724 875 558
-            </a>
-            <a
-              href="mailto:info@skinstudio.cz"
-              className="flex items-center gap-2 font-normal text-[var(--skin-charcoal)] hover:text-[var(--skin-gold-dark)] transition-colors"
-            >
-              <Mail size={18} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
-              info@skinstudio.cz
-            </a>
-            <span className="flex items-center gap-2 text-[var(--skin-charcoal)]">
-              <MapPin size={18} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
-              Uherský Brod
-            </span>
-            {INSTAGRAM_URL && (
-              <a
-                href={INSTAGRAM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 font-normal text-[var(--skin-charcoal)] hover:text-[var(--skin-gold-dark)] transition-colors"
-                aria-label="Instagram"
-              >
-                <Instagram size={18} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
-                Instagram
-              </a>
-            )}
-          </div>
-          <p className="text-center text-sm text-stone-400 mt-12 pt-8 border-t" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
-            © 2026 Skin Studio Lucie Metelková
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

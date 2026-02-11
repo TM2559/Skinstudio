@@ -21,6 +21,9 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
   const [sliders, setSliders] = useState([]);
   const pmuCarouselRef = useRef(null);
   const [pmuActiveIndex, setPmuActiveIndex] = useState(0);
+  const [autoCarouselPage, setAutoCarouselPage] = useState(0);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const pmuServices = useMemo(
     () =>
@@ -41,6 +44,32 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = () => setIsDesktop(mq.matches);
+    handler();
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  const displaySliders = sliders.length > 0
+    ? sliders.map((item) => ({
+        beforeImage: item.imageBeforeUrl,
+        afterImage: item.imageAfterUrl,
+        altText: item.title || 'Před a po',
+      }))
+    : [DEMO_SLIDER];
+
+  const totalCarouselPages = Math.max(1, Math.ceil(displaySliders.length / 3));
+
+  useEffect(() => {
+    if (!isDesktop || displaySliders.length === 0 || isCarouselPaused) return;
+    const id = setInterval(() => {
+      setAutoCarouselPage((p) => (p + 1) % totalCarouselPages);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [isDesktop, displaySliders.length, isCarouselPaused, totalCarouselPages]);
+
   // Sync pagination dots with horizontal scroll position (mobile carousel)
   useEffect(() => {
     const el = pmuCarouselRef.current;
@@ -54,21 +83,13 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
     el.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => el.removeEventListener('scroll', onScroll);
-  }, [sliders.length]);
+  }, [displaySliders.length]);
 
   const scrollTo = (id) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
     setMenuOpen(false);
   };
-
-  const displaySliders = sliders.length > 0
-    ? sliders.map((item) => ({
-        beforeImage: item.imageBeforeUrl,
-        afterImage: item.imageAfterUrl,
-        altText: item.title || 'Před a po',
-      }))
-    : [DEMO_SLIDER];
 
   return (
     <div className="min-h-screen bg-[#0F0F0F] text-[#A1A1AA] font-sans antialiased">
@@ -227,30 +248,41 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             </h2>
             <div
               ref={pmuCarouselRef}
-              className="mobile-carousel flex overflow-x-auto md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-8 md:gap-10 md:gap-y-12 -mx-4 px-4 md:mx-0 md:px-0 min-h-[320px] md:min-h-0"
+              className="relative overflow-x-auto md:overflow-hidden snap-x snap-mandatory pb-4 px-4 -mx-4 md:mx-0 md:px-0 min-h-[320px] md:min-h-0"
+              onMouseEnter={() => setIsCarouselPaused(true)}
+              onMouseLeave={() => setIsCarouselPaused(false)}
             >
-              {displaySliders.map((item, index) => (
-                <div
-                  key={index}
-                  className="mobile-carousel-item md:min-w-0 md:shrink-0 md:flex-none md:w-auto flex flex-col md:block space-y-4"
-                >
-                  <ComparisonSlider
-                    beforeImage={item.beforeImage}
-                    afterImage={item.afterImage}
-                    altText={item.altText}
-                    theme="dark"
-                  />
-                  {sliders.length === 0 && (
-                    <p className="text-center text-[#A1A1AA]/60 text-sm mt-4">
-                      Demo – vlastní před/po přidáte v adminu v záložce Fotografie → Proměny (kategorie PMU).
-                    </p>
-                  )}
-                  <div className="mobile-carousel-swipe-zone md:hidden pb-2 flex-shrink-0" aria-hidden />
-                </div>
-              ))}
+              <div
+                id="carousel-track"
+                className="flex gap-4 md:gap-0 transition-[transform] duration-700 ease-out will-change-[transform]"
+                style={{
+                  width: isDesktop && displaySliders.length ? `${(displaySliders.length / 3) * 100}%` : undefined,
+                  transform: isDesktop ? `translate3d(-${autoCarouselPage * (100 / totalCarouselPages)}%, 0, 0)` : undefined,
+                }}
+              >
+                {displaySliders.map((item, index) => (
+                  <div
+                    key={index}
+                    className="w-[85vw] shrink-0 snap-center flex flex-col md:w-1/3 md:shrink-0 md:block md:px-2 space-y-4"
+                  >
+                    <ComparisonSlider
+                      beforeImage={item.beforeImage}
+                      afterImage={item.afterImage}
+                      altText={item.altText}
+                      theme="dark"
+                    />
+                    {sliders.length === 0 && (
+                      <p className="text-center text-[#A1A1AA]/60 text-sm mt-4">
+                        Demo – vlastní před/po přidáte v adminu v záložce Fotografie → Proměny (kategorie PMU).
+                      </p>
+                    )}
+                    <div className="mobile-carousel-swipe-zone md:hidden pb-2 flex-shrink-0" aria-hidden />
+                  </div>
+                ))}
+              </div>
             </div>
             {displaySliders.length >= 1 && (
-              <div className="carousel-dots" role="tablist" aria-label="PMU proměny">
+              <div className="carousel-dots md:hidden" role="tablist" aria-label="PMU proměny">
                 {displaySliders.map((_, i) => (
                   <button
                     key={i}
