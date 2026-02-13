@@ -7,7 +7,7 @@ import InstagramShowcase from './InstagramShowcase';
 const getNav = () => {
   const items = [
     { label: 'KOSMETIKA', to: '/kosmetika' },
-    { label: 'PERMANENTNÍ MAKE-UP', to: '/pmu' },
+    { label: 'PERMANENTNÍ MAKE-UP', to: '/pmu#pmu' },
     { label: 'KONTAKT', to: '/', hash: 'kontakt' },
   ];
   if (INSTAGRAM_URL) items.push({ label: 'Instagram', to: '/', hash: 'instagram', iconOnly: true });

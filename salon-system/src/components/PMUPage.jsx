@@ -50,6 +50,14 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
       }))
     : [DEMO_SLIDER];
 
+  // Scroll to #pmu when landing on this page with hash (e.g. from main nav link)
+  useEffect(() => {
+    if (window.location.hash === '#pmu') {
+      const el = document.getElementById('pmu');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, []);
+
   // Sync pagination dots with horizontal scroll position (mobile)
   useEffect(() => {
     const el = pmuCarouselRef.current;
