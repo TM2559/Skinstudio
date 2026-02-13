@@ -27,10 +27,11 @@ export default function App() {
   const [loginError, setLoginError] = useState('');
   const [clicks, setClicks] = useState(0);
 
-  // Na stránce /rezervace vždy zobrazit rezervační formulář (ne admin)
+  // Na stránce /rezervace vždy zobrazit rezervační formulář (ne admin) a scroll nahoru
   useEffect(() => {
     if (location.pathname === '/rezervace') {
       setView('customer');
+      window.scrollTo(0, 0);
     }
   }, [location.pathname]);
 

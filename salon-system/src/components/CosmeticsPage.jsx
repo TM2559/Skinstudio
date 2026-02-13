@@ -4,6 +4,7 @@ import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
 import { getCollectionPath } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
+import { WEB_CONTENT } from '../constants/content';
 import ComparisonSlider from './ComparisonSlider';
 import LazySection from './LazySection';
 
@@ -64,28 +65,28 @@ export default function CosmeticsPage({ services = [] }) {
       <section className="grid grid-cols-1 md:grid-cols-2 grid-rows-[auto_400px] md:grid-rows-none md:h-screen md:max-h-[1080px] w-full overflow-hidden min-h-0">
         <div className="flex flex-col justify-center items-start px-8 md:px-24 h-full min-h-0 bg-[#F9F8F6] order-1 md:order-1 py-8 md:py-0">
           <p className="text-xs sm:text-sm font-sans uppercase tracking-[0.2em] text-stone-600 mb-3">
-            SKIN STUDIO LUCIE METELKOVÉ
+            {WEB_CONTENT.hero.subtitle}
           </p>
           <h1 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl leading-tight tracking-wide text-[var(--skin-charcoal)]">
-            Vaše pleť, vaše sebevědomí.
+            {WEB_CONTENT.hero.title}
           </h1>
           <p className="mt-4 font-signature text-2xl sm:text-3xl text-stone-600 -rotate-2">
-            S láskou k detailu, Lucie
+            {WEB_CONTENT.hero.signature}
           </p>
           <p className="mt-6 text-gray-600 max-w-prose" style={{ lineHeight: 1.6 }}>
-            Vytvořila jsem místo, kde se čas točí jen kolem vás. Mým cílem není vás měnit, ale vyzdvihnout to nejkrásnější ve vás.
+            {WEB_CONTENT.hero.body}
           </p>
           <Link
             to="/rezervace"
             className="mt-8 inline-flex items-center justify-center bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 w-fit shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
           >
-            Objednat termín
+            {WEB_CONTENT.hero.cta}
           </Link>
         </div>
         <div className="relative w-full h-[400px] md:h-full order-2 md:order-2 min-h-0">
           <img
             src="/lucie-portrait.jpg"
-            alt="Lucie Metelková – Skin Studio"
+            alt={`${WEB_CONTENT.footer.ownerName} – ${WEB_CONTENT.header.brandName}`}
             className="w-full h-full object-cover object-[50%_50%]"
             loading="eager"
             decoding="async"
@@ -101,24 +102,22 @@ export default function CosmeticsPage({ services = [] }) {
       >
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-display text-2xl font-bold mb-6 text-stone-800 md:mb-8">
-            Filozofie
+            {WEB_CONTENT.filozofie.heading}
           </h2>
           <div className="body-text text-stone-700 space-y-6 leading-relaxed">
+            <p>{WEB_CONTENT.filozofie.paragraphs[0]}</p>
             <p>
-              Jmenuji se Lucie Metelková a kosmetika je pro mě víc než jen práce – je to spojení odbornosti, relaxace a preciznosti. Kladu absolutní důraz na čistotu, špičkové postupy a zdraví vaší pleti.
+              {WEB_CONTENT.filozofie.paragraphs[1].split(WEB_CONTENT.filozofie.paragraph2Bold)[0]}
+              <strong className="font-semibold text-stone-800">{WEB_CONTENT.filozofie.paragraph2Bold}</strong>
+              {WEB_CONTENT.filozofie.paragraphs[1].split(WEB_CONTENT.filozofie.paragraph2Bold)[1]}
             </p>
-            <p>
-              V mém studiu v <strong className="font-semibold text-stone-800">Uherském Brodě</strong> nenajdete „pásovou výrobu“. Každá pleť je jedinečná, a proto je i každé mé ošetření 100% individuální. Ať už řešíme akné, vrásky, nebo jen toužíte po dokonalém obočí díky laminaci, mým cílem je, abyste odcházela nejen krásnější, ale i dokonale odpočatá.
-            </p>
-            <p>
-              Zastavte se a dopřejte si svůj „Me Time“ okamžik v prostředí, kde se čas točí jen kolem vás.
-            </p>
+            <p>{WEB_CONTENT.filozofie.paragraphs[2]}</p>
           </div>
           <p
             className="font-signature text-4xl text-stone-800 -rotate-3 inline-block mt-8"
-            aria-label="Lucie Metelková"
+            aria-label={WEB_CONTENT.footer.ownerName}
           >
-            Lucie
+            {WEB_CONTENT.filozofie.signatureName}
           </p>
         </div>
       </section>
@@ -130,17 +129,17 @@ export default function CosmeticsPage({ services = [] }) {
       >
         <div className="max-w-4xl mx-auto px-6">
           <h3 id="pmu-teaser-heading" className="text-3xl md:text-4xl font-serif text-stone-900 mb-4">
-            Vaše já.{' '}
-            <span className="italic font-serif text-stone-400">Jen dokonalejší.</span>
+            {WEB_CONTENT.pmu.headline}{' '}
+            <span className="italic font-serif text-stone-400">{WEB_CONTENT.pmu.headlineItalic}</span>
           </h3>
           <p className="text-stone-600 max-w-2xl mx-auto mb-8 font-light">
-            Mým cílem není vytvořit make-up, ale podtrhnout vaše rysy tak jemně, že si okolí všimne jen toho, jak skvěle vypadáte. Neviditelná práce, viditelný rozdíl.
+            {WEB_CONTENT.pmu.body}
           </p>
           <Link
             to="/pmu#pmu"
             className="inline-block px-8 py-4 border border-stone-800 text-xs uppercase tracking-[0.2em] text-stone-900 hover:bg-stone-900 hover:text-white transition-all duration-300 mt-8"
           >
-            Více o permanentním make-upu
+            {WEB_CONTENT.pmu.cta}
           </Link>
         </div>
       </section>
@@ -153,7 +152,7 @@ export default function CosmeticsPage({ services = [] }) {
       >
         <div className="max-w-6xl mx-auto">
           <h2 className="font-display text-2xl sm:text-3xl font-semibold text-stone-700 text-center mb-12">
-            Proměny
+            {WEB_CONTENT.promeny.heading}
           </h2>
           {transformations.length > 0 ? (
             <>
@@ -170,7 +169,7 @@ export default function CosmeticsPage({ services = [] }) {
                       >
                       <div className="order-2 md:order-1 space-y-2">
                         <h3 className="font-display font-semibold text-lg text-stone-800">
-                          {item.title || 'Před a po'}
+                          {item.title || WEB_CONTENT.promeny.defaultTitle}
                         </h3>
                         {item.description && (
                           <p className="text-gray-800 text-sm leading-relaxed max-w-prose">
@@ -182,7 +181,7 @@ export default function CosmeticsPage({ services = [] }) {
                         <ComparisonSlider
                           beforeImage={item.imageBeforeUrl}
                           afterImage={item.imageAfterUrl}
-                          altText={item.title || 'Před a po'}
+                          altText={item.title || WEB_CONTENT.promeny.defaultTitle}
                           theme="light"
                         />
                       </div>
@@ -192,13 +191,13 @@ export default function CosmeticsPage({ services = [] }) {
                   </div>
                 </div>
                 {transformations.length >= 1 && (
-                  <div className="carousel-dots md:hidden" role="tablist" aria-label="Proměny">
+                  <div className="carousel-dots md:hidden" role="tablist" aria-label={WEB_CONTENT.promeny.carouselAriaLabel}>
                     {transformations.map((_, i) => (
                       <button
                         key={i}
                         type="button"
                         role="tab"
-                        aria-label={`Proměna ${i + 1}`}
+                        aria-label={`${WEB_CONTENT.promeny.transformationAriaLabel} ${i + 1}`}
                         aria-selected={promenyActiveIndex === i}
                         onClick={() => {
                           const el = promenyCarouselRef.current;
@@ -215,7 +214,7 @@ export default function CosmeticsPage({ services = [] }) {
             </>
           ) : (
             <p className="text-center text-stone-500 text-sm py-12">
-              Proměny před/po budou zobrazeny, jakmile je v administraci přidáte (Fotografie → Proměny).
+              {WEB_CONTENT.promeny.emptyState}
             </p>
           )}
         </div>
@@ -229,13 +228,13 @@ export default function CosmeticsPage({ services = [] }) {
       >
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <h2 className="font-display text-2xl sm:text-3xl font-semibold mb-2 text-center text-stone-800">
-            Ceník
+            {WEB_CONTENT.cenik.heading}
           </h2>
           <p className="text-sm text-center mb-12 text-gray-500">
-            Vyberte si ošetření a rezervujte termín on-line.
+            {WEB_CONTENT.cenik.subtext}
           </p>
           {services.length === 0 ? (
-            <div className="text-center py-12 text-sm text-gray-500">Načítání procedur a ceníku…</div>
+            <div className="text-center py-12 text-sm text-gray-500">{WEB_CONTENT.cenik.loading}</div>
           ) : (
             <ul className="space-y-0">
               {services.map((s) => {
@@ -287,7 +286,7 @@ export default function CosmeticsPage({ services = [] }) {
                                 to={`/rezervace?service=${encodeURIComponent(s.id)}`}
                                 className="mt-6 inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)] focus:outline-none focus:ring-2 focus:ring-stone-600 focus:ring-offset-2"
                               >
-                                <Calendar size={16} /> Rezervovat termín
+                                <Calendar size={16} /> {WEB_CONTENT.cenik.ctaReservovat}
                               </Link>
                             </>
                           )}
@@ -304,7 +303,7 @@ export default function CosmeticsPage({ services = [] }) {
               to="/rezervace"
               className="inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
             >
-              <Calendar size={14} /> Rezervovat
+              <Calendar size={14} /> {WEB_CONTENT.cenik.ctaRezervovatShort}
             </Link>
           </div>
         </div>

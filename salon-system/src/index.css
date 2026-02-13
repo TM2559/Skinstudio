@@ -57,10 +57,6 @@
   .font-display {
     font-family: 'Playfair Display', Georgia, serif;
   }
-  .body-text {
-    line-height: 1.65;
-    color: #2f2f2f;
-  }
   .input-focus:focus {
     outline: none;
     box-shadow: 0 0 0 2px var(--skin-gold);
@@ -210,29 +206,45 @@
     display: none !important;
   }
 
-  /* 1. CHAMPAGNE GOLD BUTTON (For Light Sections) */
+  /* 1. CHAMPAGNE GOLD BUTTON (For Light Sections) – tokens from tailwind theme */
   .btn-gold {
     @apply inline-block rounded-full px-8 py-3
            font-sans font-semibold text-xs uppercase tracking-widest text-white
-           bg-gradient-to-b from-[#dec89a] to-[#b08d55]
+           bg-gradient-to-b from-skin-gold-from to-skin-gold-to
            border-t border-white/25
-           shadow-[0_4px_20px_rgba(197,165,114,0.3)]
+           shadow-skin-gold
            transition-all duration-300;
   }
   .btn-gold:hover {
-    @apply shadow-[0_6px_25px_rgba(197,165,114,0.5)] -translate-y-0.5;
+    @apply shadow-skin-gold-hover -translate-y-0.5;
   }
 
-  /* 2. ROSE GOLD SATIN BUTTON (For Dark PMU Section) */
+  /* 2. ROSE GOLD SATIN BUTTON (For Dark PMU Section) – tokens from tailwind theme */
   .btn-rose {
     @apply inline-block rounded-full px-8 py-3
            font-sans font-semibold text-xs uppercase tracking-widest text-white
-           bg-gradient-to-b from-[#B37E76] via-[#D49A91] to-[#B37E76]
-           border border-[#D49A91]/20
-           shadow-[0_4px_20px_rgba(179,126,118,0.3)]
+           bg-gradient-to-b from-skin-rose-from via-skin-rose-via to-skin-rose-to
+           border border-skin-rose-light/20
+           shadow-skin-rose
            transition-all duration-300;
   }
   .btn-rose:hover {
-    @apply shadow-[0_6px_25px_rgba(179,126,118,0.45)] -translate-y-0.5;
+    @apply shadow-skin-rose-hover -translate-y-0.5;
+  }
+
+  /* 3. Editorial headline – serif, tight tracking, responsive sizes */
+  .headline-editorial {
+    @apply font-serif tracking-tight
+           text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  /* 4. Body text – sans, light weight; pair with modifier for context */
+  .body-text {
+    @apply font-sans font-light text-skin-text;
+    line-height: 1.65;
+  }
+  .body-text-on-dark {
+    @apply font-sans font-light text-skin-base/70;
+    line-height: 1.65;
   }
 }
