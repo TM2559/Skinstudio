@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
 import { getCollectionPath } from '../firebaseConfig';
-import { GALLERY_COLLECTION, TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
+import { TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
 import ComparisonSlider from './ComparisonSlider';
 import LazySection from './LazySection';
 
@@ -20,7 +20,6 @@ function cleanDescription(text) {
 
 export default function CosmeticsPage({ services = [] }) {
   const [transformations, setTransformations] = useState([]);
-  const [gallery, setGallery] = useState([]);
   const [expandedServiceId, setExpandedServiceId] = useState(null);
   const promenyCarouselRef = useRef(null);
   const [promenyActiveIndex, setPromenyActiveIndex] = useState(0);
@@ -42,17 +41,6 @@ export default function CosmeticsPage({ services = [] }) {
       setTransformations(list);
     });
     return () => unsubT();
-  }, []);
-
-  useEffect(() => {
-    const colG = getCollectionPath(GALLERY_COLLECTION);
-    const qG = query(colG, where('category', '==', COSMETICS_CATEGORY));
-    const unsubG = onSnapshot(qG, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-      setGallery(list);
-    });
-    return () => unsubG();
   }, []);
 
   // Sync pagination dot with carousel scroll position (mobile)
@@ -322,57 +310,7 @@ export default function CosmeticsPage({ services = [] }) {
         </div>
       </section>
 
-      {/* 5. Gallery ("Moje práce" – masonry) */}
-      <section
-        id="moje-prace"
-        className="scroll-mt-20 py-24 px-4 border-t border-stone-200/80"
-        style={{ backgroundColor: COSMETICS_BG }}
-      >
-        <div className="max-w-6xl mx-auto">
-          <h2 className="font-display text-2xl sm:text-3xl font-semibold text-stone-700 text-center mb-12">
-            Moje práce
-          </h2>
-          {gallery.length > 0 ? (
-            <LazySection rootMargin="240px">
-              <div
-                className="grid gap-4"
-                style={{
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                  gridAutoRows: 'auto',
-                }}
-              >
-                {gallery.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-2xl overflow-hidden bg-white border border-stone-100 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="aspect-[4/5] min-h-[280px] bg-stone-100">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.caption || 'Galerie'}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
-                  {item.caption && (
-                    <p className="p-3 text-sm text-stone-600 text-center">
-                      {item.caption}
-                    </p>
-                  )}
-                </div>
-              ))}
-              </div>
-            </LazySection>
-          ) : (
-            <p className="text-center text-stone-500 text-sm py-12">
-              Galerie fotek se zobrazí po přidání v administraci (Fotografie → Galerie).
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* 6. Booking CTA (#kontakt for nav) */}
+      {/* 5. Booking CTA (#kontakt for nav) */}
       <section id="kontakt" className="scroll-mt-20 py-24 px-4 text-center" style={{ backgroundColor: COSMETICS_BG }}>
         <div className="max-w-xl mx-auto">
           <p className="text-stone-600 mb-6">
