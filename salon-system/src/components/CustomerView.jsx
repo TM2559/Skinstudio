@@ -182,7 +182,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
         <div>
           <h2 className={`text-[10px] font-bold uppercase tracking-widest mb-6 flex items-center gap-2 border-b pb-2 ${isDark ? 'text-stone-300 border-stone-800' : 'text-stone-500 border-stone-100'}`}>
             <span
-              className={`w-5 h-5 rounded-full text-white flex items-center justify-center text-[8px] ${isDark ? 'bg-[#C48F83]' : ''}`}
+              className={`w-5 h-5 rounded-full text-white flex items-center justify-center text-[8px] ${isDark ? 'bg-[#daa59c]' : ''}`}
               style={!isDark ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}
             >
               1
@@ -203,7 +203,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
                   className={`p-4 rounded-xl border transition-all text-left relative shadow-sm cursor-pointer ${
                     isDark
                       ? isSelected
-                        ? 'bg-stone-900 border-[#C48F83]/70 border-l-4 border-l-[#C48F83]'
+                        ? 'bg-stone-900 border-[#daa59c]/70 border-l-4 border-l-[#daa59c]'
                         : 'bg-stone-900 border-stone-800 hover:border-stone-700'
                       : isSelected
                         ? 'bg-[#F9F7F2] border border-stone-200 border-l-2'
@@ -213,7 +213,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
                 >
                   <div className="flex justify-between items-start gap-4">
                     <span className={`text-sm leading-tight ${isDark ? (isSelected ? 'font-bold text-white' : 'font-medium text-stone-200') : isSelected ? 'font-bold text-stone-900' : 'font-medium text-stone-800'}`}>{s.name}</span>
-                    <span className={`text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap ${isDark ? 'text-[#C48F83] bg-stone-800' : 'text-stone-700 bg-stone-100'}`}>
+                    <span className={`text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap ${isDark ? 'text-[#daa59c] bg-stone-800' : 'text-stone-700 bg-stone-100'}`}>
                       {s.price} Kč
                     </span>
                   </div>
@@ -247,7 +247,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
                               className={`ml-4 rounded-full px-3 py-1 text-xs font-semibold transition-colors border flex-shrink-0 ${
                                 isDark
                                   ? isUpsellActive
-                                    ? 'bg-[#C48F83]/90 text-white border-[#C48F83]/50'
+                                    ? 'bg-[#daa59c]/90 text-white border-[#daa59c]/50'
                                     : 'bg-stone-800 text-stone-200 border-stone-700 hover:border-stone-600'
                                   : isUpsellActive
                                     ? 'bg-stone-800 text-white border-stone-800'
@@ -288,7 +288,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
                     hasNoSlots ? 'opacity-50 pointer-events-none cursor-not-allowed' : ''
                   } ${
                     isDark
-                      ? isActive ? 'bg-[#C48F83]/90 text-white border-[#C48F83]/60' : 'bg-stone-900 text-stone-300 border-stone-800 hover:border-stone-700'
+                      ? isActive ? 'bg-[#daa59c]/90 text-white border-[#daa59c]/60' : 'bg-stone-900 text-stone-300 border-stone-800 hover:border-stone-700'
                       : isActive ? 'text-white border-[var(--skin-gold-dark)]' : 'bg-white text-stone-500 border-gray-100'
                   }`}
                   style={!isDark && isActive ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}
@@ -323,7 +323,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
                   onClick={() => setSelectedTime(t)}
                   className={`py-3 rounded-lg text-sm border transition-all ${
                     isDark
-                      ? isTimeSelected ? 'text-white border-[#C48F83]/60 bg-[#C48F83]/90' : 'bg-stone-900 border-stone-800 text-stone-200 hover:border-stone-700'
+                      ? isTimeSelected ? 'text-white border-[#daa59c]/60 bg-[#daa59c]/90' : 'bg-stone-900 border-stone-800 text-stone-200 hover:border-stone-700'
                       : isTimeSelected ? 'text-white border-[var(--skin-gold-dark)]' : 'bg-white border-stone-200 text-stone-700 hover:bg-[#F9F7F2] hover:border-stone-300'
                   }`}
                   style={!isDark && isTimeSelected ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}
@@ -351,13 +351,13 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
       </div>
 
       <div className={`p-8 rounded-2xl border shadow-lg h-fit md:sticky md:top-4 ${isDark ? 'bg-stone-950 border-stone-800' : 'border-stone-100 bg-white'}`}>
-        <h2 className={`text-lg font-display font-semibold mb-6 border-b pb-4 ${isDark ? 'text-[#C48F83] border-stone-800' : 'text-stone-800 border-stone-100'}`}>
-          <Sparkles className={`inline-block mr-2 ${isDark ? 'text-[#C48F83]' : 'text-stone-400'}`} size={16} /> Rezervace
+        <h2 className={`text-lg font-display font-semibold mb-6 border-b pb-4 ${isDark ? 'text-[#daa59c] border-stone-800' : 'text-stone-800 border-stone-100'}`}>
+          <Sparkles className={`inline-block mr-2 ${isDark ? 'text-[#daa59c]' : 'text-stone-400'}`} size={16} /> Rezervace
         </h2>
 
         {isSuccess ? (
           <div className="text-center py-10 animate-in zoom-in">
-            <CheckCircle size={32} className={`mx-auto mb-3 ${isDark ? 'text-[#C48F83]' : 'text-green-600'}`} />
+            <CheckCircle size={32} className={`mx-auto mb-3 ${isDark ? 'text-[#daa59c]' : 'text-green-600'}`} />
             <p className={`font-bold text-xl font-display ${isDark ? 'text-white' : 'text-stone-900'}`}>Potvrzeno</p>
             <p className={`text-xs mt-2 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>Detaily byly odeslány na váš e-mail.</p>
           </div>
@@ -391,7 +391,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
               placeholder="Vaše jméno"
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className={`w-full p-3 rounded-lg border text-sm font-medium ${isDark ? 'bg-stone-900 border-stone-800 text-stone-200 placeholder-stone-500 focus:ring-[#C48F83]/50 focus:border-[#C48F83]' : 'input-focus border-stone-200 bg-white'}`}
+              className={`w-full p-3 rounded-lg border text-sm font-medium ${isDark ? 'bg-stone-900 border-stone-800 text-stone-200 placeholder-stone-500 focus:ring-[#daa59c]/50 focus:border-[#daa59c]' : 'input-focus border-stone-200 bg-white'}`}
             />
             <input
               required
@@ -399,7 +399,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
               placeholder="Telefon"
               value={formData.phone}
               onChange={e => setFormData({ ...formData, phone: e.target.value })}
-              className={`w-full p-3 rounded-lg border text-sm font-medium ${isDark ? 'bg-stone-900 border-stone-800 text-stone-200 placeholder-stone-500 focus:ring-[#C48F83]/50 focus:border-[#C48F83]' : 'input-focus border-stone-200 bg-white'}`}
+              className={`w-full p-3 rounded-lg border text-sm font-medium ${isDark ? 'bg-stone-900 border-stone-800 text-stone-200 placeholder-stone-500 focus:ring-[#daa59c]/50 focus:border-[#daa59c]' : 'input-focus border-stone-200 bg-white'}`}
             />
             <input
               required
@@ -407,13 +407,13 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
               placeholder="E-mail pro potvrzení"
               value={formData.email}
               onChange={e => setFormData({ ...formData, email: e.target.value })}
-              className={`w-full p-3 rounded-lg border text-sm font-medium ${isDark ? 'bg-stone-900 border-stone-800 text-stone-200 placeholder-stone-500 focus:ring-[#C48F83]/50 focus:border-[#C48F83]' : 'input-focus border-stone-200 bg-white'}`}
+              className={`w-full p-3 rounded-lg border text-sm font-medium ${isDark ? 'bg-stone-900 border-stone-800 text-stone-200 placeholder-stone-500 focus:ring-[#daa59c]/50 focus:border-[#daa59c]' : 'input-focus border-stone-200 bg-white'}`}
             />
 
             <button
               type="submit"
               disabled={isSending}
-              className={`w-full py-4 rounded-full font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${isDark ? 'bg-[#C48F83] text-white hover:bg-[#C48F83]/90' : 'skin-accent'}`}
+              className={`w-full py-4 rounded-full font-sans font-semibold text-xs uppercase tracking-widest text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ${isDark ? 'bg-gradient-to-b from-[#B37E76] via-[#D49A91] to-[#B37E76] hover:brightness-95 border border-[#D49A91]/20 shadow-[0_4px_20px_rgba(179,126,118,0.3)] hover:shadow-[0_6px_25px_rgba(179,126,118,0.45)]' : 'bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]'}`}
             >
               {isSending ? (
                 <span className="flex items-center justify-center gap-2">

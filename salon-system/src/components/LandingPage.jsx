@@ -49,7 +49,7 @@ export default function LandingPage({ services = [] }) {
           </p>
           <Link
             to="/rezervace"
-            className="skin-accent inline-flex items-center justify-center px-8 py-4 font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm"
+            className="inline-flex items-center justify-center bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
           >
             Objednat termín
           </Link>
@@ -171,7 +171,7 @@ export default function LandingPage({ services = [] }) {
                               </p>
                               <Link
                                 to={`/rezervace?service=${encodeURIComponent(s.id)}`}
-                                className="skin-accent mt-6 inline-flex items-center justify-center gap-2 font-medium text-sm px-6 py-3 uppercase tracking-[0.05em] focus:outline-none focus:ring-2 focus:ring-stone-600 focus:ring-offset-2"
+                                className="mt-6 inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)] focus:outline-none focus:ring-2 focus:ring-stone-600 focus:ring-offset-2"
                               >
                                 <Calendar size={16} /> Rezervovat termín
                               </Link>
@@ -188,7 +188,7 @@ export default function LandingPage({ services = [] }) {
           <div className="text-center mt-[48px]">
             <Link
               to="/rezervace"
-              className="skin-accent inline-flex items-center justify-center gap-2 px-6 py-3 font-bold text-xs uppercase tracking-[0.05em] rounded-full"
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
             >
               <Calendar size={14} /> Rezervovat
             </Link>
@@ -257,7 +257,7 @@ export default function LandingPage({ services = [] }) {
               )}
               <Link
                 to="/rezervace"
-                className="skin-accent inline-flex items-center justify-center gap-2 px-6 py-3 font-bold text-xs uppercase tracking-[0.05em] mt-2"
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 mt-2 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
               >
                 <Calendar size={14} /> Objednat termín
               </Link>
