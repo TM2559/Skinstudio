@@ -1,7 +1,25 @@
+/** Normalized category: STANDARD (cosmetics) vs PMU. Handles legacy lowercase 'pmu'. */
+function normalizeCategory(category) {
+  const c = (category || 'STANDARD').toString().toUpperCase();
+  return c === 'PMU' ? 'PMU' : 'STANDARD';
+}
+
+/** True if service is PMU (category 'PMU' or 'pmu'). */
+export function isPmuService(service) {
+  if (!service) return false;
+  return normalizeCategory(service.category) === 'PMU';
+}
+
 /** Služby s category === 'STANDARD' (nebo bez category) = kosmetika. PMU má category 'PMU'. */
 export function filterCosmeticsServices(services) {
   if (!Array.isArray(services)) return [];
-  return services.filter((s) => (s.category || 'STANDARD') === 'STANDARD');
+  return services.filter((s) => normalizeCategory(s.category) === 'STANDARD');
+}
+
+/** Služby s category === 'PMU' (case-insensitive). */
+export function filterPmuServices(services) {
+  if (!Array.isArray(services)) return [];
+  return services.filter((s) => isPmuService(s));
 }
 
 export const Utils = {

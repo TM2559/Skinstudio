@@ -132,7 +132,7 @@ export default function App() {
     });
   }, [services, addons, serviceAddonLinks]);
 
-  /** Služby s addony pouze pro kosmetiku (STANDARD) – na /rezervace jen kosmetika, ne PMU. */
+  /** Služby s addony pouze pro kosmetiku (STANDARD) – pro stránky, kde zobrazujeme jen kosmetiku. */
   const servicesStandardWithAddons = useMemo(
     () => filterCosmeticsServices(servicesWithAddons),
     [servicesWithAddons]
@@ -198,7 +198,7 @@ export default function App() {
               setLoginError={setLoginError}
               handleLogoClick={handleLogoClick}
               handleLogin={handleLogin}
-              services={servicesStandardWithAddons}
+              services={servicesWithAddons}
               schedule={schedule}
               schedulePmu={schedulePmu}
               reservations={reservations}
