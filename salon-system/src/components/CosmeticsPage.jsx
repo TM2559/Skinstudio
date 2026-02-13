@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
 import { getCollectionPath } from '../firebaseConfig';
-import { GALLERY_COLLECTION, TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
+import { TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
 import ComparisonSlider from './ComparisonSlider';
 import LazySection from './LazySection';
 
@@ -20,7 +20,6 @@ function cleanDescription(text) {
 
 export default function CosmeticsPage({ services = [] }) {
   const [transformations, setTransformations] = useState([]);
-  const [gallery, setGallery] = useState([]);
   const [expandedServiceId, setExpandedServiceId] = useState(null);
   const promenyCarouselRef = useRef(null);
   const [promenyActiveIndex, setPromenyActiveIndex] = useState(0);
@@ -42,17 +41,6 @@ export default function CosmeticsPage({ services = [] }) {
       setTransformations(list);
     });
     return () => unsubT();
-  }, []);
-
-  useEffect(() => {
-    const colG = getCollectionPath(GALLERY_COLLECTION);
-    const qG = query(colG, where('category', '==', COSMETICS_CATEGORY));
-    const unsubG = onSnapshot(qG, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-      setGallery(list);
-    });
-    return () => unsubG();
   }, []);
 
   // Sync pagination dot with carousel scroll position (mobile)
@@ -89,7 +77,7 @@ export default function CosmeticsPage({ services = [] }) {
           </p>
           <Link
             to="/rezervace"
-            className="skin-accent mt-8 inline-flex items-center justify-center px-8 py-4 font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm w-fit"
+            className="mt-8 inline-flex items-center justify-center bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 w-fit shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
           >
             Objednat termín
           </Link>
@@ -135,7 +123,29 @@ export default function CosmeticsPage({ services = [] }) {
         </div>
       </section>
 
-      {/* 3. Transformations ("Proměny") – directly after Philosophy */}
+      {/* PMU strip – pure typography (after Filozofie, before Proměny) */}
+      <section
+        className="py-16 bg-[#faf9f6] border-y border-stone-100 text-center"
+        aria-labelledby="pmu-teaser-heading"
+      >
+        <div className="max-w-4xl mx-auto px-6">
+          <h3 id="pmu-teaser-heading" className="text-3xl md:text-4xl font-serif text-stone-900 mb-4">
+            Vaše já.{' '}
+            <span className="italic font-serif text-stone-400">Jen dokonalejší.</span>
+          </h3>
+          <p className="text-stone-600 max-w-2xl mx-auto mb-8 font-light">
+            Mým cílem není vytvořit make-up, ale podtrhnout vaše rysy tak jemně, že si okolí všimne jen toho, jak skvěle vypadáte. Neviditelná práce, viditelný rozdíl.
+          </p>
+          <Link
+            to="/pmu#pmu"
+            className="inline-block px-8 py-4 border border-stone-800 text-xs uppercase tracking-[0.2em] text-stone-900 hover:bg-stone-900 hover:text-white transition-all duration-300 mt-8"
+          >
+            Více o permanentním make-upu
+          </Link>
+        </div>
+      </section>
+
+      {/* 3. Transformations ("Proměny") */}
       <section
         id="promeny"
         className="scroll-mt-20 py-24 px-4"
@@ -275,7 +285,7 @@ export default function CosmeticsPage({ services = [] }) {
                               </p>
                               <Link
                                 to={`/rezervace?service=${encodeURIComponent(s.id)}`}
-                                className="skin-accent mt-6 inline-flex items-center justify-center gap-2 font-medium text-sm px-6 py-3 uppercase tracking-[0.05em] focus:outline-none focus:ring-2 focus:ring-stone-600 focus:ring-offset-2"
+                                className="mt-6 inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)] focus:outline-none focus:ring-2 focus:ring-stone-600 focus:ring-offset-2"
                               >
                                 <Calendar size={16} /> Rezervovat termín
                               </Link>
@@ -292,7 +302,7 @@ export default function CosmeticsPage({ services = [] }) {
           <div className="text-center mt-12">
             <Link
               to="/rezervace"
-              className="skin-accent inline-flex items-center justify-center gap-2 px-6 py-3 font-bold text-xs uppercase tracking-[0.05em] rounded-full"
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
             >
               <Calendar size={14} /> Rezervovat
             </Link>
@@ -300,57 +310,7 @@ export default function CosmeticsPage({ services = [] }) {
         </div>
       </section>
 
-      {/* 5. Gallery ("Moje práce" – masonry) */}
-      <section
-        id="moje-prace"
-        className="scroll-mt-20 py-24 px-4 border-t border-stone-200/80"
-        style={{ backgroundColor: COSMETICS_BG }}
-      >
-        <div className="max-w-6xl mx-auto">
-          <h2 className="font-display text-2xl sm:text-3xl font-semibold text-stone-700 text-center mb-12">
-            Moje práce
-          </h2>
-          {gallery.length > 0 ? (
-            <LazySection rootMargin="240px">
-              <div
-                className="grid gap-4"
-                style={{
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                  gridAutoRows: 'auto',
-                }}
-              >
-                {gallery.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-2xl overflow-hidden bg-white border border-stone-100 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="aspect-[4/5] min-h-[280px] bg-stone-100">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.caption || 'Galerie'}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
-                  {item.caption && (
-                    <p className="p-3 text-sm text-stone-600 text-center">
-                      {item.caption}
-                    </p>
-                  )}
-                </div>
-              ))}
-              </div>
-            </LazySection>
-          ) : (
-            <p className="text-center text-stone-500 text-sm py-12">
-              Galerie fotek se zobrazí po přidání v administraci (Fotografie → Galerie).
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* 6. Booking CTA (#kontakt for nav) */}
+      {/* 5. Booking CTA (#kontakt for nav) */}
       <section id="kontakt" className="scroll-mt-20 py-24 px-4 text-center" style={{ backgroundColor: COSMETICS_BG }}>
         <div className="max-w-xl mx-auto">
           <p className="text-stone-600 mb-6">
@@ -358,7 +318,7 @@ export default function CosmeticsPage({ services = [] }) {
           </p>
           <Link
             to="/rezervace"
-            className="skin-accent inline-flex items-center justify-center px-8 py-4 font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm"
+            className="inline-flex items-center justify-center bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
           >
             Rezervovat termín
           </Link>

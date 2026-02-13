@@ -36,7 +36,7 @@ export default function Layout({ children, setView }) {
   const linkClass =
     'text-xs xl:text-sm font-semibold uppercase tracking-widest transition-colors text-stone-600 hover:text-[var(--skin-gold-dark)] whitespace-nowrap';
   const ctaClass =
-    'skin-accent text-xs xl:text-sm font-semibold uppercase tracking-widest px-3 xl:px-4 py-2 rounded-full whitespace-nowrap';
+    'bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 whitespace-nowrap shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]';
 
   return (
     <div className="min-h-screen font-sans flex flex-col" style={{ backgroundColor: 'var(--skin-cream)' }}>
@@ -233,7 +233,7 @@ export default function Layout({ children, setView }) {
               </Link>
               <Link
                 to="/rezervace"
-                className="text-gray-400 hover:text-[#8C5E35] transition-colors text-sm"
+                className="inline-flex items-center justify-center bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 w-fit shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
                 onClick={() => setView?.('customer')}
               >
                 Rezervace
