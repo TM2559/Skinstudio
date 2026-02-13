@@ -310,21 +310,6 @@ export default function CosmeticsPage({ services = [] }) {
         </div>
       </section>
 
-      {/* 5. Booking CTA (#kontakt for nav) */}
-      <section id="kontakt" className="scroll-mt-20 py-24 px-4 text-center" style={{ backgroundColor: COSMETICS_BG }}>
-        <div className="max-w-xl mx-auto">
-          <p className="text-stone-600 mb-6">
-            Chcete podobný výsledek? Domluvte si konzultaci.
-          </p>
-          <Link
-            to="/rezervace"
-            className="inline-flex items-center justify-center bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
-          >
-            Rezervovat termín
-          </Link>
-        </div>
-      </section>
-
     </div>
   );
 }

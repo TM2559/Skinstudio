@@ -201,7 +201,7 @@ export default function Layout({ children, setView }) {
       <InstagramShowcase />
 
       <footer className="mt-auto bg-[#1c1c1c] text-gray-400">
-        <div className="container mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="container mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Column 1: Brand & Info */}
           <div>
             <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-2">
@@ -213,57 +213,36 @@ export default function Layout({ children, setView }) {
             </p>
           </div>
 
-          {/* Column 2: Rychlé odkazy */}
-          <div>
-            <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-4">
-              NAVIGACE
-            </h3>
-            <nav className="flex flex-col gap-2">
-              <Link to="/" className="text-gray-400 hover:text-[#8C5E35] transition-colors text-sm">
-                Domů
-              </Link>
-              <Link to="/#services" className="text-gray-400 hover:text-[#8C5E35] transition-colors text-sm">
-                Služby
-              </Link>
-              <Link to="/#about" className="text-gray-400 hover:text-[#8C5E35] transition-colors text-sm">
-                O mně
-              </Link>
-              <Link to="/#contact" className="text-gray-400 hover:text-[#8C5E35] transition-colors text-sm">
-                Kontakt
-              </Link>
-              <Link
-                to="/rezervace"
-                className="inline-flex items-center justify-center bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 w-fit shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
-                onClick={() => setView?.('customer')}
-              >
-                Rezervace
-              </Link>
-            </nav>
-          </div>
-
-          {/* Column 3: Kontakt & Parkování */}
-          <div>
+          {/* Column 2: Kontakt & Rezervace */}
+          <div className="md:text-right md:flex md:flex-col md:items-end">
             <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-4">
               KONTAKT
             </h3>
             <address className="not-italic space-y-2 text-sm">
-              <p className="flex items-center gap-2">
+              <p className="flex items-center gap-2 md:justify-end">
                 <MapPin size={16} className="shrink-0 text-gray-500" />
                 Masarykovo náměstí 72 (Budova ČSOB – 2. patro)
               </p>
-              <p className="flex items-center gap-2">
+              <p className="flex items-center gap-2 md:justify-end">
                 <Mail size={16} className="shrink-0 text-gray-500" />
                 <a href="mailto:lucie@skinstudio.cz" className="hover:text-[#8C5E35] transition-colors">
                   lucie@skinstudio.cz
                 </a>
               </p>
-              <p className="flex items-center gap-2">
+              <p className="flex items-center gap-2 md:justify-end">
                 <Phone size={16} className="shrink-0 text-gray-500" />
                 <a href="tel:+420724875558" className="hover:text-[#8C5E35] transition-colors">
                   +420 724 875 558
                 </a>
               </p>
             </address>
+            <Link
+              to="/rezervace"
+              className="mt-6 inline-flex items-center justify-center bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
+              onClick={() => setView?.('customer')}
+            >
+              Rezervace
+            </Link>
           </div>
         </div>
 
