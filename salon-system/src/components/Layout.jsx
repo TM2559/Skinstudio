@@ -3,15 +3,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Instagram, MapPin, Mail, Phone } from 'lucide-react';
 import { INSTAGRAM_URL } from '../firebaseConfig';
 import InstagramShowcase from './InstagramShowcase';
+import { TaglineWithHeart } from './FooterTagline';
+import { WEB_CONTENT } from '../constants/content';
 
 const getNav = () => {
-  const items = [
-    { label: 'KOSMETIKA', to: '/kosmetika' },
-    { label: 'PERMANENTNÍ MAKE-UP', to: '/pmu#pmu' },
-    { label: 'KONTAKT', to: '/', hash: 'kontakt' },
-  ];
-  if (INSTAGRAM_URL) items.push({ label: 'Instagram', to: '/', hash: 'instagram', iconOnly: true });
-  items.push({ label: 'REZERVACE', to: '/rezervace', cta: true });
+  const items = [...WEB_CONTENT.header.navItems];
+  const rezervace = items.pop();
+  if (INSTAGRAM_URL) items.push({ label: WEB_CONTENT.header.ariaLabelInstagram, to: '/', hash: 'instagram', iconOnly: true });
+  items.push(rezervace);
   return items;
 };
 const NAV = getNav();
@@ -51,9 +50,9 @@ export default function Layout({ children, setView }) {
           <Link
             to="/"
             className="font-display font-bold text-xl sm:text-2xl tracking-wide text-[var(--skin-charcoal)] hover:text-stone-700 transition-colors shrink-0"
-            aria-label="Skin Studio – Domů"
+            aria-label={WEB_CONTENT.header.ariaLabelHome}
           >
-            Skin Studio
+            {WEB_CONTENT.header.brandName}
           </Link>
 
           <nav className="hidden lg:flex items-center gap-3 xl:gap-4 shrink min-w-0">
@@ -66,7 +65,7 @@ export default function Layout({ children, setView }) {
                     type="button"
                     onClick={() => scrollTo(item.hash)}
                     className={linkClass}
-                    aria-label="Instagram"
+                    aria-label={WEB_CONTENT.header.ariaLabelInstagram}
                   >
                     <Instagram size={20} strokeWidth={1.5} />
                   </button>
@@ -75,13 +74,20 @@ export default function Layout({ children, setView }) {
                     key={item.label}
                     to={href}
                     className={linkClass}
-                    aria-label="Instagram"
+                    aria-label={WEB_CONTENT.header.ariaLabelInstagram}
                   >
                     <Instagram size={20} strokeWidth={1.5} />
                   </Link>
                 );
               }
               if (item.hash) {
+                if (item.to !== '/') {
+                  return (
+                    <Link key={item.label} to={item.to} className={linkClass}>
+                      {item.label}
+                    </Link>
+                  );
+                }
                 return isHome ? (
                   <button
                     key={item.label}
@@ -106,7 +112,7 @@ export default function Layout({ children, setView }) {
                   key={item.label}
                   to={item.to}
                   className={item.cta ? ctaClass : linkClass}
-                  onClick={item.to === '/rezervace' ? () => setView?.('customer') : undefined}
+                  onClick={item.to === '/rezervace' ? () => { setView?.('customer'); window.scrollTo(0, 0); } : undefined}
                 >
                   {item.label}
                 </Link>
@@ -118,7 +124,7 @@ export default function Layout({ children, setView }) {
             type="button"
             className="lg:hidden p-2 text-stone-600 hover:text-[var(--skin-gold-dark)] transition-colors shrink-0"
             onClick={() => setMenuOpen((o) => !o)}
-            aria-label="Menu"
+            aria-label={WEB_CONTENT.header.ariaLabelMenu}
           >
             {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -141,7 +147,7 @@ export default function Layout({ children, setView }) {
                     type="button"
                     onClick={() => scrollTo(item.hash)}
                     className="py-3 text-stone-600 hover:text-[var(--skin-gold-dark)] transition-colors"
-                    aria-label="Instagram"
+                    aria-label={WEB_CONTENT.header.ariaLabelInstagram}
                   >
                     <Instagram size={22} strokeWidth={1.5} />
                   </button>
@@ -151,13 +157,25 @@ export default function Layout({ children, setView }) {
                     to={href}
                     className="py-3 inline-block text-stone-600 hover:text-[var(--skin-gold-dark)] transition-colors"
                     onClick={() => setMenuOpen(false)}
-                    aria-label="Instagram"
+                    aria-label={WEB_CONTENT.header.ariaLabelInstagram}
                   >
                     <Instagram size={22} strokeWidth={1.5} />
                   </Link>
                 );
               }
               if (item.hash) {
+                if (item.to !== '/') {
+                  return (
+                    <Link
+                      key={item.label}
+                      to={item.to}
+                      className="py-3 text-sm font-semibold uppercase tracking-widest text-stone-600 hover:text-[var(--skin-gold-dark)] transition-colors block"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                }
                 return isHome ? (
                   <button
                     key={item.label}
@@ -183,9 +201,9 @@ export default function Layout({ children, setView }) {
                   key={item.label}
                   to={item.to}
                   className={item.cta ? `inline-flex ${ctaClass} justify-center my-1` : `py-3 text-sm font-semibold uppercase tracking-widest text-stone-600 hover:text-[var(--skin-gold-dark)] transition-colors block`}
-                  onClick={() => {
+                    onClick={() => {
                     setMenuOpen(false);
-                    if (item.to === '/rezervace') setView?.('customer');
+                    if (item.to === '/rezervace') { setView?.('customer'); window.scrollTo(0, 0); }
                   }}
                 >
                   {item.label}
@@ -200,51 +218,39 @@ export default function Layout({ children, setView }) {
 
       <InstagramShowcase />
 
-      <footer className="mt-auto bg-[#1c1c1c] font-sans font-light text-gray-200">
+      <footer id="kontakt" className="mt-auto bg-[#1c1c1c] font-sans font-light text-gray-200">
         <div className="container mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Column 1: Brand & Info */}
           <div>
             <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-2">
-              SKIN STUDIO
+              {WEB_CONTENT.footer.brandHeading}
             </h3>
-            <p className="font-medium mb-2">Lucie Metelková</p>
+            <p className="font-medium mb-2">{WEB_CONTENT.footer.ownerName}</p>
             <p className="text-sm leading-relaxed">
-              Prémiová péče o pleť a permanentní make-up v{' '}
-              <span className="inline-flex items-center mx-1 relative top-[1px]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                    stroke="#E57590"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>{' '}
-              Uherského Brodu.
+              <TaglineWithHeart tagline={WEB_CONTENT.footer.tagline} heartWord={WEB_CONTENT.footer.heartReplacementWord} />
             </p>
           </div>
 
           {/* Column 2: Kontakt */}
           <div className="md:text-right md:flex md:flex-col md:items-end">
             <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-4">
-              KONTAKT
+              {WEB_CONTENT.footer.contactHeading}
             </h3>
             <address className="not-italic space-y-2 text-sm">
               <p className="flex items-center gap-2 md:justify-end">
                 <MapPin size={16} className="shrink-0 opacity-70" />
-                Masarykovo náměstí 72 (Budova ČSOB – 2. patro)
+                {WEB_CONTENT.footer.location}
               </p>
               <p className="flex items-center gap-2 md:justify-end">
                 <Mail size={16} className="shrink-0 opacity-70" />
-                <a href="mailto:lucie@skinstudio.cz" className="hover:text-[#8C5E35] transition-colors">
-                  lucie@skinstudio.cz
+                <a href={`mailto:${WEB_CONTENT.footer.email}`} className="hover:text-[#8C5E35] transition-colors">
+                  {WEB_CONTENT.footer.email}
                 </a>
               </p>
               <p className="flex items-center gap-2 md:justify-end">
                 <Phone size={16} className="shrink-0 opacity-70" />
-                <a href="tel:+420724875558" className="hover:text-[#8C5E35] transition-colors">
-                  +420 724 875 558
+                <a href={`tel:${WEB_CONTENT.footer.phone.replace(/\s/g, '')}`} className="hover:text-[#8C5E35] transition-colors">
+                  {WEB_CONTENT.footer.phone}
                 </a>
               </p>
             </address>
@@ -255,7 +261,7 @@ export default function Layout({ children, setView }) {
         <div className="border-t border-gray-700/60">
           <div className="container mx-auto px-6 py-4">
             <p className="text-xs text-center">
-              © 2024 Skin Studio Lucie Metelková. Všechna práva vyhrazena.
+              {WEB_CONTENT.footer.copyright}
             </p>
           </div>
         </div>
