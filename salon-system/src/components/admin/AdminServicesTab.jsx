@@ -48,7 +48,13 @@ const AdminServicesTab = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rawText: raw }),
       });
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (_) {
+        if (!res.ok) throw new Error(`Chyba ${res.status}. Zkuste to znovu.`);
+        throw new Error('Neplatná odpověď serveru. Zkuste to znovu.');
+      }
       if (!res.ok) {
         throw new Error(data.error || `Chyba ${res.status}`);
       }
@@ -56,7 +62,9 @@ const AdminServicesTab = ({
         setServiceForm({ ...serviceForm, description: data.formattedMarkdown });
       }
     } catch (err) {
-      setFormatError(err.message || 'Formátování se nepovedlo.');
+      const msg = err.message || '';
+      const isParseOrPattern = err instanceof SyntaxError || /unexpected token|expected pattern/i.test(msg);
+      setFormatError(isParseOrPattern ? 'Formátování není teď k dispozici. Zkuste to později.' : msg || 'Formátování se nepovedlo.');
     } finally {
       setIsFormatting(false);
     }

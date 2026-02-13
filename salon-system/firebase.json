@@ -2,7 +2,13 @@
   "hosting": {
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [{"source": "**", "destination": "/index.html"}]
+    "rewrites": [
+      { "source": "/api/format-content", "function": "formatContent" },
+      { "source": "**", "destination": "/index.html" }
+    ]
+  },
+  "functions": {
+    "source": "functions"
   },
   "storage": {
     "rules": "storage.rules"
