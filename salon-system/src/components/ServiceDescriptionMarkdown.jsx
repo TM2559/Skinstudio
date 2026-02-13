@@ -14,18 +14,24 @@ function cleanDescription(text) {
 }
 
 const markdownComponents = {
-  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-  strong: ({ children }) => <strong className="font-semibold text-stone-800">{children}</strong>,
-  ul: ({ children }) => <ul className="list-disc pl-5 space-y-1 my-2">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1 my-2">{children}</ol>,
-  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+  p: ({ node, children, ...props }) => <p className="mb-3 last:mb-0" {...props}>{children}</p>,
+  strong: ({ node, children, ...props }) => (
+    <strong className="font-semibold text-[var(--skin-gold)]" {...props}>{children}</strong>
+  ),
+  ul: ({ node, children, ...props }) => (
+    <ul className="list-disc pl-5 space-y-1 my-2" {...props}>{children}</ul>
+  ),
+  ol: ({ node, children, ...props }) => (
+    <ol className="list-decimal pl-5 space-y-1 my-2" {...props}>{children}</ol>
+  ),
+  li: ({ node, children, ...props }) => <li className="pl-1 leading-relaxed" {...props}>{children}</li>,
 };
 
 export default function ServiceDescriptionMarkdown({ text, className = '' }) {
   const cleaned = cleanDescription(text);
   if (!cleaned) return null;
   return (
-    <div className={`text-gray-600 leading-relaxed max-w-[65ch] ${className}`}>
+    <div className={`text-sm text-stone-500 leading-relaxed max-w-[65ch] ${className}`}>
       <ReactMarkdown components={markdownComponents}>{cleaned}</ReactMarkdown>
     </div>
   );
