@@ -72,7 +72,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
   };
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F] text-[#A1A1AA] font-sans antialiased">
+    <div id="pmu" className="min-h-screen bg-[#0F0F0F] text-[#A1A1AA] font-sans antialiased">
       {/* Dark theme header – jako na main/produkci */}
       <header
         className="fixed top-0 left-0 right-0 z-50 bg-[#0F0F0F]/80 backdrop-blur-md border-b border-white/5"
@@ -206,11 +206,11 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
               Filozofie
             </h2>
             <div className="text-left">
-              <h3 className="text-xl font-serif text-gray-900 mb-4">Jemnost, která zůstává</h3>
-              <p className="mt-4 text-gray-500 leading-relaxed">
+              <h3 className="text-xl font-serif text-white mb-4">Jemnost, která zůstává</h3>
+              <p className="mt-4 text-[#A1A1AA] leading-relaxed">
                 Permanentní make-up vnímám jako neviditelného pomocníka. Jeho úkolem není přebít vaši tvář, ale tiše podtrhnout to, co je na ní krásné.
               </p>
-              <p className="mt-4 text-gray-600 leading-relaxed">
+              <p className="mt-4 text-[#A1A1AA]/80 leading-relaxed">
                 Pracuji tak, aby výsledek působil vzdušně a přirozeně. Cílem je, abyste se ráno probudila s pocitem, že jste upravená, ale stále jste to vy.
               </p>
             </div>
