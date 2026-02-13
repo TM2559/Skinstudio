@@ -200,56 +200,61 @@ export default function Layout({ children, setView }) {
 
       <InstagramShowcase />
 
-      <footer className="mt-auto bg-[#1c1c1c] text-gray-400">
+      <footer className="mt-auto bg-[#1c1c1c] font-sans font-light text-gray-200">
         <div className="container mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Column 1: Brand & Info */}
           <div>
             <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-2">
               SKIN STUDIO
             </h3>
-            <p className="text-gray-400 font-medium mb-2">Lucie Metelková</p>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              Prémiová péče o pleť a permanentní make-up v srdci Uherského Brodu.
+            <p className="font-medium mb-2">Lucie Metelková</p>
+            <p className="text-sm leading-relaxed">
+              Prémiová péče o pleť a permanentní make-up v{' '}
+              <span className="inline-flex items-center mx-1 relative top-[1px]">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                    stroke="#E57590"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>{' '}
+              Uherského Brodu.
             </p>
           </div>
 
-          {/* Column 2: Kontakt & Rezervace */}
+          {/* Column 2: Kontakt */}
           <div className="md:text-right md:flex md:flex-col md:items-end">
             <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-4">
               KONTAKT
             </h3>
             <address className="not-italic space-y-2 text-sm">
               <p className="flex items-center gap-2 md:justify-end">
-                <MapPin size={16} className="shrink-0 text-gray-500" />
+                <MapPin size={16} className="shrink-0 opacity-70" />
                 Masarykovo náměstí 72 (Budova ČSOB – 2. patro)
               </p>
               <p className="flex items-center gap-2 md:justify-end">
-                <Mail size={16} className="shrink-0 text-gray-500" />
+                <Mail size={16} className="shrink-0 opacity-70" />
                 <a href="mailto:lucie@skinstudio.cz" className="hover:text-[#8C5E35] transition-colors">
                   lucie@skinstudio.cz
                 </a>
               </p>
               <p className="flex items-center gap-2 md:justify-end">
-                <Phone size={16} className="shrink-0 text-gray-500" />
+                <Phone size={16} className="shrink-0 opacity-70" />
                 <a href="tel:+420724875558" className="hover:text-[#8C5E35] transition-colors">
                   +420 724 875 558
                 </a>
               </p>
             </address>
-            <Link
-              to="/rezervace"
-              className="mt-6 inline-flex items-center justify-center bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
-              onClick={() => setView?.('customer')}
-            >
-              Rezervace
-            </Link>
           </div>
         </div>
 
         {/* Bottom bar */}
         <div className="border-t border-gray-700/60">
           <div className="container mx-auto px-6 py-4">
-            <p className="text-gray-500 text-xs text-center">
+            <p className="text-xs text-center">
               © 2024 Skin Studio Lucie Metelková. Všechna práva vyhrazena.
             </p>
           </div>
