@@ -7,6 +7,7 @@ import { TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cos
 import { WEB_CONTENT } from '../constants/content';
 import ComparisonSlider from './ComparisonSlider';
 import LazySection from './LazySection';
+import ServiceDescriptionMarkdown from './ServiceDescriptionMarkdown';
 
 const COSMETICS_BG = '#F9F8F6';
 
@@ -279,9 +280,7 @@ export default function CosmeticsPage({ services = [] }) {
                         >
                           {hasDescription && (
                             <>
-                              <p className="text-gray-600 leading-relaxed max-w-[65ch] whitespace-pre-wrap">
-                                {cleanDescription(s.description)}
-                              </p>
+                              <ServiceDescriptionMarkdown text={s.description} />
                               <Link
                                 to={`/rezervace?service=${encodeURIComponent(s.id)}`}
                                 className="mt-6 inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)] focus:outline-none focus:ring-2 focus:ring-stone-600 focus:ring-offset-2"

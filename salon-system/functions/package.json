@@ -3,7 +3,7 @@
   "description": "Firebase Cloud Functions for Skin Studio (e.g. format-content API)",
   "main": "index.js",
   "type": "module",
-  "engines": { "node": ">=18" },
+  "engines": { "node": "20" },
   "scripts": {
     "serve": "firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"

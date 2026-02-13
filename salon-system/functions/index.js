@@ -216,57 +216,54 @@ async function formatWithGemini(rawText, apiKey) {
   return text.trim();
 }
 
-function parseBody(req) {
-  return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', (chunk) => { body += chunk; });
-    req.on('end', () => {
-      try {
-        resolve(body ? JSON.parse(body) : {});
-      } catch (e) {
-        reject(e);
-      }
-    });
-    req.on('error', reject);
-  });
-}
-
 export const formatContent = onRequest(
   { region: 'europe-west1', timeoutSeconds: 60 },
   async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
-      return;
-    }
-    if (req.method !== 'POST') {
-      res.status(405).json({ error: 'Method not allowed' });
-      return;
-    }
+    const send = (status, data) => {
+      try {
+        res.status(status).json(data);
+      } catch (e) {
+        console.error('formatContent send error', e);
+      }
+    };
     try {
-      const body = await parseBody(req);
+      if (req.method === 'OPTIONS') {
+        res.status(204).send('');
+        return;
+      }
+      if (req.method !== 'POST') {
+        send(405, { error: 'Method not allowed' });
+        return;
+      }
+      const body = req.body || {};
       const rawText = body.rawText;
       if (typeof rawText !== 'string') {
-        res.status(400).json({ error: 'Missing or invalid rawText' });
+        send(400, { error: 'Missing or invalid rawText' });
         return;
       }
       const trimmed = rawText.trim();
       if (!trimmed) {
-        res.status(400).json({ error: 'rawText is empty' });
+        send(400, { error: 'rawText is empty' });
         return;
       }
-      const key = geminiApiKey.value() || process.env.GEMINI_API_KEY || '';
+      let key = '';
+      try {
+        key = geminiApiKey.value() || process.env.GEMINI_API_KEY || '';
+      } catch (_) {
+        key = process.env.GEMINI_API_KEY || '';
+      }
       if (!key) {
-        res.status(503).json({ error: 'No LLM configured. Set GEMINI_API_KEY in env or params.' });
+        send(503, { error: 'No LLM configured. Set GEMINI_API_KEY in env or params.' });
         return;
       }
       const formattedMarkdown = await formatWithGemini(trimmed, key);
-      res.status(200).json({ formattedMarkdown });
+      send(200, { formattedMarkdown });
     } catch (err) {
       console.error('formatContent error', err);
-      res.status(500).json({ error: err.message || 'Formatting failed' });
+      send(500, { error: err.message || 'Formatting failed' });
     }
   }
 );

@@ -3,7 +3,7 @@
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
-      { "source": "/api/format-content", "function": "formatContent" },
+      { "source": "/api/format-content", "function": { "functionId": "formatContent", "region": "europe-west1" } },
       { "source": "**", "destination": "/index.html" }
     ]
   },
