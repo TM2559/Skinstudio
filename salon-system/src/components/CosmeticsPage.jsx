@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Phone, Mail, Instagram, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
-import { getCollectionPath, INSTAGRAM_URL } from '../firebaseConfig';
-import { TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
+import { getCollectionPath } from '../firebaseConfig';
+import { GALLERY_COLLECTION, TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
 import ComparisonSlider from './ComparisonSlider';
 import LazySection from './LazySection';
 
-const COSMETICS_BG = '#fdfbf7';
+const COSMETICS_BG = '#F9F8F6';
 
 /** Remove parenthetical meta-commentary from description text. */
 function cleanDescription(text) {
@@ -20,6 +20,7 @@ function cleanDescription(text) {
 
 export default function CosmeticsPage({ services = [] }) {
   const [transformations, setTransformations] = useState([]);
+  const [gallery, setGallery] = useState([]);
   const [expandedServiceId, setExpandedServiceId] = useState(null);
   const promenyCarouselRef = useRef(null);
   const [promenyActiveIndex, setPromenyActiveIndex] = useState(0);
@@ -43,12 +44,23 @@ export default function CosmeticsPage({ services = [] }) {
     return () => unsubT();
   }, []);
 
+  useEffect(() => {
+    const colG = getCollectionPath(GALLERY_COLLECTION);
+    const qG = query(colG, where('category', '==', COSMETICS_CATEGORY));
+    const unsubG = onSnapshot(qG, (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      setGallery(list);
+    });
+    return () => unsubG();
+  }, []);
+
   // Sync pagination dot with carousel scroll position (mobile)
   useEffect(() => {
     const el = promenyCarouselRef.current;
     if (!el || transformations.length <= 1) return;
     const onScroll = () => {
-      const itemWidth = el.offsetWidth * 0.85 + 16;
+      const itemWidth = el.offsetWidth * 0.85 + 24; /* 85vw + gap-6 */
       const index = Math.round(el.scrollLeft / itemWidth);
       const clamped = Math.min(Math.max(0, index), transformations.length - 1);
       setPromenyActiveIndex(clamped);
@@ -60,73 +72,66 @@ export default function CosmeticsPage({ services = [] }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: COSMETICS_BG }}>
-      {/* 1. Hero – Subtitle → Claim → Handwritten → CTA */}
-      <section className="pt-14 sm:pt-20 pb-12 sm:pb-16 px-4 text-center">
-        <div className="max-w-3xl mx-auto">
+      {/* 1. Hero – mobile: text first, compact image strip; desktop: split, viewport height */}
+      <section className="grid grid-cols-1 md:grid-cols-2 grid-rows-[auto_400px] md:grid-rows-none md:h-screen md:max-h-[1080px] w-full overflow-hidden min-h-0">
+        <div className="flex flex-col justify-center items-start px-8 md:px-24 h-full min-h-0 bg-[#F9F8F6] order-1 md:order-1 py-8 md:py-0">
           <p className="text-xs sm:text-sm font-sans uppercase tracking-[0.2em] text-stone-600 mb-3">
             SKIN STUDIO LUCIE METELKOVÉ
           </p>
-          <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-wide text-[var(--skin-charcoal)]">
+          <h1 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl leading-tight tracking-wide text-[var(--skin-charcoal)]">
             Vaše pleť, vaše sebevědomí.
           </h1>
-          <div className="flex flex-col items-center mt-4">
-            <p className="font-signature text-2xl sm:text-3xl text-stone-600 -rotate-2 mb-8">
-              S láskou k detailu, Lucie
-            </p>
-            <Link
-              to="/rezervace"
-              className="skin-accent inline-flex items-center justify-center px-8 py-4 font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm"
-            >
-              Objednat termín
-            </Link>
-          </div>
+          <p className="mt-4 font-signature text-2xl sm:text-3xl text-stone-600 -rotate-2">
+            S láskou k detailu, Lucie
+          </p>
+          <p className="mt-6 text-gray-600 max-w-prose" style={{ lineHeight: 1.6 }}>
+            Vytvořila jsem místo, kde se čas točí jen kolem vás. Mým cílem není vás měnit, ale vyzdvihnout to nejkrásnější ve vás.
+          </p>
+          <Link
+            to="/rezervace"
+            className="skin-accent mt-8 inline-flex items-center justify-center px-8 py-4 font-bold uppercase text-[10px] tracking-[0.05em] shadow-sm w-fit"
+          >
+            Objednat termín
+          </Link>
+        </div>
+        <div className="relative w-full h-[400px] md:h-full order-2 md:order-2 min-h-0">
+          <img
+            src="/lucie-portrait.jpg"
+            alt="Lucie Metelková – Skin Studio"
+            className="w-full h-full object-cover object-[50%_50%]"
+            loading="eager"
+            decoding="async"
+          />
         </div>
       </section>
 
-      {/* 2. Philosophy / About ("O studiu") – organic text on beige + portrait */}
+      {/* 2. Filozofie – text-only, centered, no duplicate portrait */}
       <section
         id="o-nas"
-        className="scroll-mt-20 py-28 px-4 sm:px-6"
+        className="scroll-mt-20 py-24 px-4 sm:px-6"
         style={{ backgroundColor: 'var(--skin-cream-dark)' }}
       >
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start">
-            {/* Left: text directly on beige, no card */}
-            <div className="order-2 md:order-1">
-              <h2 className="font-display text-2xl font-bold mb-6 text-stone-800 md:mb-8">
-                Filozofie
-              </h2>
-              <div className="body-text text-left text-stone-700 space-y-6 leading-relaxed">
-                <p>
-                  Jmenuji se Lucie Metelková a kosmetika je pro mě víc než jen práce – je to spojení odbornosti, relaxace a preciznosti. Kladu absolutní důraz na čistotu, špičkové postupy a bezpečí vaší pleti.
-                </p>
-                <p>
-                  V mém studiu v <strong className="font-semibold text-stone-800">Uherském Brodě</strong> nenajdete „pásovou výrobu“. Každá pleť je jedinečná, a proto je i každé mé ošetření 100% individuální. Ať už řešíme akné, vrásky, nebo jen toužíte po dokonalém obočí díky laminaci, mým cílem je, abyste odcházela nejen krásnější, ale i dokonale odpočatá.
-                </p>
-                <p>
-                  Zastavte se a dopřejte si svůj „Me Time“ okamžik v prostředí, kde se čas točí jen kolem vás.
-                </p>
-              </div>
-              <div className="flex justify-end mt-8">
-                <p
-                  className="font-signature text-4xl text-stone-800 -rotate-3 inline-block"
-                  aria-label="Lucie Metelková"
-                >
-                  Lucie
-                </p>
-              </div>
-            </div>
-            {/* Right: larger portrait on desktop, rounded + shadow on image only */}
-            <div className="order-1 md:order-2 flex justify-center md:justify-end w-full">
-              <img
-                src="/lucie-portrait.jpg"
-                alt="Lucie Metelková – Skin Studio"
-                className="w-full max-w-sm md:max-w-md aspect-[3/4] md:aspect-[2/3] object-cover rounded-2xl shadow-2xl"
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="font-display text-2xl font-bold mb-6 text-stone-800 md:mb-8">
+            Filozofie
+          </h2>
+          <div className="body-text text-stone-700 space-y-6 leading-relaxed">
+            <p>
+              Jmenuji se Lucie Metelková a kosmetika je pro mě víc než jen práce – je to spojení odbornosti, relaxace a preciznosti. Kladu absolutní důraz na čistotu, špičkové postupy a zdraví vaší pleti.
+            </p>
+            <p>
+              V mém studiu v <strong className="font-semibold text-stone-800">Uherském Brodě</strong> nenajdete „pásovou výrobu“. Každá pleť je jedinečná, a proto je i každé mé ošetření 100% individuální. Ať už řešíme akné, vrásky, nebo jen toužíte po dokonalém obočí díky laminaci, mým cílem je, abyste odcházela nejen krásnější, ale i dokonale odpočatá.
+            </p>
+            <p>
+              Zastavte se a dopřejte si svůj „Me Time“ okamžik v prostředí, kde se čas točí jen kolem vás.
+            </p>
           </div>
+          <p
+            className="font-signature text-4xl text-stone-800 -rotate-3 inline-block mt-8"
+            aria-label="Lucie Metelková"
+          >
+            Lucie
+          </p>
         </div>
       </section>
 
@@ -167,32 +172,39 @@ export default function CosmeticsPage({ services = [] }) {
               <LazySection rootMargin="240px">
                 <div
                   ref={promenyCarouselRef}
-                  className="mobile-carousel carousel-track md:grid md:grid-cols-1 lg:grid-cols-2 md:overflow-visible gap-4 md:gap-10 md:gap-y-12 px-4 pb-2 md:pb-0 -mx-4 md:mx-0"
+                  className="transformations-scroll flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory px-4 -mx-4 md:mx-0 md:px-0 min-h-[320px]"
                 >
-                  {transformations.map((item) => (
-                    <div
-                      key={item.id}
-                      className="mobile-carousel-item md:min-w-0 md:shrink-0 md:flex-none md:w-auto space-y-3"
-                    >
-                      <ComparisonSlider
-                        beforeImage={item.imageBeforeUrl}
-                        afterImage={item.imageAfterUrl}
-                        altText={item.title || 'Před a po'}
-                        theme="light"
-                      />
-                      <h3 className="font-display font-semibold text-lg text-stone-700">
-                        {item.title}
-                      </h3>
-                      {item.description && (
-                        <p className="text-stone-600 text-sm leading-relaxed">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                  <div id="carousel-track" className="flex gap-6 flex-shrink-0">
+                    {transformations.map((item) => (
+                      <div
+                        key={item.id}
+                        className="w-[85vw] md:w-[400px] flex-shrink-0 snap-center flex flex-col"
+                      >
+                      <div className="order-2 md:order-1 space-y-2">
+                        <h3 className="font-display font-semibold text-lg text-stone-800">
+                          {item.title || 'Před a po'}
+                        </h3>
+                        {item.description && (
+                          <p className="text-gray-800 text-sm leading-relaxed max-w-prose">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="order-1 md:order-2">
+                        <ComparisonSlider
+                          beforeImage={item.imageBeforeUrl}
+                          afterImage={item.imageAfterUrl}
+                          altText={item.title || 'Před a po'}
+                          theme="light"
+                        />
+                      </div>
+                      <div className="order-3 mobile-carousel-swipe-zone md:hidden pb-2" aria-hidden />
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 {transformations.length >= 1 && (
-                  <div className="carousel-dots" role="tablist" aria-label="Proměny">
+                  <div className="carousel-dots md:hidden" role="tablist" aria-label="Proměny">
                     {transformations.map((_, i) => (
                       <button
                         key={i}
@@ -203,7 +215,7 @@ export default function CosmeticsPage({ services = [] }) {
                         onClick={() => {
                           const el = promenyCarouselRef.current;
                           if (!el) return;
-                          const itemWidth = el.offsetWidth * 0.85 + 16;
+                          const itemWidth = el.offsetWidth * 0.85 + 24; /* 85vw + gap-6 */
                           el.scrollTo({ left: i * itemWidth, behavior: 'smooth' });
                         }}
                         className={`dot ${promenyActiveIndex === i ? 'dot-active' : ''}`}
@@ -221,7 +233,7 @@ export default function CosmeticsPage({ services = [] }) {
         </div>
       </section>
 
-      {/* 4. Services & Pricing ("Ceník" / Služby) */}
+      {/* 4. Services & Pricing ("Ceník" – accordion) */}
       <section
         id="procedury"
         className="scroll-mt-20 py-24 px-4 border-t border-stone-200/80"
@@ -310,7 +322,57 @@ export default function CosmeticsPage({ services = [] }) {
         </div>
       </section>
 
-      {/* 5. Booking CTA (#kontakt for nav) */}
+      {/* 5. Gallery ("Moje práce" – masonry) */}
+      <section
+        id="moje-prace"
+        className="scroll-mt-20 py-24 px-4 border-t border-stone-200/80"
+        style={{ backgroundColor: COSMETICS_BG }}
+      >
+        <div className="max-w-6xl mx-auto">
+          <h2 className="font-display text-2xl sm:text-3xl font-semibold text-stone-700 text-center mb-12">
+            Moje práce
+          </h2>
+          {gallery.length > 0 ? (
+            <LazySection rootMargin="240px">
+              <div
+                className="grid gap-4"
+                style={{
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                  gridAutoRows: 'auto',
+                }}
+              >
+                {gallery.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-2xl overflow-hidden bg-white border border-stone-100 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="aspect-[4/5] min-h-[280px] bg-stone-100">
+                    <img
+                      src={item.imageUrl}
+                      alt={item.caption || 'Galerie'}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                  {item.caption && (
+                    <p className="p-3 text-sm text-stone-600 text-center">
+                      {item.caption}
+                    </p>
+                  )}
+                </div>
+              ))}
+              </div>
+            </LazySection>
+          ) : (
+            <p className="text-center text-stone-500 text-sm py-12">
+              Galerie fotek se zobrazí po přidání v administraci (Fotografie → Galerie).
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* 6. Booking CTA (#kontakt for nav) */}
       <section id="kontakt" className="scroll-mt-20 py-24 px-4 text-center" style={{ backgroundColor: COSMETICS_BG }}>
         <div className="max-w-xl mx-auto">
           <p className="text-stone-600 mb-6">
@@ -325,50 +387,6 @@ export default function CosmeticsPage({ services = [] }) {
         </div>
       </section>
 
-      {/* 7. Footer – address, phone, Instagram link, copyright (#kontakt for nav) */}
-      <footer
-        id="kontakt"
-        className="scroll-mt-20 py-24 px-4 border-t border-stone-200/80"
-        style={{ backgroundColor: '#F9F7F2' }}
-      >
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-8 sm:gap-12 text-center sm:text-left">
-            <a
-              href="tel:+420724875558"
-              className="flex items-center gap-2 font-normal text-[var(--skin-charcoal)] hover:text-[var(--skin-gold-dark)] transition-colors"
-            >
-              <Phone size={18} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
-              +420 724 875 558
-            </a>
-            <a
-              href="mailto:info@skinstudio.cz"
-              className="flex items-center gap-2 font-normal text-[var(--skin-charcoal)] hover:text-[var(--skin-gold-dark)] transition-colors"
-            >
-              <Mail size={18} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
-              info@skinstudio.cz
-            </a>
-            <span className="flex items-center gap-2 text-[var(--skin-charcoal)]">
-              <MapPin size={18} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
-              Uherský Brod
-            </span>
-            {INSTAGRAM_URL && (
-              <a
-                href={INSTAGRAM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 font-normal text-[var(--skin-charcoal)] hover:text-[var(--skin-gold-dark)] transition-colors"
-                aria-label="Instagram"
-              >
-                <Instagram size={18} className="shrink-0 text-[var(--skin-gold-dark)]" aria-hidden />
-                Instagram
-              </a>
-            )}
-          </div>
-          <p className="text-center text-sm text-stone-400 mt-12 pt-8 border-t" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
-            © 2026 Skin Studio Lucie Metelková
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

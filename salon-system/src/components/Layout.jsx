@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Instagram } from 'lucide-react';
+import { Menu, X, Instagram, MapPin, Mail, Phone } from 'lucide-react';
 import { INSTAGRAM_URL } from '../firebaseConfig';
 import InstagramShowcase from './InstagramShowcase';
 
 const getNav = () => {
   const items = [
     { label: 'KOSMETIKA', to: '/kosmetika' },
-    { label: 'PERMANENTNÍ MAKE-UP', to: '/pmu' },
+    { label: 'PERMANENTNÍ MAKE-UP', to: '/pmu#pmu' },
     { label: 'KONTAKT', to: '/', hash: 'kontakt' },
   ];
   if (INSTAGRAM_URL) items.push({ label: 'Instagram', to: '/', hash: 'instagram', iconOnly: true });
@@ -200,26 +200,80 @@ export default function Layout({ children, setView }) {
 
       <InstagramShowcase />
 
-      <footer
-        className="border-t py-6 mt-auto skin-border"
-        style={{ backgroundColor: 'var(--skin-white)' }}
-      >
-        <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-          <p className="text-[#6b6560] text-[10px] tracking-[0.3em] uppercase order-2 sm:order-1">
-            © 2026 Skin Studio – Lucie Metelková
-          </p>
-          {INSTAGRAM_URL && (
-            <a
-              href={INSTAGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="order-1 sm:order-2 flex items-center gap-2 text-[#6b6560] hover:text-[var(--skin-charcoal)] transition-colors"
-              aria-label="Instagram"
-            >
-              <Instagram size={18} />
-              <span className="text-[10px] uppercase tracking-wider">Instagram</span>
-            </a>
-          )}
+      <footer className="mt-auto bg-[#1c1c1c] text-gray-400">
+        <div className="container mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Column 1: Brand & Info */}
+          <div>
+            <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-2">
+              SKIN STUDIO
+            </h3>
+            <p className="text-gray-400 font-medium mb-2">Lucie Metelková</p>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              Prémiová péče o pleť a permanentní make-up v srdci Uherského Brodu.
+            </p>
+          </div>
+
+          {/* Column 2: Rychlé odkazy */}
+          <div>
+            <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-4">
+              NAVIGACE
+            </h3>
+            <nav className="flex flex-col gap-2">
+              <Link to="/" className="text-gray-400 hover:text-[#8C5E35] transition-colors text-sm">
+                Domů
+              </Link>
+              <Link to="/#services" className="text-gray-400 hover:text-[#8C5E35] transition-colors text-sm">
+                Služby
+              </Link>
+              <Link to="/#about" className="text-gray-400 hover:text-[#8C5E35] transition-colors text-sm">
+                O mně
+              </Link>
+              <Link to="/#contact" className="text-gray-400 hover:text-[#8C5E35] transition-colors text-sm">
+                Kontakt
+              </Link>
+              <Link
+                to="/rezervace"
+                className="text-gray-400 hover:text-[#8C5E35] transition-colors text-sm"
+                onClick={() => setView?.('customer')}
+              >
+                Rezervace
+              </Link>
+            </nav>
+          </div>
+
+          {/* Column 3: Kontakt & Parkování */}
+          <div>
+            <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-4">
+              KONTAKT
+            </h3>
+            <address className="not-italic space-y-2 text-sm">
+              <p className="flex items-center gap-2">
+                <MapPin size={16} className="shrink-0 text-gray-500" />
+                Masarykovo náměstí 72 (Budova ČSOB – 2. patro)
+              </p>
+              <p className="flex items-center gap-2">
+                <Mail size={16} className="shrink-0 text-gray-500" />
+                <a href="mailto:lucie@skinstudio.cz" className="hover:text-[#8C5E35] transition-colors">
+                  lucie@skinstudio.cz
+                </a>
+              </p>
+              <p className="flex items-center gap-2">
+                <Phone size={16} className="shrink-0 text-gray-500" />
+                <a href="tel:+420724875558" className="hover:text-[#8C5E35] transition-colors">
+                  +420 724 875 558
+                </a>
+              </p>
+            </address>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-t border-gray-700/60">
+          <div className="container mx-auto px-6 py-4">
+            <p className="text-gray-500 text-xs text-center">
+              © 2024 Skin Studio Lucie Metelková. Všechna práva vyhrazena.
+            </p>
+          </div>
         </div>
       </footer>
     </div>

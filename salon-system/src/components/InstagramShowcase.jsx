@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { onSnapshot } from 'firebase/firestore';
 import { Instagram } from 'lucide-react';
 import { INSTAGRAM_URL, getDocPath } from '../firebaseConfig';
@@ -7,68 +7,66 @@ const INSTAGRAM_HANDLE = '@skin_studio_lucie_metelkova';
 const CONFIG_DOC = 'instagramShowcase';
 const STATIC_CONFIG_PATH = '/instagram-showcase/config.json';
 
-/** Crossfade: délka prolínání (1–2 s) a intervaly pro každý slot (ms) */
-const CROSSFADE_DURATION_MS = 2000;
-const SLOT_INTERVALS_MS = [4000, 5500, 4800, 6000];
+/** Living Mosaic: swap interval and fade duration */
+const SWAP_INTERVAL_MS = 3000;
+const FADE_DURATION_MS = 700;
 
-/** Placeholder sady pro každý ze 4 slotů (nature/skincare) */
-const SLOT_PLACEHOLDERS = [
-  [
-    'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=600&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&h=600&fit=crop',
-  ],
-  [
-    'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&h=600&fit=crop',
-  ],
-  [
-    'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=600&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&h=600&fit=crop',
-  ],
-  [
-    'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=600&h=600&fit=crop',
-  ],
-];
-
-/** Fallback flat list když nemáme sloty */
-const PLACEHOLDER_IMAGES = [
+/** Image pool for the living mosaic (8–12 images). Reused for variety. */
+const galleryImages = [
   'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&h=600&fit=crop',
   'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=600&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=600&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=600&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&h=600&fit=crop',
   'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&h=600&fit=crop',
 ];
 
-/** Rozdělí plochý seznam URL do 4 slotů (round-robin) pro crossfade */
-function flatUrlsToSlots(urls) {
-  const slots = [[], [], [], []];
-  urls.forEach((url, i) => slots[i % 4].push(url));
-  return slots;
+/** Fallback when no config – first 4 of pool */
+const PLACEHOLDER_IMAGES = galleryImages.slice(0, 4);
+
+/** Build pool: use imageList if available (pad to 8+ with galleryImages), else galleryImages */
+function buildPool(imageList) {
+  if (imageList && imageList.length > 0) {
+    const fromConfig = [...imageList];
+    while (fromConfig.length < 8) {
+      fromConfig.push(galleryImages[fromConfig.length % galleryImages.length]);
+    }
+    return fromConfig.slice(0, 12);
+  }
+  return galleryImages;
 }
 
 export default function InstagramShowcase() {
   const [imageList, setImageList] = useState(null);
-  const [activeIndices, setActiveIndices] = useState([0, 0, 0, 0]);
+  /** Indices into pool for each of the 4 visible slots; initial: first 4 */
+  const [displayedIndices, setDisplayedIndices] = useState([0, 1, 2, 3]);
+  /** Which slot is currently fading out (0–3 or null) */
+  const [fadingSlot, setFadingSlot] = useState(null);
+  const poolRef = useRef(buildPool(null));
+  const displayedIndicesRef = useRef([0, 1, 2, 3]);
+  const intervalRef = useRef(null);
+  const timeoutRef = useRef(null);
+
+  const pool = useMemo(() => buildPool(imageList), [imageList]);
+  displayedIndicesRef.current = displayedIndices;
+  poolRef.current = pool;
 
   useEffect(() => {
     const docRef = getDocPath('config', CONFIG_DOC);
-
     const unsub = onSnapshot(
       docRef,
       (snap) => {
         const data = snap.data();
         const urls = Array.isArray(data?.urls) ? data.urls : [];
-        if (urls.length > 0) {
-          setImageList(urls);
-          return;
-        }
-        setImageList(null);
+        if (urls.length > 0) setImageList(urls);
+        else setImageList(null);
       },
       () => setImageList(null)
     );
-
     return () => unsub();
   }, []);
 
@@ -79,47 +77,51 @@ export default function InstagramShowcase() {
       .then((arr) => {
         if (Array.isArray(arr) && arr.length > 0) {
           setImageList(arr.map((filename) => `/instagram-showcase/${filename.trim()}`));
-        } else {
-          setImageList(PLACEHOLDER_IMAGES);
-        }
+        } else setImageList([]);
       })
-      .catch(() => setImageList(PLACEHOLDER_IMAGES));
-  }, [imageList]);
-
-  const slotImages = useMemo(() => {
-    if (!imageList || imageList.length === 0) return SLOT_PLACEHOLDERS;
-    const slots = flatUrlsToSlots(imageList);
-    return slots.map((slot, i) =>
-      slot.length > 0 ? slot : [PLACEHOLDER_IMAGES[i % 4]]
-    );
+      .catch(() => setImageList([]));
   }, [imageList]);
 
   useEffect(() => {
-    setActiveIndices((prev) =>
-      prev.map((idx, slotIndex) => {
-        const count = slotImages[slotIndex]?.length ?? 1;
-        return count > 0 ? Math.min(idx, count - 1) : 0;
-      })
-    );
-  }, [slotImages]);
+    const len = pool.length;
+    setDisplayedIndices((prev) => {
+      const next = prev.map((idx) => (idx < len ? idx : 0));
+      return next.every((n, i) => n === prev[i]) ? prev : next;
+    });
+  }, [pool.length]);
 
   useEffect(() => {
-    const timers = SLOT_INTERVALS_MS.map((intervalMs, slotIndex) => {
-      return setInterval(() => {
-        setActiveIndices((prev) => {
+    if (pool.length < 2) return;
+
+    intervalRef.current = setInterval(() => {
+      const poolArr = poolRef.current;
+      const current = displayedIndicesRef.current;
+      const slot = Math.floor(Math.random() * 4);
+      const displayedSet = new Set(current);
+      const otherIndices = poolArr
+        .map((_, i) => i)
+        .filter((i) => !displayedSet.has(i));
+      const candidates = otherIndices.length > 0 ? otherIndices : [...Array(poolArr.length).keys()];
+      const newIdx = candidates[Math.floor(Math.random() * candidates.length)];
+
+      setFadingSlot(slot);
+      timeoutRef.current = setTimeout(() => {
+        setDisplayedIndices((prev) => {
           const next = [...prev];
-          const count = slotImages[slotIndex]?.length ?? 1;
-          next[slotIndex] = count > 0 ? (prev[slotIndex] + 1) % count : 0;
+          next[slot] = newIdx;
           return next;
         });
-      }, intervalMs);
-    });
-    return () => timers.forEach(clearInterval);
-  }, [slotImages]);
+        setFadingSlot(null);
+      }, FADE_DURATION_MS);
+    }, SWAP_INTERVAL_MS);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [pool.length]);
 
   if (!INSTAGRAM_URL) return null;
-
-  const durationClass = 'duration-[2000ms]';
 
   return (
     <section
@@ -143,8 +145,10 @@ export default function InstagramShowcase() {
         </header>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {slotImages.map((urls, slotIndex) => {
-            const list = urls.length > 0 ? urls : [PLACEHOLDER_IMAGES[slotIndex % 4]];
+          {[0, 1, 2, 3].map((slotIndex) => {
+            const idx = displayedIndices[slotIndex] ?? 0;
+            const src = pool[idx] ?? pool[0];
+            const isFading = fadingSlot === slotIndex;
             return (
               <div
                 key={slotIndex}
@@ -157,23 +161,18 @@ export default function InstagramShowcase() {
                   className="group block absolute inset-0 cursor-pointer"
                   aria-label={`Instagram – příspěvek ${slotIndex + 1}`}
                 >
-                  <div className="absolute inset-0 overflow-hidden">
-                    {list.map((src, imgIndex) => (
-                      <img
-                        key={typeof src === 'string' ? src : imgIndex}
-                        src={src}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 transition-opacity ease-in-out ${durationClass} ${
-                          activeIndices[slotIndex] === imgIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                        }`}
-                        onError={(e) => {
-                          e.target.src = PLACEHOLDER_IMAGES[imgIndex % PLACEHOLDER_IMAGES.length];
-                        }}
-                      />
-                    ))}
-                  </div>
+                  <img
+                    src={src}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className={`gallery-item absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out group-hover:scale-110 ${
+                      isFading ? 'opacity-0' : 'opacity-100'
+                    }`}
+                    onError={(e) => {
+                      e.target.src = galleryImages[0];
+                    }}
+                  />
                   <div
                     className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center z-20 pointer-events-none"
                     aria-hidden

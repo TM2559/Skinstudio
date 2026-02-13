@@ -38,19 +38,18 @@
     color: #6b6560;
   }
   .skin-accent {
-    background-color: var(--skin-gold-dark);
+    background-color: #8C5E35;
     color: white;
     border-radius: 9999px;
     letter-spacing: 0.05em;
     transition: background-color 0.2s ease, transform 0.2s ease;
   }
   .skin-accent:hover {
-    background-color: #8a6b32;
-    color: white;
-    transform: translateY(-2px);
+    background-color: #754d29;
+    transform: scale(1.05);
   }
   .skin-accent:active {
-    transform: translateY(0);
+    transform: scale(0.98);
   }
   .skin-border {
     border-color: var(--skin-beige-muted);
@@ -73,7 +72,7 @@
     object-position: center center;
   }
 
-  /* Karusel Proměny – skrytí scrollbaru na mobilu */
+  /* Karusel Proměny – skrytí scrollbaru (pouze pokud je potřeba) */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -82,38 +81,72 @@
     display: none;
   }
 
-  /* Mobile Carousel – peek, scroll-snap, touch-friendly (no JS) */
-  .mobile-carousel {
-    display: flex;
-    overflow-x: scroll;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x;
-    gap: 1rem;
-    padding-right: 20px;
-    padding-bottom: 1rem;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    width: 100%;
-    min-width: 0;
-    /* iOS: vytvoří scroll vrstvu pro spolehlivější touch scroll */
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
+  /* Custom scrollbar – thin, Quiet Luxury (Transformations + any overflow-x-auto) */
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 4px;
   }
-  .mobile-carousel::-webkit-scrollbar {
-    display: none;
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 0 20%;
   }
-  .mobile-carousel-item {
-    flex: 0 0 85%;
-    width: 85%;
-    scroll-snap-align: start;
-    min-width: 0;
-    touch-action: pan-x;
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background-color: #e5e5e5;
+    border-radius: 20px;
   }
-  /* Před/po slider uvnitř karuselu – swipe má posouvat karusel, ne jen handle */
-  .mobile-carousel .comparison-slider-contain {
-    touch-action: pan-x;
+  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background-color: #a8a29e;
+  }
+
+  /* Mobile Carousel – jen pod md, aby na mobilu vždy fungoval (redesign nesmí ho přepsat) */
+  @media (max-width: 767px) {
+    /* Na mobilu jen swipe, bez scrollbaru */
+    .transformations-scroll {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .transformations-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .mobile-carousel {
+      display: flex;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      gap: 1rem;
+      padding-right: 20px;
+      padding-bottom: 1rem;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      width: 100%;
+      min-width: 0;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+    }
+    .mobile-carousel::-webkit-scrollbar {
+      display: none;
+    }
+    .mobile-carousel-item {
+      flex: 0 0 85%;
+      width: 85%;
+      scroll-snap-align: start;
+      min-width: 0;
+      touch-action: pan-x;
+    }
+    /* Knihovna dává [data-rcs=root] touch-action: none – přepis, ať jde swipe na karusel */
+    .mobile-carousel [data-rcs="root"] {
+      touch-action: pan-x !important;
+    }
+    /* Handle před/po: tah musí jít na slider, ne na karusel */
+    .mobile-carousel [data-rcs="handle-container"] {
+      touch-action: none !important;
+    }
+    /* Celá oblast pod obrázky (text + padding) má být swipeovatelná */
+    .mobile-carousel-item .mobile-carousel-swipe-zone {
+      touch-action: pan-x;
+      min-height: 48px;
+    }
   }
 
   /* Horizontal strip (tabs, date chips) – snap + touch, no 85% width */

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Phone, Mail, MapPin, Instagram } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
+import { INSTAGRAM_URL } from '../firebaseConfig';
 import { getCollectionPath } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
 import ComparisonSlider from './ComparisonSlider';
@@ -19,6 +20,8 @@ const DEMO_SLIDER = {
 export default function PMUPage({ services = [], schedule = {}, reservations = [] }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sliders, setSliders] = useState([]);
+  const pmuCarouselRef = useRef(null);
+  const [pmuActiveIndex, setPmuActiveIndex] = useState(0);
 
   const pmuServices = useMemo(
     () =>
@@ -39,12 +42,6 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
     return () => unsub();
   }, []);
 
-  const scrollTo = (id) => {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-    setMenuOpen(false);
-  };
-
   const displaySliders = sliders.length > 0
     ? sliders.map((item) => ({
         beforeImage: item.imageBeforeUrl,
@@ -53,8 +50,37 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
       }))
     : [DEMO_SLIDER];
 
+  // Scroll to #pmu when landing on this page with hash (e.g. from main nav link)
+  useEffect(() => {
+    if (window.location.hash === '#pmu') {
+      const el = document.getElementById('pmu');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, []);
+
+  // Sync pagination dots with horizontal scroll position (mobile)
+  useEffect(() => {
+    const el = pmuCarouselRef.current;
+    if (!el || displaySliders.length <= 1) return;
+    const onScroll = () => {
+      const itemWidth = el.offsetWidth * 0.85 + 24; /* 85vw + gap-6 */
+      const index = Math.round(el.scrollLeft / itemWidth);
+      const clamped = Math.min(Math.max(0, index), displaySliders.length - 1);
+      setPmuActiveIndex(clamped);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [displaySliders.length]);
+
+  const scrollTo = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    setMenuOpen(false);
+  };
+
   return (
-    <div className="min-h-screen bg-[#0F0F0F] text-[#A1A1AA] font-sans antialiased">
+    <div id="pmu" className="min-h-screen bg-[#0F0F0F] text-[#A1A1AA] font-sans antialiased">
       {/* Dark theme header – jako na main/produkci */}
       <header
         className="fixed top-0 left-0 right-0 z-50 bg-[#0F0F0F]/80 backdrop-blur-md border-b border-white/5"
@@ -63,7 +89,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-16">
           <Link
             to="/"
-            className="font-display font-bold text-xl tracking-wide text-white hover:text-[#daa59c] transition-colors shrink-0"
+            className="font-display font-bold text-xl tracking-wide text-white hover:text-[#C48F83] transition-colors shrink-0"
             aria-label="Skin Studio – Domů"
           >
             Skin Studio
@@ -72,35 +98,35 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
           <nav className="hidden md:flex items-center gap-8">
             <Link
               to="/"
-              className="text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#daa59c] transition-colors"
+              className="text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#C48F83] transition-colors"
             >
               Domů
             </Link>
             <button
               type="button"
               onClick={() => scrollTo('philosophy')}
-              className="text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#daa59c] transition-colors"
+              className="text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#C48F83] transition-colors"
             >
               Filozofie
             </button>
             <button
               type="button"
               onClick={() => scrollTo('portfolio')}
-              className="text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#daa59c] transition-colors"
+              className="text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#C48F83] transition-colors"
             >
               Portfolio
             </button>
             <button
               type="button"
               onClick={() => scrollTo('cenik')}
-              className="text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#daa59c] transition-colors"
+              className="text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#C48F83] transition-colors"
             >
               Ceník
             </button>
             <button
               type="button"
               onClick={() => scrollTo('rezervace-pmu')}
-              className="text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full bg-gradient-to-r from-[#B37E76] via-[#D49A91] to-[#B37E76] text-white border border-[#D49A91]/20 shadow-lg shadow-[#B37E76]/30 hover:shadow-[#B37E76]/40 hover:scale-[1.01] transition-all"
+              className="text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full bg-[#C48F83] text-white hover:bg-[#C48F83]/90 hover:scale-[1.01] transition-all"
             >
               Rezervace
             </button>
@@ -108,7 +134,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
 
           <button
             type="button"
-            className="md:hidden p-2 text-white hover:text-[#daa59c] transition-colors"
+            className="md:hidden p-2 text-white hover:text-[#C48F83] transition-colors"
             onClick={() => setMenuOpen((o) => !o)}
             aria-label="Menu"
           >
@@ -120,7 +146,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
           <div className="md:hidden border-t border-white/5 px-4 py-4 flex flex-col gap-1 bg-[#0F0F0F]">
             <Link
               to="/"
-              className="py-3 text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#daa59c]"
+              className="py-3 text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#C48F83]"
               onClick={() => setMenuOpen(false)}
             >
               Domů
@@ -128,28 +154,28 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             <button
               type="button"
               onClick={() => scrollTo('philosophy')}
-              className="text-left py-3 text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#daa59c]"
+              className="text-left py-3 text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#C48F83]"
             >
               Filozofie
             </button>
             <button
               type="button"
               onClick={() => scrollTo('portfolio')}
-              className="text-left py-3 text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#daa59c]"
+              className="text-left py-3 text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#C48F83]"
             >
               Portfolio
             </button>
             <button
               type="button"
               onClick={() => scrollTo('cenik')}
-              className="text-left py-3 text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#daa59c]"
+              className="text-left py-3 text-sm font-semibold uppercase tracking-widest text-white/90 hover:text-[#C48F83]"
             >
               Ceník
             </button>
             <button
               type="button"
               onClick={() => { scrollTo('rezervace-pmu'); setMenuOpen(false); }}
-              className="inline-flex justify-center py-3 mt-2 text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full bg-gradient-to-r from-[#B37E76] via-[#D49A91] to-[#B37E76] text-white border border-[#D49A91]/20 shadow-lg shadow-[#B37E76]/30 hover:shadow-[#B37E76]/40 hover:scale-[1.01] transition-all"
+              className="inline-flex justify-center py-3 mt-2 text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full bg-[#C48F83] text-white hover:bg-[#C48F83]/90 hover:scale-[1.01] transition-all"
             >
               Rezervace
             </button>
@@ -160,7 +186,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
       <main>
         {/* Hero – full-screen, jako na main */}
         <section className="min-h-screen flex flex-col items-center justify-center px-4 pt-16 text-center">
-          <p className="font-display text-[#daa59c] text-sm uppercase tracking-[0.3em] mb-6">
+          <p className="font-display text-[#C48F83] text-sm uppercase tracking-[0.3em] mb-6">
             Permanent Make-Up
           </p>
           <h1 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white tracking-tight max-w-3xl">
@@ -172,28 +198,30 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
           <button
             type="button"
             onClick={() => scrollTo('rezervace-pmu')}
-            className="mt-12 inline-flex items-center justify-center px-8 py-4 font-semibold uppercase text-[10px] tracking-[0.2em] rounded-full bg-gradient-to-r from-[#B37E76] via-[#D49A91] to-[#B37E76] text-white border border-[#D49A91]/20 shadow-lg shadow-[#B37E76]/30 hover:shadow-[#B37E76]/40 hover:scale-[1.01] transition-all"
+            className="mt-12 inline-flex items-center justify-center px-8 py-4 font-semibold uppercase text-[10px] tracking-[0.2em] rounded-full bg-[#C48F83] text-white hover:bg-[#C48F83]/90 hover:scale-[1.01] transition-all"
           >
             Objednat konzultaci
           </button>
         </section>
 
-        {/* Filozofie – jako na main */}
+        {/* Filozofie – text-left, heading centered, max-w-2xl */}
         <section
           id="philosophy"
           className="scroll-mt-24 py-24 sm:py-32 px-4"
         >
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="font-display text-2xl sm:text-3xl font-semibold text-white mb-8">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="font-display text-2xl sm:text-3xl font-semibold text-white mb-8 text-center">
               Filozofie
             </h2>
-            <p className="text-[#A1A1AA] leading-relaxed text-base sm:text-lg">
-              Trvalé líčení není o výrazné kresbě — je o jemnosti, symetrii a dlouhodobé spokojenosti.
-              Každý tah je promyšlen tak, aby podtrhl vaši přirozenou krásu.
-            </p>
-            <p className="mt-8 text-[#A1A1AA]/80 text-sm sm:text-base leading-relaxed">
-              Výběr pigmentů, technika i následná péče tvoří jeden celek. Svěřte se do rukou, které toto umění ovládají.
-            </p>
+            <div className="text-left">
+              <h3 className="text-xl font-serif text-white mb-4">Jemnost, která zůstává</h3>
+              <p className="mt-4 text-[#A1A1AA] leading-relaxed">
+                Permanentní make-up vnímám jako neviditelného pomocníka. Jeho úkolem není přebít vaši tvář, ale tiše podtrhnout to, co je na ní krásné.
+              </p>
+              <p className="mt-4 text-[#A1A1AA]/80 leading-relaxed">
+                Pracuji tak, aby výsledek působil vzdušně a přirozeně. Cílem je, abyste se ráno probudila s pocitem, že jste upravená, ale stále jste to vy.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -206,23 +234,52 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             <h2 className="font-display text-2xl sm:text-3xl font-semibold text-white text-center mb-16">
               Portfolio
             </h2>
-            <div className={`grid gap-8 ${displaySliders.length > 0 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 max-w-2xl mx-auto'}`}>
-              {displaySliders.map((item, index) => (
-                <div key={index}>
-                  <ComparisonSlider
-                    beforeImage={item.beforeImage}
-                    afterImage={item.afterImage}
-                    altText={item.altText}
-                    theme="dark"
-                  />
-                  {sliders.length === 0 && (
-                    <p className="text-center text-[#A1A1AA]/60 text-sm mt-4">
-                      Demo – vlastní před/po přidáte v adminu v záložce Fotografie → Proměny (kategorie PMU).
-                    </p>
-                  )}
-                </div>
-              ))}
+            <div
+              ref={pmuCarouselRef}
+              className="transformations-scroll flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory px-4 -mx-4 md:mx-0 md:px-0 min-h-[320px]"
+            >
+              <div id="carousel-track" className="flex gap-6 flex-shrink-0">
+                {displaySliders.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex-shrink-0 w-[85vw] md:w-[400px] snap-center flex flex-col space-y-4"
+                  >
+                    <ComparisonSlider
+                      beforeImage={item.beforeImage}
+                      afterImage={item.afterImage}
+                      altText={item.altText}
+                      theme="dark"
+                    />
+                    {sliders.length === 0 && (
+                      <p className="text-center text-[#A1A1AA]/60 text-sm mt-4">
+                        Demo – vlastní před/po přidáte v adminu v záložce Fotografie → Proměny (kategorie PMU).
+                      </p>
+                    )}
+                    <div className="mobile-carousel-swipe-zone md:hidden pb-2 flex-shrink-0" aria-hidden />
+                  </div>
+                ))}
+              </div>
             </div>
+            {displaySliders.length >= 1 && (
+              <div className="carousel-dots md:hidden" role="tablist" aria-label="PMU proměny">
+                {displaySliders.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    role="tab"
+                    aria-label={`Proměna ${i + 1}`}
+                    aria-selected={pmuActiveIndex === i}
+                    onClick={() => {
+                      const el = pmuCarouselRef.current;
+                      if (!el) return;
+                      const itemWidth = el.offsetWidth * 0.85 + 24; /* 85vw + gap-6 */
+                      el.scrollTo({ left: i * itemWidth, behavior: 'smooth' });
+                    }}
+                    className={`dot ${pmuActiveIndex === i ? 'dot-active' : ''}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -235,8 +292,8 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             <h2 className="font-display text-2xl sm:text-3xl font-semibold text-white text-center mb-12">
               Ceník a rezervace
             </h2>
-            <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-8 sm:p-10">
-              <ul className="space-y-6 text-[#A1A1AA]">
+            <div className="bg-white/5 rounded-2xl p-8 sm:p-10 transition-colors duration-300 hover:bg-white/10">
+              <ul className="space-y-0 text-[#A1A1AA]">
                 {pmuServices.length === 0 ? (
                   <li className="py-6 text-center text-[#A1A1AA]/80 text-sm">
                     Služby se připravují…
@@ -251,17 +308,10 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                     return (
                       <li
                         key={service.id}
-                        className={`flex justify-between items-baseline pb-4 ${!isLast ? 'border-b border-white/5' : ''}`}
+                        className={`flex justify-between items-baseline py-4 px-3 -mx-3 rounded-lg transition-colors duration-300 hover:bg-white/5 ${!isLast ? 'border-b border-white/5' : ''}`}
                       >
-                        <span>
-                          {service.name}
-                          {service.duration ? (
-                            <span className="ml-2 text-[#A1A1AA]/70 text-sm">
-                              ({service.duration} min)
-                            </span>
-                          ) : null}
-                        </span>
-                        <span className="text-[#daa59c] font-medium">{priceText}</span>
+                        <span>{service.name}</span>
+                        <span className="font-display text-[#C48F83] font-medium">{priceText}</span>
                       </li>
                     );
                   })
@@ -273,7 +323,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
               <button
                 type="button"
                 onClick={() => scrollTo('rezervace-pmu')}
-                className="mt-8 w-full inline-flex items-center justify-center py-4 font-semibold uppercase text-[10px] tracking-[0.2em] rounded-full bg-gradient-to-r from-[#B37E76] via-[#D49A91] to-[#B37E76] text-white border border-[#D49A91]/20 shadow-lg shadow-[#B37E76]/30 hover:shadow-[#B37E76]/40 hover:scale-[1.01] transition-all"
+                className="mt-8 w-full inline-flex items-center justify-center py-4 font-semibold uppercase text-[10px] tracking-[0.2em] rounded-full text-white transition-all bg-[#C48F83] hover:bg-[#C48F83]/90 hover:scale-[1.01]"
               >
                 Rezervovat termín
               </button>
@@ -307,14 +357,99 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
         </section>
       </main>
 
-      {/* Footer – jako na main */}
-      <footer className="border-t border-white/5 py-8 px-4">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-4 text-[#A1A1AA]/60 text-xs uppercase tracking-widest">
-          <Link to="/" className="hover:text-[#daa59c] transition-colors">
-            Skin Studio
-          </Link>
-          <span>·</span>
-          <span>© 2026</span>
+      {/* Footer – Kontakt, navigace */}
+      <footer className="border-t border-white/5">
+        <div className="max-w-6xl mx-auto px-4 py-12 sm:py-16 grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
+          <div>
+            <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-2">
+              Skin Studio
+            </h3>
+            <p className="text-[#A1A1AA] font-medium mb-2">Lucie Metelková</p>
+            <p className="text-[#A1A1AA]/80 text-sm leading-relaxed">
+              Prémiová péče o pleť a permanentní make-up v srdci Uherského Brodu.
+            </p>
+          </div>
+          <div>
+            <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-4">
+              Navigace
+            </h3>
+            <nav className="flex flex-col gap-2">
+              <Link to="/" className="text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm">
+                Domů
+              </Link>
+              <button
+                type="button"
+                onClick={() => scrollTo('philosophy')}
+                className="text-left text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm"
+              >
+                Filozofie
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollTo('portfolio')}
+                className="text-left text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm"
+              >
+                Portfolio
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollTo('cenik')}
+                className="text-left text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm"
+              >
+                Ceník
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollTo('rezervace-pmu')}
+                className="text-left text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm"
+              >
+                Rezervace
+              </button>
+            </nav>
+          </div>
+          <div>
+            <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-4">
+              Kontakt
+            </h3>
+            <address className="not-italic space-y-2 text-sm text-[#A1A1AA]">
+              <p className="flex items-center gap-2">
+                <MapPin size={16} className="shrink-0 text-[#C48F83]" aria-hidden />
+                Masarykovo náměstí 72 (Budova ČSOB – 2. patro), Uherský Brod
+              </p>
+              <p className="flex items-center gap-2">
+                <Mail size={16} className="shrink-0 text-[#C48F83]" aria-hidden />
+                <a href="mailto:lucie@skinstudio.cz" className="hover:text-[#C48F83] transition-colors">
+                  lucie@skinstudio.cz
+                </a>
+              </p>
+              <p className="flex items-center gap-2">
+                <Phone size={16} className="shrink-0 text-[#C48F83]" aria-hidden />
+                <a href="tel:+420724875558" className="hover:text-[#C48F83] transition-colors">
+                  +420 724 875 558
+                </a>
+              </p>
+              {INSTAGRAM_URL && (
+                <p className="flex items-center gap-2 pt-1">
+                  <Instagram size={16} className="shrink-0 text-[#C48F83]" aria-hidden />
+                  <a
+                    href={INSTAGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-[#C48F83] transition-colors"
+                  >
+                    Instagram
+                  </a>
+                </p>
+              )}
+            </address>
+          </div>
+        </div>
+        <div className="border-t border-white/5">
+          <div className="max-w-6xl mx-auto px-4 py-4">
+            <p className="text-[#A1A1AA]/60 text-xs text-center">
+              © 2026 Skin Studio Lucie Metelková
+            </p>
+          </div>
         </div>
       </footer>
     </div>
