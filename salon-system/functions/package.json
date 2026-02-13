@@ -1,0 +1,14 @@
+{
+  "name": "salon-functions",
+  "description": "Firebase Cloud Functions for Skin Studio (e.g. format-content API)",
+  "main": "index.js",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-functions": "^6.3.0",
+    "firebase-admin": "^13.0.0"
+  }
+}
