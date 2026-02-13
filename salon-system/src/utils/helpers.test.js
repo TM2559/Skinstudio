@@ -3,7 +3,29 @@
  * Testují převody času, formátování dat, filtraci služeb (kosmetika vs PMU) a logiku volných slotů (getSmartSlots).
  */
 import { describe, it, expect } from 'vitest';
-import { filterCosmeticsServices, Utils } from './helpers';
+import { filterCosmeticsServices, filterPmuServices, isPmuService, Utils } from './helpers';
+
+describe('isPmuService and filterPmuServices', () => {
+  it('isPmuService returns true for category PMU or pmu (case-insensitive)', () => {
+    expect(isPmuService({ category: 'PMU' })).toBe(true);
+    expect(isPmuService({ category: 'pmu' })).toBe(true);
+    expect(isPmuService({ category: 'Pmu' })).toBe(true);
+    expect(isPmuService({ category: 'STANDARD' })).toBe(false);
+    expect(isPmuService({ category: undefined })).toBe(false);
+    expect(isPmuService(null)).toBe(false);
+  });
+
+  it('filterPmuServices returns only PMU services (case-insensitive)', () => {
+    const mixed = [
+      { id: 'c1', name: 'Čištění', category: 'STANDARD' },
+      { id: 'p1', name: 'PMU obočí', category: 'PMU' },
+      { id: 'p2', name: 'PMU rty', category: 'pmu' },
+    ];
+    const result = filterPmuServices(mixed);
+    expect(result).toHaveLength(2);
+    expect(result.map((s) => s.id)).toEqual(['p1', 'p2']);
+  });
+});
 
 describe('filterCosmeticsServices', () => {
   // Na /rezervace (kosmetika) se smí zobrazit jen STANDARD – PMU služby se tam nesmí dostat.
@@ -41,6 +63,16 @@ describe('filterCosmeticsServices', () => {
       { id: '2', name: 'B' },
     ];
     expect(filterCosmeticsServices(all)).toHaveLength(2);
+  });
+
+  it('excludes lowercase pmu (case-insensitive normalization)', () => {
+    const withLowerPmu = [
+      { id: 'a', name: 'Kosmetika', category: 'STANDARD' },
+      { id: 'b', name: 'PMU', category: 'pmu' },
+    ];
+    const result = filterCosmeticsServices(withLowerPmu);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('a');
   });
 });
 

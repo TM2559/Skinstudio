@@ -6,11 +6,10 @@ import { INSTAGRAM_URL } from '../firebaseConfig';
 import { getCollectionPath } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
 import { WEB_CONTENT } from '../constants/content';
+import { filterPmuServices } from '../utils/helpers';
 import { TaglineWithHeart } from './FooterTagline';
 import ComparisonSlider from './ComparisonSlider';
 import ReservationApp from './ReservationApp';
-
-const CATEGORY_PMU = 'PMU';
 
 /** Demo před/po slider, když v adminu ještě nic není */
 const C = WEB_CONTENT.pmuPage;
@@ -29,9 +28,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
 
   const pmuServices = useMemo(
     () =>
-      services
-        .filter((s) => (s.category || 'STANDARD') === CATEGORY_PMU)
-        .sort((a, b) => (a.order ?? 999) - (b.order ?? 999)),
+      filterPmuServices(services).sort((a, b) => (a.order ?? 999) - (b.order ?? 999)),
     [services]
   );
 

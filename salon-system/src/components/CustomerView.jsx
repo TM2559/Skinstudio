@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { CheckCircle, Sparkles, Loader2 } from 'lucide-react';
 import { addDoc } from "firebase/firestore";
-import { Utils } from '../utils/helpers';
+import { Utils, isPmuService } from '../utils/helpers';
 import { getCollectionPath, EMAILJS_CONFIG } from '../firebaseConfig';
 
-const CustomerView = ({ services, schedule, reservations, onBookingSuccess, initialServiceId, theme = 'light' }) => {
+const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBookingSuccess, initialServiceId, theme = 'light' }) => {
   const ADMIN_EMAIL = "info@skinstudio.cz";
   const isDark = theme === 'dark';
 
@@ -26,6 +26,14 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
   const [isSuccess, setIsSuccess] = useState(false);
   const [selectedUpsells, setSelectedUpsells] = useState([]);
 
+  /** Use PMU schedule when a PMU service is selected and schedulePmu is provided; otherwise cosmetics schedule. */
+  const effectiveSchedule = useMemo(() => {
+    if (selectedService && isPmuService(selectedService) && schedulePmu && Object.keys(schedulePmu).length > 0) {
+      return schedulePmu;
+    }
+    return schedule;
+  }, [schedule, schedulePmu, selectedService]);
+
   const handleUpsellToggle = (service, isActive) => {
     setSelectedUpsells(prev =>
       isActive ? [...prev, service] : prev.filter(u => u.id !== service.id)
@@ -35,15 +43,16 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
   const clientDates = useMemo(() => {
     const dates = [];
     const today = new Date();
+    const sched = effectiveSchedule;
     for (let i = 0; i < 30; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       const key = Utils.formatDateKey(d);
-      const dayData = schedule[key];
+      const dayData = sched[key];
       if (dayData && (dayData.periods?.length > 0 || dayData.start)) dates.push(d);
     }
     return dates;
-  }, [schedule]);
+  }, [effectiveSchedule]);
 
   const activeDateStr = selectedDateStr || (clientDates.length > 0 ? Utils.formatDateKey(clientDates[0]) : null);
 
@@ -54,7 +63,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
     const duration = parseInt(selectedService.duration);
     clientDates.forEach((d) => {
       const key = Utils.formatDateKey(d);
-      const dayData = schedule[key];
+      const dayData = effectiveSchedule[key];
       if (!dayData) return;
       const periods = dayData.periods || (dayData.start ? [{ start: dayData.start, end: dayData.end }] : []);
       const bookedIntervals = reservations
@@ -64,12 +73,12 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
       map.set(key, slots.length);
     });
     return map;
-  }, [clientDates, selectedService, schedule, reservations]);
+  }, [clientDates, selectedService, effectiveSchedule, reservations]);
 
   // --- ZMĚNA: Použití chytré logiky (getSmartSlots) ---
   const availableSlots = useMemo(() => {
     if (!activeDateStr || !selectedService) return [];
-    const dayData = schedule[activeDateStr];
+    const dayData = effectiveSchedule[activeDateStr];
     if (!dayData) return [];
 
     // 1. Získáme pracovní bloky
@@ -87,7 +96,7 @@ const CustomerView = ({ services, schedule, reservations, onBookingSuccess, init
       bookedIntervals
     );
 
-  }, [activeDateStr, selectedService, schedule, reservations]);
+  }, [activeDateStr, selectedService, effectiveSchedule, reservations]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

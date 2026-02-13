@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Scissors,
   X,
@@ -8,6 +8,8 @@ import {
   GripVertical,
   Edit2,
   Trash2,
+  WandSparkles,
+  Loader2,
 } from 'lucide-react';
 
 const AdminServicesTab = ({
@@ -28,7 +30,39 @@ const AdminServicesTab = ({
   addons = [],
   editingAddonLinks = [],
   setEditingAddonLinks,
-}) => (
+}) => {
+  const [isFormatting, setIsFormatting] = useState(false);
+  const [formatError, setFormatError] = useState('');
+
+  const handleFormatDescription = async () => {
+    const raw = (serviceForm.description || '').trim();
+    if (!raw) {
+      setFormatError('Nejprve napište hrubý text do popisu.');
+      return;
+    }
+    setIsFormatting(true);
+    setFormatError('');
+    try {
+      const res = await fetch('/api/format-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rawText: raw }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || `Chyba ${res.status}`);
+      }
+      if (data.formattedMarkdown != null) {
+        setServiceForm({ ...serviceForm, description: data.formattedMarkdown });
+      }
+    } catch (err) {
+      setFormatError(err.message || 'Formátování se nepovedlo.');
+    } finally {
+      setIsFormatting(false);
+    }
+  };
+
+  return (
   <div className="bg-stone-50/60 rounded-2xl border border-stone-200 p-6 md:p-8 shadow-sm">
     <h2 className="font-serif text-xl mb-1 flex items-center gap-2 text-stone-800">
       <Scissors size={20} className="text-stone-500" />
@@ -100,7 +134,26 @@ const AdminServicesTab = ({
         </select>
       </div>
       <div>
-        <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Popis služby</label>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Popis služby</label>
+          <button
+            type="button"
+            onClick={handleFormatDescription}
+            disabled={isFormatting}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            title="Převést hrubý text na luxusní Markdown (AI)"
+          >
+            {isFormatting ? (
+              <Loader2 size={14} className="animate-spin shrink-0" />
+            ) : (
+              <WandSparkles size={14} className="shrink-0" />
+            )}
+            <span>AI Vylepšit</span>
+          </button>
+        </div>
+        {formatError && (
+          <p className="text-xs text-amber-700 mb-1" role="alert">{formatError}</p>
+        )}
         <textarea
           placeholder="Několik vět popisujících proceduru (zobrazí se po rozkliknutí na webu)"
           value={serviceForm.description || ''}
@@ -277,6 +330,7 @@ const AdminServicesTab = ({
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default AdminServicesTab;

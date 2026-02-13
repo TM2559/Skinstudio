@@ -51,6 +51,7 @@ export default function ReservationApp({
             <CustomerView
               services={services}
               schedule={schedule}
+              schedulePmu={schedulePmu}
               reservations={reservations}
               initialServiceId={initialServiceId}
               theme={isDark ? 'dark' : 'light'}
@@ -84,6 +85,7 @@ export default function ReservationApp({
             <CustomerView
               services={services}
               schedule={schedule}
+              schedulePmu={schedulePmu}
               reservations={reservations}
               initialServiceId={initialServiceId}
             />
