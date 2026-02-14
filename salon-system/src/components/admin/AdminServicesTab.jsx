@@ -111,45 +111,47 @@ const AdminServicesTab = ({
           <option value="PMU">PMU (permanentní make-up)</option>
         </select>
       </div>
-      <div className="flex flex-wrap gap-2">
-        <input
-          type="number"
-          placeholder="Cena"
-          value={serviceForm.price}
-          onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
-          className="flex-1 min-w-0 p-3 border rounded-lg text-sm"
-        />
-        <select
-          value={serviceForm.duration}
-          onChange={(e) => setServiceForm({ ...serviceForm, duration: e.target.value })}
-          className="flex-1 min-w-0 p-3 border rounded-lg text-sm bg-white"
-        >
-          {(serviceForm.category || 'STANDARD') === 'PMU' ? (
-            <>
-              <option value="180">3 h</option>
-              <option value="210">3,5 h</option>
-              <option value="240">4 h</option>
-              <option value="270">4,5 h</option>
-            </>
-          ) : (
-            <>
-              <option value="30">30 min</option>
-              <option value="60">60 min</option>
-              <option value="90">90 min</option>
-              <option value="120">120 min</option>
-            </>
-          )}
-        </select>
+      <div>
+        <div className="flex flex-wrap gap-2">
+          <input
+            type="number"
+            placeholder="Cena"
+            value={serviceForm.price}
+            onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
+            className="flex-1 min-w-0 p-3 border rounded-lg text-sm"
+          />
+          <select
+            value={serviceForm.duration}
+            onChange={(e) => setServiceForm({ ...serviceForm, duration: e.target.value })}
+            className="flex-1 min-w-0 p-3 border rounded-lg text-sm bg-white"
+          >
+            {(serviceForm.category || 'STANDARD') === 'PMU' ? (
+              <>
+                <option value="180">3 h</option>
+                <option value="210">3,5 h</option>
+                <option value="240">4 h</option>
+                <option value="270">4,5 h</option>
+              </>
+            ) : (
+              <>
+                <option value="30">30 min</option>
+                <option value="60">60 min</option>
+                <option value="90">90 min</option>
+                <option value="120">120 min</option>
+              </>
+            )}
+          </select>
+        </div>
+        <label className="flex items-center gap-2 mt-2 p-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-700 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!serviceForm.isStartingPrice}
+            onChange={(e) => setServiceForm({ ...serviceForm, isStartingPrice: e.target.checked })}
+            className="rounded border-stone-300 size-4 shrink-0"
+          />
+          Cena je &quot;od&quot;?
+        </label>
       </div>
-      <label className="flex items-center gap-2 py-1 text-sm text-stone-600 cursor-pointer w-full">
-        <input
-          type="checkbox"
-          checked={!!serviceForm.isStartingPrice}
-          onChange={(e) => setServiceForm({ ...serviceForm, isStartingPrice: e.target.checked })}
-          className="rounded border-stone-300"
-        />
-        Cena je &quot;od&quot;?
-      </label>
       <div>
         <div className="flex items-center justify-between gap-2 mb-1">
           <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Popis služby</label>
