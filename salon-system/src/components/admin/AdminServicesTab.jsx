@@ -111,27 +111,18 @@ const AdminServicesTab = ({
           <option value="PMU">PMU (permanentní make-up)</option>
         </select>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
           type="number"
           placeholder="Cena"
           value={serviceForm.price}
           onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
-          className="flex-1 p-3 border rounded-lg text-sm"
+          className="flex-1 min-w-0 p-3 border rounded-lg text-sm"
         />
-        <label className="flex items-center gap-2 shrink-0 px-3 py-2 text-sm text-stone-600 whitespace-nowrap cursor-pointer">
-          <input
-            type="checkbox"
-            checked={!!serviceForm.isStartingPrice}
-            onChange={(e) => setServiceForm({ ...serviceForm, isStartingPrice: e.target.checked })}
-            className="rounded border-stone-300"
-          />
-          Cena je &quot;od&quot;?
-        </label>
         <select
           value={serviceForm.duration}
           onChange={(e) => setServiceForm({ ...serviceForm, duration: e.target.value })}
-          className="flex-1 p-3 border rounded-lg text-sm bg-white"
+          className="flex-1 min-w-0 p-3 border rounded-lg text-sm bg-white"
         >
           {(serviceForm.category || 'STANDARD') === 'PMU' ? (
             <>
@@ -150,6 +141,15 @@ const AdminServicesTab = ({
           )}
         </select>
       </div>
+      <label className="flex items-center gap-2 py-1 text-sm text-stone-600 cursor-pointer w-full">
+        <input
+          type="checkbox"
+          checked={!!serviceForm.isStartingPrice}
+          onChange={(e) => setServiceForm({ ...serviceForm, isStartingPrice: e.target.checked })}
+          className="rounded border-stone-300"
+        />
+        Cena je &quot;od&quot;?
+      </label>
       <div>
         <div className="flex items-center justify-between gap-2 mb-1">
           <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Popis služby</label>
