@@ -9,6 +9,7 @@ const AdminAddonsTab = ({ addons, onAddonsChange }) => {
     name: '',
     default_price: '',
     is_active: true,
+    price_behavior: 'ADD',
   });
 
   const resetForm = () => {
@@ -17,6 +18,7 @@ const AdminAddonsTab = ({ addons, onAddonsChange }) => {
       name: '',
       default_price: '',
       is_active: true,
+      price_behavior: 'ADD',
     });
   };
 
@@ -27,6 +29,7 @@ const AdminAddonsTab = ({ addons, onAddonsChange }) => {
       name: form.name.trim(),
       default_price: parseInt(form.default_price, 10) || 0,
       is_active: !!form.is_active,
+      price_behavior: form.price_behavior === 'REPLACE' ? 'REPLACE' : 'ADD',
     };
     try {
       if (editingId) {
@@ -60,6 +63,7 @@ const AdminAddonsTab = ({ addons, onAddonsChange }) => {
       name: addon.name || '',
       default_price: addon.default_price ?? '',
       is_active: addon.is_active !== false,
+      price_behavior: addon.price_behavior === 'REPLACE' ? 'REPLACE' : 'ADD',
     });
   };
 
@@ -84,17 +88,42 @@ const AdminAddonsTab = ({ addons, onAddonsChange }) => {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="w-full p-3 border border-stone-200 rounded-lg text-sm"
           />
-          <div className="flex gap-3 flex-wrap">
-            <div className="flex-1 min-w-[120px]">
-              <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Výchozí cena (Kč)</label>
-              <input
-                type="number"
-                min="0"
-                placeholder="350"
-                value={form.default_price}
-                onChange={(e) => setForm({ ...form, default_price: e.target.value })}
-                className="w-full p-3 border border-stone-200 rounded-lg text-sm"
-              />
+          <div className="space-y-2">
+            <div className="flex gap-4">
+              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pt-3">Typ ceny</span>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="price_behavior"
+                  checked={form.price_behavior === 'ADD'}
+                  onChange={() => setForm({ ...form, price_behavior: 'ADD' })}
+                  className="border-stone-300"
+                />
+                <span className="text-sm text-stone-600">Přičíst k ceně</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="price_behavior"
+                  checked={form.price_behavior === 'REPLACE'}
+                  onChange={() => setForm({ ...form, price_behavior: 'REPLACE' })}
+                  className="border-stone-300"
+                />
+                <span className="text-sm text-stone-600">Konečná cena</span>
+              </label>
+            </div>
+            <div className="flex gap-3 flex-wrap">
+              <div className="flex-1 min-w-[120px]">
+                <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Výchozí cena (Kč)</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder={form.price_behavior === 'REPLACE' ? '5000' : '350'}
+                  value={form.default_price}
+                  onChange={(e) => setForm({ ...form, default_price: e.target.value })}
+                  className="w-full p-3 border border-stone-200 rounded-lg text-sm"
+                />
+              </div>
             </div>
           </div>
           <label className="flex items-center gap-2 cursor-pointer">

@@ -4,6 +4,19 @@ import { addDoc } from "firebase/firestore";
 import { Utils, isPmuService, filterCosmeticsServices } from '../utils/helpers';
 import { getCollectionPath, EMAILJS_CONFIG } from '../firebaseConfig';
 
+/**
+ * Total price: REPLACE options set the base (last one wins), ADD options add on top.
+ * If service has isStartingPrice ("od"), base is 0 – "od" is only informational.
+ */
+function calculateReservationTotal(service, upsells) {
+  const base = service?.isStartingPrice ? 0 : (service?.price ?? 0);
+  const overrides = (upsells || []).filter((u) => u.price_behavior === 'REPLACE');
+  const additions = (upsells || []).filter((u) => u.price_behavior !== 'REPLACE');
+  let total = overrides.length > 0 ? (overrides[overrides.length - 1].price ?? 0) : base;
+  additions.forEach((u) => { total += (u.price ?? 0); });
+  return total;
+}
+
 const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBookingSuccess, initialServiceId, theme = 'light' }) => {
   const ADMIN_EMAIL = "info@skinstudio.cz";
   const isDark = theme === 'dark';
@@ -123,7 +136,7 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
         email: formData.email,
         serviceName: selectedService.name,
         duration: parseInt(selectedService.duration),
-        price: selectedService.price || 0,
+        price: calculateReservationTotal(selectedService, selectedUpsells),
         created: new Date().toISOString(),
         reminderSent: false,
         source: 'web'
@@ -228,9 +241,11 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
                 >
                   <div className="flex justify-between items-start gap-4">
                     <span className={`text-sm leading-tight ${isDark ? (isSelected ? 'font-bold text-white' : 'font-medium text-stone-200') : isSelected ? 'font-bold text-stone-900' : 'font-medium text-stone-800'}`}>{s.name}</span>
-                    <span className={`text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap ${isDark ? 'text-[#daa59c] bg-stone-800' : 'text-stone-700 bg-stone-100'}`}>
-                      {s.isStartingPrice ? `od ${s.price} Kč` : `${s.price} Kč`}
-                    </span>
+                    {!(isSelected && s.isStartingPrice) && (
+                      <span className={`text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap ${isDark ? 'text-[#daa59c] bg-stone-800' : 'text-stone-700 bg-stone-100'}`}>
+                        {s.isStartingPrice ? `od ${s.price} Kč` : `${s.price} Kč`}
+                      </span>
+                    )}
                   </div>
                   {isSelected && addons.length > 0 && (
                     <div className={`mt-4 pt-3 border-t space-y-2 ${isDark ? 'border-stone-800' : 'border-stone-100'}`}>
@@ -380,7 +395,7 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
           <form onSubmit={handleSubmit} className={`space-y-4 ${!selectedTime ? 'opacity-40 pointer-events-none' : ''}`}>
             <div className={`text-xs space-y-1 mb-4 border-b pb-4 font-medium ${isDark ? 'border-stone-800 text-stone-400' : 'border-stone-100 text-stone-600'}`}>
               <div className="flex justify-between"><span>Služba:</span><span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{selectedService?.name || '-'}</span></div>
-              <div className="flex justify-between"><span>Cena:</span><span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{selectedService?.price != null ? (selectedService.isStartingPrice ? `od ${selectedService.price} Kč` : `${selectedService.price} Kč`) : '-'}</span></div>
+              <div className="flex justify-between"><span>Cena:</span><span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{selectedService?.isStartingPrice ? '—' : (selectedService?.price != null ? `${selectedService.price} Kč` : '—')}</span></div>
               {selectedUpsells.length > 0 && (
                 <>
                   {selectedUpsells.map((u) => (
@@ -390,9 +405,9 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
                     </div>
                   ))}
                   <div className="flex justify-between font-medium">
-                    <span>Celkem (+ doplňky):</span>
+                    <span>Celkem{selectedUpsells.some(u => u.price_behavior === 'REPLACE') ? '' : ' (+ doplňky)'}:</span>
                     <span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>
-                      {(selectedService?.price || 0) + selectedUpsells.reduce((sum, u) => sum + (u.price || 0), 0)} Kč
+                      {calculateReservationTotal(selectedService, selectedUpsells)} Kč
                     </span>
                   </div>
                 </>

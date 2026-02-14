@@ -126,6 +126,7 @@ export default function App() {
             price: final_price,
             duration_minutes: addon.duration_minutes,
             is_recommended: !!link.is_recommended,
+            price_behavior: addon.price_behavior === 'REPLACE' ? 'REPLACE' : 'ADD',
           };
         })
         .filter(Boolean);
