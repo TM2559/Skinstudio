@@ -142,12 +142,12 @@ const AdminServicesTab = ({
             )}
           </select>
         </div>
-        <label className="flex items-center gap-2 mt-2 p-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-700 cursor-pointer">
+        <label data-cena-od className="flex items-center gap-2 mt-2 p-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-700 cursor-pointer">
           <input
             type="checkbox"
             checked={!!serviceForm.isStartingPrice}
             onChange={(e) => setServiceForm({ ...serviceForm, isStartingPrice: e.target.checked })}
-            className="rounded border-stone-300 size-4 shrink-0"
+            className="rounded border-stone-300 w-4 h-4 shrink-0"
           />
           Cena je &quot;od&quot;?
         </label>
