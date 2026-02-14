@@ -10,6 +10,7 @@ import { filterPmuServices } from '../utils/helpers';
 import { TaglineWithHeart } from './FooterTagline';
 import ComparisonSlider from './ComparisonSlider';
 import ReservationApp from './ReservationApp';
+import ServiceListAccordion from './ServiceListAccordion';
 
 /** Demo před/po slider, když v adminu ještě nic není */
 const C = WEB_CONTENT.pmuPage;
@@ -30,6 +31,15 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
     () =>
       filterPmuServices(services).sort((a, b) => (a.order ?? 999) - (b.order ?? 999)),
     [services]
+  );
+
+  const pmuServicesWithDescriptions = useMemo(
+    () =>
+      pmuServices.map((s) => ({
+        ...s,
+        description: s.description || (C.serviceDescriptionDefaults && C.serviceDescriptionDefaults[s.name]) || '',
+      })),
+    [pmuServices]
   );
 
   useEffect(() => {
@@ -283,50 +293,26 @@ className="mt-12 inline-flex items-center justify-center px-8 py-4 font-sans fon
           </div>
         </section>
 
-        {/* Ceník a rezervace – dark card jako na main */}
+        {/* Ceník a rezervace – expandable accordion (dark/rose theme) */}
         <section
           id="cenik"
           className="scroll-mt-24 py-24 sm:py-32 px-4"
         >
-          <div className="max-w-xl mx-auto">
+          <div className="max-w-3xl mx-auto">
             <h2 className="font-display text-2xl sm:text-3xl font-semibold text-white text-center mb-12">
               {C.cenik.heading}
             </h2>
-            <div className="bg-white/5 rounded-2xl p-8 sm:p-10 transition-colors duration-300 hover:bg-white/10">
-              <ul className="space-y-0 text-[#A1A1AA]">
-                {pmuServices.length === 0 ? (
-                  <li className="py-6 text-center text-[#A1A1AA]/80 text-sm">
-                    {C.cenik.loading}
-                  </li>
-                ) : (
-                  pmuServices.map((service, index) => {
-                    const isLast = index === pmuServices.length - 1;
-                    const priceText =
-                      service.price == null || service.price === 0
-                        ? C.cenik.priceDleCeniku
-                        : `${Number(service.price)} Kč`;
-                    return (
-                      <li
-                        key={service.id}
-                        className={`flex justify-between items-baseline py-4 px-3 -mx-3 rounded-lg transition-colors duration-300 hover:bg-white/5 ${!isLast ? 'border-b border-white/5' : ''}`}
-                      >
-                        <span>{service.name}</span>
-                        <span className="font-display text-[#daa59c] font-medium">{priceText}</span>
-                      </li>
-                    );
-                  })
-                )}
-              </ul>
-              <p className="mt-8 text-[#A1A1AA]/70 text-sm text-center">
-                {C.cenik.priceNote}
-              </p>
-              <button
-                type="button"
-                onClick={() => scrollTo('rezervace-pmu')}
-                className="mt-8 w-full inline-flex items-center justify-center py-4 font-sans font-semibold text-xs uppercase tracking-widest rounded-full text-white transition-all duration-300 bg-gradient-to-b from-[#B37E76] via-[#D49A91] to-[#B37E76] hover:brightness-95 border border-[#D49A91]/20 hover:scale-[1.01] shadow-[0_4px_20px_rgba(179,126,118,0.3)] hover:shadow-[0_6px_25px_rgba(179,126,118,0.45)]"
-              >
-                {C.cenik.cta}
-              </button>
+            <div className="bg-white/5 rounded-2xl p-8 sm:p-10 transition-colors duration-300 hover:bg-white/10 border border-white/5">
+              <ServiceListAccordion
+                services={pmuServicesWithDescriptions}
+                variant="dark"
+                loadingText={C.cenik.loading}
+                ctaReservovat={C.cenik.cta}
+                ctaReservovatShort={C.cenik.cta}
+                priceNote={C.cenik.priceNote}
+                getReserveHref={(s) => `/pmu?service=${encodeURIComponent(s.id)}#rezervace-pmu`}
+                footerHref="#rezervace-pmu"
+              />
             </div>
           </div>
         </section>

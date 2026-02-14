@@ -14,26 +14,38 @@ function cleanDescription(text) {
     .trim();
 }
 
-const markdownComponents = {
-  p: ({ node, children, ...props }) => <p className="mb-3 last:mb-0" {...props}>{children}</p>,
-  strong: ({ node, children, ...props }) => (
-    <span className="font-semibold text-[var(--skin-gold)]" {...props}>{children}</span>
-  ),
-  ul: ({ node, children, ...props }) => (
-    <ul className="list-disc pl-5 space-y-2 my-3" {...props}>{children}</ul>
-  ),
-  ol: ({ node, children, ...props }) => (
-    <ol className="list-decimal pl-5 space-y-2 my-3" {...props}>{children}</ol>
-  ),
-  li: ({ node, children, ...props }) => <li className="pl-1" {...props}>{children}</li>,
-};
+const ROSE_ACCENT = '#daa59c';
 
-export default function ServiceDescriptionMarkdown({ text, className = '' }) {
+function getMarkdownComponents(theme) {
+  const isDark = theme === 'dark';
+  const accentClass = isDark ? 'font-semibold' : 'font-semibold text-[var(--skin-gold)]';
+  const accentStyle = isDark ? { color: ROSE_ACCENT } : undefined;
+  return {
+    p: ({ node, children, ...props }) => <p className="mb-3 last:mb-0" {...props}>{children}</p>,
+    strong: ({ node, children, ...props }) => (
+      <span className={accentClass} style={accentStyle} {...props}>{children}</span>
+    ),
+    ul: ({ node, children, ...props }) => (
+      <ul className="list-disc pl-5 space-y-2 my-3" {...props}>{children}</ul>
+    ),
+    ol: ({ node, children, ...props }) => (
+      <ol className="list-decimal pl-5 space-y-2 my-3" {...props}>{children}</ol>
+    ),
+    li: ({ node, children, ...props }) => <li className="pl-1" {...props}>{children}</li>,
+  };
+}
+
+export default function ServiceDescriptionMarkdown({ text, className = '', theme = 'light' }) {
   const cleaned = cleanDescription(text);
   if (!cleaned) return null;
+  const components = getMarkdownComponents(theme);
+  const wrapperClass =
+    theme === 'dark'
+      ? `text-sm text-[#A1A1AA] leading-relaxed max-w-[65ch] ${className}`
+      : `text-sm text-stone-500 leading-relaxed max-w-[65ch] ${className}`;
   return (
-    <div className={`text-sm text-stone-500 leading-relaxed max-w-[65ch] ${className}`}>
-      <ReactMarkdown remarkPlugins={[remarkBreaks]} components={markdownComponents}>{cleaned}</ReactMarkdown>
+    <div className={wrapperClass}>
+      <ReactMarkdown remarkPlugins={[remarkBreaks]} components={components}>{cleaned}</ReactMarkdown>
     </div>
   );
 }

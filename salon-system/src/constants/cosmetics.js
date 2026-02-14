@@ -7,6 +7,11 @@
  * transformation_items: { id, imageBeforeUrl, imageAfterUrl, title, description?, category: 'COSMETICS' | 'PMU', createdAt? }
  *
  * Default category: COSMETICS.
+ *
+ * Services (Firestore `services`): each document should have category: 'STANDARD' (cosmetics)
+ * or 'PMU'. STANDARD = Laminace, Lash Lifting, Peeling, Úprava obočí, Me time, Clear skin, etc.
+ * PMU = Meziřasová linka, Rty - Soft Lips, Pudrové obočí. Used to filter the Light (cosmetics)
+ * booking list so PMU services do not appear there.
  */
 export const COSMETICS_CATEGORY = 'COSMETICS';
 export const PMU_CATEGORY = 'PMU';

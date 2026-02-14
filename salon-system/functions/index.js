@@ -8,6 +8,9 @@ const db = getFirestore();
 
 const applicationId = defineString('BULKGATE_APPLICATION_ID', { default: '' });
 const applicationToken = defineString('BULKGATE_APPLICATION_TOKEN', { default: '' });
+/** Shortcode: např. sender_id = "gShort", sender_id_value = "90999" (vaše krátké číslo). */
+const senderId = defineString('BULKGATE_SENDER_ID', { default: '' });
+const senderIdValue = defineString('BULKGATE_SENDER_ID_VALUE', { default: '' });
 const geminiApiKey = defineString('GEMINI_API_KEY', { default: '' });
 
 const BULKGATE_URL = 'https://portal.bulkgate.com/api/1.0/simple/transactional';
@@ -76,17 +79,22 @@ function buildReminderText(name, dateDisplay, time, serviceName) {
 }
 
 /** Send one SMS via BulkGate (shared). @param unicode - false for GSM 03.38 (160 chars). */
-async function sendOneSms(appId, appToken, number, text, unicode = true) {
+async function sendOneSms(appId, appToken, number, text, unicode = true, senderIdOpt, senderIdValueOpt) {
+  const payload = {
+    application_id: appId,
+    application_token: appToken,
+    number,
+    text,
+    unicode,
+  };
+  if (senderIdOpt && senderIdValueOpt) {
+    payload.sender_id = senderIdOpt;
+    payload.sender_id_value = senderIdValueOpt;
+  }
   const response = await fetch(BULKGATE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      application_id: appId,
-      application_token: appToken,
-      number,
-      text,
-      unicode,
-    }),
+    body: JSON.stringify(payload),
   });
   const data = await response.json().catch(() => ({}));
   return { ok: response.ok, data };
@@ -131,8 +139,10 @@ export const sendReminderSms = onCall(
       const dateDisplay = res.date ? res.date.replace(/-/g, '/') : '';
       const text = buildReminderText(res.name || '', dateDisplay, res.time || '', res.serviceName || 'rezervace');
 
+      const sid = senderId.value();
+      const sidVal = senderIdValue.value();
       try {
-        const { ok, data } = await sendOneSms(appId, appToken, number, text);
+        const { ok, data } = await sendOneSms(appId, appToken, number, text, true, sid || undefined, sidVal || undefined);
         if (!ok) {
           const reason = data.error || data.message || 'BulkGate API chyba';
           console.warn('BulkGate API chyba:', reason, data);
@@ -173,8 +183,10 @@ export const sendConfirmationSms = onCall(
     }
 
     const text = buildConfirmationSmsMessage(serviceName, date, time);
+    const sid = senderId.value();
+    const sidVal = senderIdValue.value();
 
-    const { ok, data } = await sendOneSms(appId, appToken, number, text, true);
+    const { ok, data } = await sendOneSms(appId, appToken, number, text, true, sid || undefined, sidVal || undefined);
     if (!ok) {
       console.warn('BulkGate sendConfirmationSms:', data);
       throw new HttpsError('internal', data.error || data.message || 'BulkGate API chyba.');

@@ -15,6 +15,13 @@ describe('isPmuService and filterPmuServices', () => {
     expect(isPmuService(null)).toBe(false);
   });
 
+  it('isPmuService treats known PMU names as PMU when category is missing', () => {
+    expect(isPmuService({ name: 'Meziřasová linka' })).toBe(true);
+    expect(isPmuService({ name: 'Rty - Soft Lips' })).toBe(true);
+    expect(isPmuService({ name: 'Pudrové obočí' })).toBe(true);
+    expect(isPmuService({ name: 'Laminace' })).toBe(false);
+  });
+
   it('filterPmuServices returns only PMU services (case-insensitive)', () => {
     const mixed = [
       { id: 'c1', name: 'Čištění', category: 'STANDARD' },
@@ -73,6 +80,18 @@ describe('filterCosmeticsServices', () => {
     const result = filterCosmeticsServices(withLowerPmu);
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('a');
+  });
+
+  it('excludes known PMU services by name when category is missing', () => {
+    const withPmuNames = [
+      { id: 'c1', name: 'Laminace', category: 'STANDARD' },
+      { id: 'p1', name: 'Meziřasová linka' },
+      { id: 'p2', name: 'Rty - Soft Lips' },
+      { id: 'c2', name: 'Peeling' },
+    ];
+    const result = filterCosmeticsServices(withPmuNames);
+    expect(result).toHaveLength(2);
+    expect(result.map((s) => s.id)).toEqual(['c1', 'c2']);
   });
 });
 

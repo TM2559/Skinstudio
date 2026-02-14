@@ -126,6 +126,12 @@ export const WEB_CONTENT = {
       priceDleCeniku: 'dle ceníku',
       cta: 'Rezervovat termín',
     },
+    /** Default Markdown descriptions for PMU services when not set in Firestore. Key = service name. */
+    serviceDescriptionDefaults: {
+      'Meziřasová linka': '**Dlouhotrvající krása:** Probouzejte se upravená každé ráno.\n\n* **Přirozený vzhled:** Žádné ostré kontury, jen jemné stínování.\n* **Výdrž:** 1,5–2 roky.',
+      'Rty - Soft Lips': '**Dlouhotrvající krása:** Probouzejte se upravená každé ráno.\n\n* **Přirozený vzhled:** Žádné ostré kontury, jen jemné stínování.\n* **Výdrž:** 1,5–2 roky.',
+      'Pudrové obočí': '**Dlouhotrvající krása:** Probouzejte se upravená každé ráno.\n\n* **Přirozený vzhled:** Žádné ostré kontury, jen jemné stínování.\n* **Výdrž:** 1,5–2 roky.',
+    },
     rezervace: {
       heading: 'Rezervace PMU',
     },

@@ -15,6 +15,13 @@ Obojí přes [BulkGate](https://www.bulkgate.com/) (HTTP Simple API).
    BULKGATE_APPLICATION_TOKEN=tvůj_application_token
    ```
 
+   **Shortcode (volitelné):** Pokud chceš odesílat SMS z krátkého čísla (shortcode), přidej do `.env`:
+   ```
+   BULKGATE_SENDER_ID=gShort
+   BULKGATE_SENDER_ID_VALUE=90999
+   ```
+   (`90999` nahraď svým shortcode z BulkGate portálu. Jiné typy odesílatele: `gText`, `gSystem`, `gOwn` atd. – viz [BulkGate dokumentace](https://help.bulkgate.com/docs/en/http-simple-transactional-post-json.html).)
+
    Při prvním `firebase deploy --only functions` může CLI místo toho vyzvat k zadání hodnot a uložit je do `.env.<project_id>`.
 
 2. **Lokální test**  

@@ -4,16 +4,28 @@ function normalizeCategory(category) {
   return c === 'PMU' ? 'PMU' : 'STANDARD';
 }
 
-/** True if service is PMU (category 'PMU' or 'pmu'). */
-export function isPmuService(service) {
-  if (!service) return false;
-  return normalizeCategory(service.category) === 'PMU';
+/** Known PMU service name substrings – used when category is not set in Firestore. */
+const KNOWN_PMU_NAMES = ['meziřasová linka', 'rty', 'pudrové obočí', 'soft lips'];
+
+function isPmuByName(name) {
+  if (!name || typeof name !== 'string') return false;
+  const lower = name.toLowerCase();
+  return KNOWN_PMU_NAMES.some((pattern) => lower.includes(pattern));
 }
 
-/** Služby s category === 'STANDARD' (nebo bez category) = kosmetika. PMU má category 'PMU'. */
+/** True if service is PMU (category 'PMU' or 'pmu', or known PMU name when category missing). */
+export function isPmuService(service) {
+  if (!service) return false;
+  if (service.category !== undefined && service.category !== null && String(service.category).trim() !== '') {
+    return normalizeCategory(service.category) === 'PMU';
+  }
+  return isPmuByName(service.name);
+}
+
+/** Služby bez PMU: category === 'STANDARD' nebo ne-PMU. PMU = category 'PMU' nebo známé PMU názvy. */
 export function filterCosmeticsServices(services) {
   if (!Array.isArray(services)) return [];
-  return services.filter((s) => normalizeCategory(s.category) === 'STANDARD');
+  return services.filter((s) => !isPmuService(s));
 }
 
 /** Služby s category === 'PMU' (case-insensitive). */

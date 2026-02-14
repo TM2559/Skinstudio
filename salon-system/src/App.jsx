@@ -107,9 +107,10 @@ export default function App() {
     };
   }, [user]);
 
-  const servicesStandardOnly = useMemo(() => {
-    return services.filter((s) => (s.category || 'STANDARD') === 'STANDARD');
-  }, [services]);
+  const servicesStandardOnly = useMemo(
+    () => filterCosmeticsServices(services),
+    [services]
+  );
 
   const servicesWithAddons = useMemo(() => {
     return services.map((service) => {

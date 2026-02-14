@@ -1,28 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
 import { getCollectionPath } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
 import { WEB_CONTENT } from '../constants/content';
+import { filterCosmeticsServices } from '../utils/helpers';
 import ComparisonSlider from './ComparisonSlider';
 import LazySection from './LazySection';
-import ServiceDescriptionMarkdown from './ServiceDescriptionMarkdown';
+import ServiceListAccordion from './ServiceListAccordion';
 
 const COSMETICS_BG = '#F9F8F6';
 
-/** Remove parenthetical meta-commentary from description text. */
-function cleanDescription(text) {
-  if (!text || typeof text !== 'string') return '';
-  return text
-    .replace(/\s*\([^)]*\)\s*/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 export default function CosmeticsPage({ services = [] }) {
+  const cosmeticServices = filterCosmeticsServices(services);
   const [transformations, setTransformations] = useState([]);
-  const [expandedServiceId, setExpandedServiceId] = useState(null);
   const promenyCarouselRef = useRef(null);
   const [promenyActiveIndex, setPromenyActiveIndex] = useState(0);
 
@@ -234,77 +225,15 @@ export default function CosmeticsPage({ services = [] }) {
           <p className="text-sm text-center mb-12 text-gray-500">
             {WEB_CONTENT.cenik.subtext}
           </p>
-          {services.length === 0 ? (
-            <div className="text-center py-12 text-sm text-gray-500">{WEB_CONTENT.cenik.loading}</div>
-          ) : (
-            <ul className="space-y-0">
-              {services.map((s) => {
-                const hasDescription = !!(s.description && cleanDescription(s.description));
-                const isExpanded = expandedServiceId === s.id;
-                return (
-                  <li
-                    key={s.id}
-                    className="border-b last:border-b-0"
-                    style={{ borderColor: '#E5E5E5' }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setExpandedServiceId((id) => (id === s.id ? null : s.id))}
-                      className="w-full flex justify-between items-center text-left transition-colors hover:bg-stone-50/80 active:bg-stone-100/80 py-[20px]"
-                    >
-                      <span className="font-display text-lg sm:text-xl text-stone-800 font-semibold min-w-0 pr-4">
-                        {s.name}
-                      </span>
-                      <div className="flex items-center shrink-0">
-                        <span className="font-normal text-stone-700 tabular-nums text-right">
-                          {s.price != null ? `${s.price} Kč` : '—'}
-                        </span>
-                        {hasDescription && (
-                          <span className="ml-4 flex items-center justify-center text-stone-400 shrink-0">
-                            {isExpanded ? <ChevronUp size={20} aria-hidden /> : <ChevronDown size={20} aria-hidden />}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                    <div
-                      className="grid ease-out"
-                      style={{
-                        gridTemplateRows: isExpanded && hasDescription ? '1fr' : '0fr',
-                        transition: 'grid-template-rows 0.3s ease, opacity 0.3s ease',
-                      }}
-                    >
-                      <div className="min-h-0 overflow-hidden">
-                        <div
-                          className="pb-6 pt-0 px-0 transition-opacity duration-300 ease-out"
-                          style={{ opacity: isExpanded && hasDescription ? 1 : 0 }}
-                        >
-                          {hasDescription && (
-                            <>
-                              <ServiceDescriptionMarkdown text={s.description} />
-                              <Link
-                                to={`/rezervace?service=${encodeURIComponent(s.id)}`}
-                                className="mt-6 inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)] focus:outline-none focus:ring-2 focus:ring-stone-600 focus:ring-offset-2"
-                              >
-                                <Calendar size={16} /> {WEB_CONTENT.cenik.ctaReservovat}
-                              </Link>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          <div className="text-center mt-12">
-            <Link
-              to="/rezervace"
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]"
-            >
-              <Calendar size={14} /> {WEB_CONTENT.cenik.ctaRezervovatShort}
-            </Link>
-          </div>
+          <ServiceListAccordion
+            services={cosmeticServices}
+            variant="light"
+            loadingText={WEB_CONTENT.cenik.loading}
+            ctaReservovat={WEB_CONTENT.cenik.ctaReservovat}
+            ctaReservovatShort={WEB_CONTENT.cenik.ctaRezervovatShort}
+            getReserveHref={(s) => `/rezervace?service=${encodeURIComponent(s.id)}`}
+            footerHref="/rezervace"
+          />
         </div>
       </section>
 

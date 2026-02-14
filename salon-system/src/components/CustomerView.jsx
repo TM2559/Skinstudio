@@ -1,24 +1,30 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { CheckCircle, Sparkles, Loader2 } from 'lucide-react';
 import { addDoc } from "firebase/firestore";
-import { Utils, isPmuService } from '../utils/helpers';
+import { Utils, isPmuService, filterCosmeticsServices } from '../utils/helpers';
 import { getCollectionPath, EMAILJS_CONFIG } from '../firebaseConfig';
 
 const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBookingSuccess, initialServiceId, theme = 'light' }) => {
   const ADMIN_EMAIL = "info@skinstudio.cz";
   const isDark = theme === 'dark';
 
+  /** Na světlé stránce /rezervace zobrazujeme jen kosmetiku; na PMU (dark) všechny předané služby (PMU). */
+  const displayServices = useMemo(
+    () => (isDark ? services : filterCosmeticsServices(services)),
+    [services, isDark]
+  );
+
   const [selectedService, setSelectedService] = useState(null);
   const hasAppliedInitialService = useRef(false);
 
   useEffect(() => {
-    if (hasAppliedInitialService.current || !initialServiceId || !services.length) return;
-    const svc = services.find((s) => s.id === initialServiceId);
+    if (hasAppliedInitialService.current || !initialServiceId || !displayServices.length) return;
+    const svc = displayServices.find((s) => s.id === initialServiceId);
     if (svc) {
       setSelectedService(svc);
       hasAppliedInitialService.current = true;
     }
-  }, [initialServiceId, services]);
+  }, [initialServiceId, displayServices]);
   const [selectedDateStr, setSelectedDateStr] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
@@ -199,7 +205,7 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
             1. Výběr procedury
           </h2>
           <div className="grid gap-3">
-            {services.map(s => {
+            {displayServices.map(s => {
               const isSelected = selectedService?.id === s.id;
               const addons = s.available_addons ?? [];
               return (
