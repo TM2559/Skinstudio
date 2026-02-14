@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkBreaks from 'remark-breaks';
 
 /**
  * Renders service description as Markdown (bold, lists, etc.).
@@ -9,22 +10,22 @@ function cleanDescription(text) {
   if (!text || typeof text !== 'string') return '';
   return text
     .replace(/\s*\([^)]*\)\s*/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/[ \t]+/g, ' ')
     .trim();
 }
 
 const markdownComponents = {
   p: ({ node, children, ...props }) => <p className="mb-3 last:mb-0" {...props}>{children}</p>,
   strong: ({ node, children, ...props }) => (
-    <strong className="font-semibold text-[var(--skin-gold)]" {...props}>{children}</strong>
+    <span className="font-semibold text-[var(--skin-gold)]" {...props}>{children}</span>
   ),
   ul: ({ node, children, ...props }) => (
-    <ul className="list-disc pl-5 space-y-1 my-2" {...props}>{children}</ul>
+    <ul className="list-disc pl-5 space-y-2 my-3" {...props}>{children}</ul>
   ),
   ol: ({ node, children, ...props }) => (
-    <ol className="list-decimal pl-5 space-y-1 my-2" {...props}>{children}</ol>
+    <ol className="list-decimal pl-5 space-y-2 my-3" {...props}>{children}</ol>
   ),
-  li: ({ node, children, ...props }) => <li className="pl-1 leading-relaxed" {...props}>{children}</li>,
+  li: ({ node, children, ...props }) => <li className="pl-1" {...props}>{children}</li>,
 };
 
 export default function ServiceDescriptionMarkdown({ text, className = '' }) {
@@ -32,7 +33,7 @@ export default function ServiceDescriptionMarkdown({ text, className = '' }) {
   if (!cleaned) return null;
   return (
     <div className={`text-sm text-stone-500 leading-relaxed max-w-[65ch] ${className}`}>
-      <ReactMarkdown components={markdownComponents}>{cleaned}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkBreaks]} components={markdownComponents}>{cleaned}</ReactMarkdown>
     </div>
   );
 }
