@@ -229,7 +229,7 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
                   <div className="flex justify-between items-start gap-4">
                     <span className={`text-sm leading-tight ${isDark ? (isSelected ? 'font-bold text-white' : 'font-medium text-stone-200') : isSelected ? 'font-bold text-stone-900' : 'font-medium text-stone-800'}`}>{s.name}</span>
                     <span className={`text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap ${isDark ? 'text-[#daa59c] bg-stone-800' : 'text-stone-700 bg-stone-100'}`}>
-                      {s.price} Kč
+                      {s.isStartingPrice ? `od ${s.price} Kč` : `${s.price} Kč`}
                     </span>
                   </div>
                   {isSelected && addons.length > 0 && (
@@ -380,7 +380,7 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
           <form onSubmit={handleSubmit} className={`space-y-4 ${!selectedTime ? 'opacity-40 pointer-events-none' : ''}`}>
             <div className={`text-xs space-y-1 mb-4 border-b pb-4 font-medium ${isDark ? 'border-stone-800 text-stone-400' : 'border-stone-100 text-stone-600'}`}>
               <div className="flex justify-between"><span>Služba:</span><span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{selectedService?.name || '-'}</span></div>
-              <div className="flex justify-between"><span>Cena:</span><span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{selectedService?.price ? `${selectedService.price} Kč` : '-'}</span></div>
+              <div className="flex justify-between"><span>Cena:</span><span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{selectedService?.price != null ? (selectedService.isStartingPrice ? `od ${selectedService.price} Kč` : `${selectedService.price} Kč`) : '-'}</span></div>
               {selectedUpsells.length > 0 && (
                 <>
                   {selectedUpsells.map((u) => (

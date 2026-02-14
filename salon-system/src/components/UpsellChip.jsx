@@ -27,7 +27,7 @@ const UpsellChip = ({ service, selected: controlledSelected, onToggle, onSelect 
     return () => clearTimeout(t);
   }, [selected, isControlled, service, onToggle, onSelect]);
 
-  const priceDisplay = service.price != null ? `${service.price} Kč` : '';
+  const priceDisplay = service.price != null ? (service.isStartingPrice ? `od ${service.price} Kč` : `${service.price} Kč`) : '';
 
   return (
     <button

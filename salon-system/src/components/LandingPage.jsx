@@ -134,7 +134,7 @@ export default function LandingPage({ services = [] }) {
                       </span>
                       <div className="flex items-center shrink-0">
                         <span className="font-normal text-stone-700 tabular-nums text-right">
-                          {s.price != null ? `${s.price} Kč` : '—'}
+                          {s.price != null ? (s.isStartingPrice ? `od ${s.price} Kč` : `${s.price} Kč`) : '—'}
                         </span>
                         {hasDescription && (
                           <span className="ml-4 flex items-center justify-center text-stone-400 shrink-0">

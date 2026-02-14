@@ -22,7 +22,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   const [workStart, setWorkStart] = useState('09:00');
   const [workEnd, setWorkEnd] = useState('17:00');
   const [editingServiceId, setEditingServiceId] = useState(null);
-  const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60', description: '', category: 'STANDARD' });
+  const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60', description: '', category: 'STANDARD', isStartingPrice: false });
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [remindersList, setRemindersList] = useState([]);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
@@ -133,6 +133,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
       duration: parseInt(serviceForm.duration),
       description: (serviceForm.description || '').trim(),
       category: serviceForm.category || 'STANDARD',
+      isStartingPrice: !!serviceForm.isStartingPrice,
       order: editingServiceId ? undefined : services.length,
     };
     const updateData = { ...data };
@@ -145,7 +146,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     } else {
       await addDoc(getCollectionPath('services'), data);
     }
-    setServiceForm({ name: '', price: '', duration: '60', description: '', category: 'STANDARD' });
+    setServiceForm({ name: '', price: '', duration: '60', description: '', category: 'STANDARD', isStartingPrice: false });
   };
 
   const handleDeleteService = async (id) => {
@@ -160,7 +161,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     const duration = category === 'PMU' && !PMU_DURATIONS.includes(Number(s.duration))
       ? 180
       : s.duration;
-    setServiceForm({ name: s.name, price: s.price, duration, description: s.description || '', category });
+    setServiceForm({ name: s.name, price: s.price, duration, description: s.description || '', category, isStartingPrice: !!s.isStartingPrice });
     const links = serviceAddonLinks
       .filter((l) => l.main_service_id === s.id)
       .map((l) => ({
@@ -512,7 +513,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
             draggedItemIndex={draggedItemIndex}
             onCancelEdit={() => {
               setEditingServiceId(null);
-              setServiceForm({ name: '', price: '', duration: '60', description: '', category: 'STANDARD' });
+              setServiceForm({ name: '', price: '', duration: '60', description: '', category: 'STANDARD', isStartingPrice: false });
               setEditingAddonLinks([]);
             }}
             addons={addons}

@@ -16,7 +16,7 @@ const noop = () => {};
 const defaultProps = {
   services: defaultServices,
   editingServiceId: null,
-  serviceForm: { name: '', price: '', duration: '60', description: '', category: 'STANDARD' },
+  serviceForm: { name: '', price: '', duration: '60', description: '', category: 'STANDARD', isStartingPrice: false },
   setServiceForm: vi.fn(),
   onService: vi.fn(),
   onDeleteService: vi.fn(),
@@ -52,6 +52,7 @@ describe('AdminServicesTab', () => {
           duration: '60',
           description: 'Popis masáže',
           category: 'STANDARD',
+          isStartingPrice: false,
         }}
       />
     );
@@ -68,7 +69,7 @@ describe('AdminServicesTab', () => {
       <AdminServicesTab
         {...defaultProps}
         editingServiceId="s1"
-        serviceForm={{ name: 'Masáž', price: 800, duration: '60', description: '', category: 'STANDARD' }}
+        serviceForm={{ name: 'Masáž', price: 800, duration: '60', description: '', category: 'STANDARD', isStartingPrice: false }}
         onCancelEdit={onCancelEdit}
       />
     );

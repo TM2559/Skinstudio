@@ -119,6 +119,15 @@ const AdminServicesTab = ({
           onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
           className="flex-1 p-3 border rounded-lg text-sm"
         />
+        <label className="flex items-center gap-2 shrink-0 px-3 py-2 text-sm text-stone-600 whitespace-nowrap cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!serviceForm.isStartingPrice}
+            onChange={(e) => setServiceForm({ ...serviceForm, isStartingPrice: e.target.checked })}
+            className="rounded border-stone-300"
+          />
+          Cena je &quot;od&quot;?
+        </label>
         <select
           value={serviceForm.duration}
           onChange={(e) => setServiceForm({ ...serviceForm, duration: e.target.value })}
@@ -317,7 +326,7 @@ const AdminServicesTab = ({
               <div className="flex flex-col">
                 <span className="text-sm font-bold text-stone-800">{s.name}</span>
                 <div className="flex gap-2 mt-1 flex-wrap items-center">
-                  <span className="text-[10px] font-bold text-stone-500">{s.price} Kč</span>
+                  <span className="text-[10px] font-bold text-stone-500">{s.isStartingPrice ? `od ${s.price} Kč` : `${s.price} Kč`}</span>
                   <span className="text-[10px] text-stone-300">{s.duration} min</span>
                   <span className="text-[10px] text-stone-400">
                     {(s.category || 'STANDARD') === 'PMU' ? 'PMU' : 'Kosmetika'}

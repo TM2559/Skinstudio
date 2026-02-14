@@ -68,7 +68,9 @@ export default function ServiceListAccordion({
           const hasDescription = !!(s.description && cleanDescription(s.description));
           const isExpanded = expandedServiceId === s.id;
           const priceText =
-            s.price != null && s.price !== 0 ? `${Number(s.price)} Kč` : (isDark ? 'dle ceníku' : '—');
+            s.price != null && s.price !== 0
+              ? (s.isStartingPrice ? `od ${Number(s.price)} Kč` : `${Number(s.price)} Kč`)
+              : (isDark ? 'dle ceníku' : '—');
           return (
             <li
               key={s.id}
