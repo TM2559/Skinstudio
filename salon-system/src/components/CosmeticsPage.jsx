@@ -9,6 +9,7 @@ import ComparisonSlider from './ComparisonSlider';
 import LazySection from './LazySection';
 import ServiceListAccordion from './ServiceListAccordion';
 import SocialProofSection from './SocialProofSection';
+import { GOOGLE_REVIEW_URL } from '../firebaseConfig';
 
 const COSMETICS_BG = '#F9F8F6';
 
@@ -240,7 +241,7 @@ export default function CosmeticsPage({ services = [] }) {
 
       {/* 5. Recenze a Google – Social Proof */}
       <section id="recenze" className="scroll-mt-20">
-        <SocialProofSection qrImageSrc="/Skinstudio_ggl_qr.png" />
+        <SocialProofSection qrImageSrc="/Skinstudio_ggl_qr.png" googleReviewUrl={GOOGLE_REVIEW_URL} />
       </section>
 
     </div>

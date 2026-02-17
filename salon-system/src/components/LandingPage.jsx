@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, Heart, MapPin, Phone, Mail, Instagram, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
 import InstagramSection from './InstagramSection';
 import SocialProofSection from './SocialProofSection';
-import { INSTAGRAM_URL } from '../firebaseConfig';
+import { INSTAGRAM_URL, GOOGLE_REVIEW_URL } from '../firebaseConfig';
 import ServiceDescriptionMarkdown from './ServiceDescriptionMarkdown';
 
 function cleanDescription(text) {
@@ -194,7 +194,7 @@ export default function LandingPage({ services = [] }) {
 
       {/* Recenze a Google – Social Proof */}
       <section id="recenze" className="scroll-mt-20">
-        <SocialProofSection qrImageSrc="/Skinstudio_ggl_qr.png" />
+        <SocialProofSection qrImageSrc="/Skinstudio_ggl_qr.png" googleReviewUrl={GOOGLE_REVIEW_URL} />
       </section>
 
       {/* Footer – Kontakt + Sociální sítě */}

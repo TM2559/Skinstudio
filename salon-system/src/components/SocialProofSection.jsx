@@ -135,11 +135,14 @@ function ActionCard({ qrImageSrc = '/Skinstudio_ggl_qr.png', googleReviewUrl = '
   );
 }
 
+const DEFAULT_GOOGLE_REVIEW_URL = 'https://g.page/r/your-place-id/review';
+
 export default function SocialProofSection({
   qrImageSrc = '/Skinstudio_ggl_qr.png',
-  googleReviewUrl = 'https://g.page/r/your-place-id/review',
+  googleReviewUrl,
   reviews = MOCK_REVIEWS,
 }) {
+  const reviewUrl = googleReviewUrl && googleReviewUrl.trim() ? googleReviewUrl.trim() : DEFAULT_GOOGLE_REVIEW_URL;
   return (
     <section className="bg-gray-50 py-12 md:py-16">
       <div className="max-w-6xl mx-auto px-4">
@@ -161,7 +164,7 @@ export default function SocialProofSection({
           </div>
           {/* Right: action card (fixed width on desktop); equal height, content centered */}
           <div className="w-full md:w-[320px] md:shrink-0 h-full min-h-0 flex">
-            <ActionCard qrImageSrc={qrImageSrc} googleReviewUrl={googleReviewUrl} />
+            <ActionCard qrImageSrc={qrImageSrc} googleReviewUrl={reviewUrl} />
           </div>
         </div>
       </div>
