@@ -79,7 +79,7 @@ function ActionCard({ qrImageSrc = '/Skinstudio_ggl_qr.png', googleReviewUrl = '
         <GoogleGIcon className="w-6 h-6 shrink-0" />
         <h3 className="font-bold text-gray-900 text-lg">Byla jste s péčí spokojená?</h3>
       </div>
-      {/* Desktop: show QR code (clickable) + body, signature, link — centered */}
+      {/* Desktop only: QR code (clickable) */}
       <div className="hidden md:flex flex-1 flex-col justify-center min-h-0">
         <div className="flex justify-center">
           <a
@@ -101,26 +101,28 @@ function ActionCard({ qrImageSrc = '/Skinstudio_ggl_qr.png', googleReviewUrl = '
             </div>
           </a>
         </div>
-        <div className="flex flex-col items-center text-center mt-3">
-          <p className="text-sm text-gray-500">
-            Budu moc ráda za vaše hodnocení. Vaše zpětná vazba mi pomáhá se zlepšovat.
-          </p>
-          <p className="mt-3 font-signature text-xl text-gray-700 inline-flex items-center gap-1" aria-hidden>
-            Vaše Lucie
-            <Heart className="w-4 h-4 shrink-0 fill-[#E57590] text-[#E57590]" aria-hidden />
-          </p>
-          <a
-            href={googleReviewUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 text-sm underline decoration-gray-400 underline-offset-4 text-slate-500 hover:text-black transition-colors"
-          >
-            Napsat recenzi online
-          </a>
-        </div>
       </div>
-      {/* Mobile: show CTA button instead of QR */}
-      <div className="md:hidden mt-auto pt-2">
+      {/* Body + signature: visible on all screen sizes, centered */}
+      <div className="flex flex-col items-center text-center md:mt-3">
+        <p className="text-sm text-gray-600 mb-2">
+          Budu moc ráda za vaše hodnocení. Vaše zpětná vazba mi pomáhá se zlepšovat.
+        </p>
+        <p className="font-signature text-xl text-gray-700 flex items-center justify-center gap-2 mb-4 md:mb-0" aria-hidden>
+          Vaše Lucie
+          <Heart className="w-4 h-4 shrink-0 stroke-[#E57590] fill-none" strokeWidth={1.5} aria-hidden />
+        </p>
+        {/* Desktop: text link */}
+        <a
+          href={googleReviewUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden md:inline-block mt-4 text-sm underline decoration-gray-400 underline-offset-4 text-slate-500 hover:text-black transition-colors"
+        >
+          Napsat recenzi online
+        </a>
+      </div>
+      {/* Mobile only: full-width CTA button */}
+      <div className="md:hidden mt-4">
         <a
           href={googleReviewUrl}
           target="_blank"
