@@ -81,7 +81,7 @@ export default function CosmeticsPage({ services = [] }) {
           <img
             src="/lucie-portrait.jpg"
             alt={WEB_CONTENT.imageAlts.portrait}
-            className="w-full h-full object-cover object-top"
+            className="w-full h-full object-cover object-[50%_55%]"
             loading="eager"
             decoding="async"
             fetchPriority="high"
