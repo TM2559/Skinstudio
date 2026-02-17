@@ -8,6 +8,7 @@ import { filterCosmeticsServices } from '../utils/helpers';
 import ComparisonSlider from './ComparisonSlider';
 import LazySection from './LazySection';
 import ServiceListAccordion from './ServiceListAccordion';
+import SocialProofSection from './SocialProofSection';
 
 const COSMETICS_BG = '#F9F8F6';
 
@@ -235,6 +236,11 @@ export default function CosmeticsPage({ services = [] }) {
             footerHref="/rezervace"
           />
         </div>
+      </section>
+
+      {/* 5. Recenze a Google – Social Proof */}
+      <section id="recenze" className="scroll-mt-20">
+        <SocialProofSection qrImageSrc="/Skinstudio_ggl_qr.png" />
       </section>
 
     </div>

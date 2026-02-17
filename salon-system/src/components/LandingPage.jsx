@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Heart, MapPin, Phone, Mail, Instagram, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
 import InstagramSection from './InstagramSection';
+import SocialProofSection from './SocialProofSection';
 import { INSTAGRAM_URL } from '../firebaseConfig';
 import ServiceDescriptionMarkdown from './ServiceDescriptionMarkdown';
 
@@ -189,6 +190,11 @@ export default function LandingPage({ services = [] }) {
             </Link>
           </div>
         </div>
+      </section>
+
+      {/* Recenze a Google – Social Proof */}
+      <section id="recenze" className="scroll-mt-20">
+        <SocialProofSection qrImageSrc="/Skinstudio_ggl_qr.png" />
       </section>
 
       {/* Footer – Kontakt + Sociální sítě */}
