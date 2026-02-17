@@ -40,8 +40,8 @@ export const INSTAGRAM_URL = instagramUrl || (instagramUsername ? `https://www.i
 // Volitelné: URL příspěvků pro embed, oddělené čárkou (max cca 6)
 export const INSTAGRAM_POST_URLS = (getEnv('VITE_INSTAGRAM_POST_URLS') || '').split(',').map(s => s.trim()).filter(Boolean);
 
-// Google Recenze – stejná URL jako v QR kódu
-export const GOOGLE_REVIEW_URL = getEnv('VITE_GOOGLE_REVIEW_URL') || '';
+// Google Recenze – stejná URL jako v QR kódu (fallback = Skin Studio place ID)
+export const GOOGLE_REVIEW_URL = getEnv('VITE_GOOGLE_REVIEW_URL') || 'https://g.page/r/CWkt9xHMgMjqEAE/review';
 
 // Inicializace
 const app = initializeApp(firebaseConfig);
