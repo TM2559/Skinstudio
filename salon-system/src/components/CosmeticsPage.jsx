@@ -78,13 +78,10 @@ export default function CosmeticsPage({ services = [] }) {
           </Link>
         </div>
         <div className="relative w-full h-[400px] md:h-full order-2 md:order-2 min-h-0">
-          {/* LCP image: priority load, explicit size for CLS. Add lucie-portrait.webp + <picture> for WebP. */}
           <img
             src="/lucie-portrait.jpg"
             alt={WEB_CONTENT.imageAlts.portrait}
             className="w-full h-full object-cover object-[50%_50%]"
-            width={600}
-            height={800}
             loading="eager"
             decoding="async"
             fetchPriority="high"
