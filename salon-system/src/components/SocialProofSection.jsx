@@ -127,7 +127,7 @@ function ActionCard({ qrImageSrc = '/Skinstudio_ggl_qr.png', googleReviewUrl = '
           href={googleReviewUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 w-full bg-[#4285F4] hover:bg-[#3367D6] text-white font-semibold py-3 px-4 rounded-xl transition-colors"
+          className="inline-flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-black text-white font-semibold py-3 px-4 rounded-xl transition-colors"
         >
           Napsat recenzi na Google
           <ExternalLink className="w-4 h-4 shrink-0" />
