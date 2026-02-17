@@ -18,11 +18,27 @@ export const WEB_CONTENT = {
   },
 
   hero: {
+    /** Single H1 for homepage – SEO: Kosmetika Uherský Brod */
+    seoTitle: 'Skin Studio – Prémiová kosmetika a péče o pleť Uherský Brod',
     subtitle: 'SKIN STUDIO LUCIE METELKOVÉ',
     title: 'Vaše pleť, vaše sebevědomí.',
     signature: 'S láskou k detailu, Lucie',
     body: 'Vytvořila jsem místo, kde se čas točí jen kolem vás. Mým cílem není vás měnit, ale vyzdvihnout to nejkrásnější ve vás.',
     cta: 'Objednat termín',
+  },
+
+  /** Landing page section H2s – keyword-rich for SEO */
+  landing: {
+    sectionAbout: 'Kosmetika Uherský Brod – Anti-aging a péče o pleť',
+    sectionServices: 'Naše služby: Laminace obočí a Lifting řas',
+    sectionReviews: 'Recenze klientek ze Skin Studia',
+    sectionContact: 'Kontakt – Kosmetika Skin Studio Uherský Brod',
+    sectionInstagram: 'Sledujte nás na Instagramu – kosmetika a péče o pleť Uherský Brod',
+  },
+  /** Descriptive alt text for images (SEO + accessibility) */
+  imageAlts: {
+    instagramGallery: 'Kosmetika a péče o pleť – Skin Studio Lucie Metelková, Uherský Brod',
+    portrait: 'Lucie Metelková – prémiová kosmetika a péče o pleť, Skin Studio Uherský Brod',
   },
 
   filozofie: {

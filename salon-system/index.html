@@ -13,6 +13,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Sacramento&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!-- Canonical URL – prevent duplicate content (www vs non-www) -->
+    <link rel="canonical" href="https://www.skinstudio.cz/" />
+
+    <!-- Preload LCP font (Playfair Display) to improve First Contentful Paint / LCP -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Sacramento&display=swap" as="style" />
+
     <!-- SEO & branding -->
     <title>Skin Studio | Prémiová kosmetika Uherský Brod</title>
     <meta name="description" content="Kosmetické studio Lucie Metelkové. Profesionální péče o pleť, laminace obočí a relaxace v minimalistickém prostředí. Rezervujte si svůj termín online." />
@@ -24,6 +30,44 @@
     <meta property="og:image" content="https://www.skinstudio.cz/og-hero.jpg" />
     <meta property="og:url" content="https://www.skinstudio.cz/" />
     <meta property="og:locale" content="cs_CZ" />
+
+    <!-- Local SEO: Schema.org BeautySalon (JSON-LD) for Local Pack -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BeautySalon",
+      "name": "Skin Studio | Lucie Metelková",
+      "image": [
+        "https://www.skinstudio.cz/og-hero.jpg",
+        "https://www.pinterest.com/pin/300052393898930237/"
+      ],
+      "priceRange": "$$",
+      "telephone": "+420 724 875 558",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Masarykovo nám. 72",
+        "addressLocality": "Uherský Brod",
+        "postalCode": "688 01",
+        "addressCountry": "CZ"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 49.0253456,
+        "longitude": 17.6469656
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          "opens": "09:00",
+          "closes": "16:00"
+        }
+      ],
+      "sameAs": [
+        "https://www.instagram.com/skin_studio_lucie_metelkova"
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

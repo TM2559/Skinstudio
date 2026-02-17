@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { onSnapshot } from 'firebase/firestore';
 import { Instagram } from 'lucide-react';
 import { INSTAGRAM_URL, getDocPath } from '../firebaseConfig';
+import { WEB_CONTENT } from '../constants/content';
 
 const INSTAGRAM_HANDLE = '@skin_studio_lucie_metelkova';
 const CONFIG_DOC = 'instagramShowcase';
@@ -132,7 +133,7 @@ export default function InstagramShowcase() {
       <div className="max-w-4xl mx-auto px-4">
         <header className="text-center mb-10">
           <h2 className="font-display text-3xl text-stone-800 mb-2">
-            Sledujte nás na Instagramu
+            {WEB_CONTENT.landing.sectionInstagram}
           </h2>
           <a
             href={INSTAGRAM_URL}
@@ -163,7 +164,7 @@ export default function InstagramShowcase() {
                 >
                   <img
                     src={src}
-                    alt=""
+                    alt={WEB_CONTENT.imageAlts.instagramGallery}
                     loading="lazy"
                     decoding="async"
                     className={`gallery-item absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out group-hover:scale-110 ${

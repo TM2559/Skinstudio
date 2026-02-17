@@ -1,6 +1,29 @@
 import { defineConfig } from 'vite'
+import { writeFileSync } from 'fs'
+import { join } from 'path'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+
+const BASE = 'https://www.skinstudio.cz'
+const today = () => new Date().toISOString().slice(0, 10)
+
+/** Generates sitemap.xml at build time with current date (for SEO). */
+function sitemapPlugin() {
+  return {
+    name: 'sitemap',
+    closeBundle() {
+      const outDir = join(process.cwd(), 'dist')
+      const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${BASE}/</loc><lastmod>${today()}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>${BASE}/kosmetika</loc><lastmod>${today()}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>${BASE}/pmu</loc><lastmod>${today()}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>${BASE}/rezervace</loc><lastmod>${today()}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+</urlset>`
+      writeFileSync(join(outDir, 'sitemap.xml'), sitemap.trim(), 'utf8')
+    },
+  }
+}
 
 export default defineConfig({
   server: {
@@ -10,6 +33,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    sitemapPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {

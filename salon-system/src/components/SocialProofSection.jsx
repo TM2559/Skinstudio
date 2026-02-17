@@ -94,7 +94,7 @@ function ActionCard({ qrImageSrc = '/Skinstudio_ggl_qr.png', googleReviewUrl = S
             <div className="bg-white border border-gray-100 rounded-xl p-4 inline-block shadow-sm w-fit hover:border-gray-200 transition-colors">
               <img
                 src={qrImageSrc}
-                alt="QR kód – ohodnoťte nás na Google"
+                alt="QR kód pro Google Recenze – Skin Studio kosmetika Uherský Brod"
                 className="w-40 h-40 object-contain pointer-events-none"
                 width={160}
                 height={160}
@@ -143,13 +143,14 @@ export default function SocialProofSection({
   qrImageSrc = '/Skinstudio_ggl_qr.png',
   googleReviewUrl,
   reviews = MOCK_REVIEWS,
+  sectionTitle = 'Recenze klientek ze Skin Studia',
 }) {
   const reviewUrl = googleReviewUrl && googleReviewUrl.trim() ? googleReviewUrl.trim() : SKIN_STUDIO_GOOGLE_REVIEW_URL;
   return (
     <section className="bg-gray-50 py-12 md:py-16">
       <div className="max-w-6xl mx-auto px-4">
         <h2 className="font-bold text-2xl md:text-3xl text-gray-900 mb-8 text-center">
-          Co o nás říkají klienti
+          {sectionTitle}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6 md:gap-8 items-stretch">
           {/* Left: review cards — stretch to match row height */}

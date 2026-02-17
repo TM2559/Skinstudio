@@ -5,6 +5,7 @@ import InstagramSection from './InstagramSection';
 import SocialProofSection from './SocialProofSection';
 import { INSTAGRAM_URL, GOOGLE_REVIEW_URL } from '../firebaseConfig';
 import ServiceDescriptionMarkdown from './ServiceDescriptionMarkdown';
+import { WEB_CONTENT } from '../constants/content';
 
 function cleanDescription(text) {
   if (!text || typeof text !== 'string') return '';
@@ -31,14 +32,14 @@ export default function LandingPage({ services = [] }) {
       >
         <div className="max-w-4xl mx-auto px-4 pt-14 sm:pt-20 pb-14 sm:pb-20 text-center">
           <p className="text-xs sm:text-sm font-sans uppercase tracking-[0.2em] text-stone-600 mb-3">
-            SKIN STUDIO LUCIE METELKOVÉ
+            {WEB_CONTENT.hero.subtitle}
           </p>
           <h1 className="font-display font-bold text-4xl sm:text-5xl tracking-wide text-[var(--skin-charcoal)]">
-            Vaše pleť, vaše sebevědomí.
+            {WEB_CONTENT.hero.seoTitle}
           </h1>
           <div className="flex flex-col items-center mt-4">
-            <p className="font-signature text-2xl sm:text-3xl text-stone-600 -rotate-2 mb-8">
-              S láskou k detailu, Lucie
+            <p className="font-signature text-2xl sm:text-3xl text-stone-600 -rotate-2 mb-8" aria-hidden>
+              {WEB_CONTENT.hero.signature}
             </p>
           </div>
           <p className="body-text text-sm sm:text-base max-w-xl mx-auto mt-4 mb-8 text-[#3d3730]">
@@ -62,7 +63,7 @@ export default function LandingPage({ services = [] }) {
       >
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="font-display text-2xl font-bold mb-10 text-center text-[var(--skin-charcoal)]">
-            O studiu
+            {WEB_CONTENT.landing.sectionAbout}
           </h2>
           <div
             className="rounded-2xl p-8 sm:p-10 shadow-sm"
@@ -106,7 +107,7 @@ export default function LandingPage({ services = [] }) {
       >
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <h2 className="font-display text-2xl sm:text-3xl font-semibold mb-2 text-center text-stone-800">
-            Procedury a ceník
+            {WEB_CONTENT.landing.sectionServices}
           </h2>
           <p className="text-sm text-center mb-12 text-gray-500">
             Vyberte si ošetření a rezervujte termín on-line.
@@ -194,7 +195,11 @@ export default function LandingPage({ services = [] }) {
 
       {/* Recenze a Google – Social Proof */}
       <section id="recenze" className="scroll-mt-20">
-        <SocialProofSection qrImageSrc="/Skinstudio_ggl_qr.png" googleReviewUrl={GOOGLE_REVIEW_URL} />
+        <SocialProofSection
+          qrImageSrc="/Skinstudio_ggl_qr.png"
+          googleReviewUrl={GOOGLE_REVIEW_URL}
+          sectionTitle={WEB_CONTENT.landing.sectionReviews}
+        />
       </section>
 
       {/* Footer – Kontakt + Sociální sítě */}
@@ -208,7 +213,7 @@ export default function LandingPage({ services = [] }) {
             {/* Left: Contact */}
             <div className="text-left">
               <h2 className="font-display text-2xl font-bold mb-6 text-[var(--skin-charcoal)]">
-                Kontakt
+                {WEB_CONTENT.landing.sectionContact}
               </h2>
               <p className="text-sm text-[#6b6560] mb-6">Domluvte si termín návštěvy. Těším se na vás.</p>
               <ul className="space-y-4">
@@ -242,7 +247,7 @@ export default function LandingPage({ services = [] }) {
             {/* Right: Socials & CTA */}
             <div className="text-left">
               <h2 className="font-display text-2xl font-bold mb-6 text-[var(--skin-charcoal)]">
-                Sledujte nás
+                {WEB_CONTENT.kontakt.followHeading}
               </h2>
               {INSTAGRAM_URL && (
                 <a
