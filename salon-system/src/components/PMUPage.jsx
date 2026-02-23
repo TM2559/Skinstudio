@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Phone, Mail, MapPin, Instagram } from 'lucide-react';
+import { Menu, X, Phone, Mail, MapPin } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
-import { INSTAGRAM_URL } from '../firebaseConfig';
 import { getCollectionPath } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
+import { WEB_CONTENT } from '../constants/content';
 import ComparisonSlider from './ComparisonSlider';
 import ReservationApp from './ReservationApp';
+import { TaglineWithHeart } from './FooterTagline';
 
 const CATEGORY_PMU = 'PMU';
 
@@ -349,6 +350,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
               handleLogin={() => {}}
               services={pmuServices}
               schedule={schedule}
+              schedulePmu={schedule}
               reservations={reservations}
               widgetOnly
               mode="dark"
@@ -357,97 +359,46 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
         </section>
       </main>
 
-      {/* Footer – Kontakt, navigace */}
-      <footer className="border-t border-white/5">
-        <div className="max-w-6xl mx-auto px-4 py-12 sm:py-16 grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
+      {/* Footer – stejná struktura jako kosmetika (Layout), dark theme */}
+      <footer id="kontakt" className="mt-auto border-t border-white/5 bg-[#0F0F0F] font-sans font-light text-gray-200">
+        <div className="container mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-2">
-              Skin Studio
+              {WEB_CONTENT.footer.brandHeading}
             </h3>
-            <p className="text-[#A1A1AA] font-medium mb-2">Lucie Metelková</p>
-            <p className="text-[#A1A1AA]/80 text-sm leading-relaxed">
-              Prémiová péče o pleť a permanentní make-up v srdci Uherského Brodu.
+            <p className="font-medium mb-2 text-[#A1A1AA]">{WEB_CONTENT.footer.ownerName}</p>
+            <p className="text-sm leading-relaxed text-[#A1A1AA]/90">
+              <TaglineWithHeart tagline={WEB_CONTENT.footer.tagline} heartWord={WEB_CONTENT.footer.heartReplacementWord} />
             </p>
           </div>
-          <div>
+          <div className="md:text-right md:flex md:flex-col md:items-end">
             <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-4">
-              Navigace
-            </h3>
-            <nav className="flex flex-col gap-2">
-              <Link to="/" className="text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm">
-                Kosmetika
-              </Link>
-              <button
-                type="button"
-                onClick={() => scrollTo('philosophy')}
-                className="text-left text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm"
-              >
-                Filozofie
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollTo('portfolio')}
-                className="text-left text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm"
-              >
-                Portfolio
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollTo('cenik')}
-                className="text-left text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm"
-              >
-                Ceník
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollTo('rezervace-pmu')}
-                className="text-left text-[#A1A1AA] hover:text-[#C48F83] transition-colors text-sm"
-              >
-                Rezervace
-              </button>
-            </nav>
-          </div>
-          <div>
-            <h3 className="text-white uppercase tracking-wide font-semibold text-sm mb-4">
-              Kontakt
+              {WEB_CONTENT.footer.contactHeading}
             </h3>
             <address className="not-italic space-y-2 text-sm text-[#A1A1AA]">
-              <p className="flex items-center gap-2">
+              <p className="flex items-center gap-2 md:justify-end">
                 <MapPin size={16} className="shrink-0 text-[#C48F83]" aria-hidden />
-                Masarykovo náměstí 72 (Budova ČSOB – 2. patro), Uherský Brod
+                {WEB_CONTENT.footer.location}
               </p>
-              <p className="flex items-center gap-2">
+              <p className="flex items-center gap-2 md:justify-end">
                 <Mail size={16} className="shrink-0 text-[#C48F83]" aria-hidden />
-                <a href="mailto:lucie@skinstudio.cz" className="hover:text-[#C48F83] transition-colors">
-                  lucie@skinstudio.cz
+                <a href={`mailto:${WEB_CONTENT.footer.email}`} className="hover:text-[#C48F83] transition-colors">
+                  {WEB_CONTENT.footer.email}
                 </a>
               </p>
-              <p className="flex items-center gap-2">
+              <p className="flex items-center gap-2 md:justify-end">
                 <Phone size={16} className="shrink-0 text-[#C48F83]" aria-hidden />
-                <a href="tel:+420724875558" className="hover:text-[#C48F83] transition-colors">
-                  +420 724 875 558
+                <a href={`tel:${WEB_CONTENT.footer.phone.replace(/\s/g, '')}`} className="hover:text-[#C48F83] transition-colors">
+                  {WEB_CONTENT.footer.phone}
                 </a>
               </p>
-              {INSTAGRAM_URL && (
-                <p className="flex items-center gap-2 pt-1">
-                  <Instagram size={16} className="shrink-0 text-[#C48F83]" aria-hidden />
-                  <a
-                    href={INSTAGRAM_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-[#C48F83] transition-colors"
-                  >
-                    Instagram
-                  </a>
-                </p>
-              )}
             </address>
           </div>
         </div>
         <div className="border-t border-white/5">
-          <div className="max-w-6xl mx-auto px-4 py-4">
-            <p className="text-[#A1A1AA]/60 text-xs text-center">
-              © 2026 Skin Studio Lucie Metelková
+          <div className="container mx-auto px-6 py-4">
+            <p className="text-xs text-center text-[#A1A1AA]/60">
+              {WEB_CONTENT.footer.copyright}
             </p>
           </div>
         </div>

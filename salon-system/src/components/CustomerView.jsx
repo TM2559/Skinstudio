@@ -299,9 +299,9 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
         </div>
 
         {/* Krok 2: Datum */}
-        <div className={!selectedService ? 'opacity-20 pointer-events-none' : ''}>
+        <div className={`min-w-0 ${!selectedService ? 'opacity-20 pointer-events-none' : ''}`}>
           <h2 className={`text-[10px] font-bold uppercase tracking-widest mb-6 border-b pb-2 ${isDark ? 'text-stone-300 border-stone-800' : 'text-stone-500 border-stone-100'}`}>2. Termín</h2>
-          <div className="mobile-carousel-strip flex gap-3 pb-4">
+          <div className="mobile-carousel-strip date-strip-scroll flex gap-3 pb-4 min-w-0">
             {clientDates.length === 0 && <p className={`text-xs ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>Momentálně nejsou vypsány žádné termíny.</p>}
             {clientDates.map(d => {
               const key = Utils.formatDateKey(d);

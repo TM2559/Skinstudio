@@ -163,6 +163,28 @@
     flex-shrink: 0;
   }
 
+  /* Pás termínů (dny) – na desktopu scrollovatelný včetně scrollbaru */
+  @media (min-width: 768px) {
+    .date-strip-scroll {
+      scrollbar-width: thin;
+      -ms-overflow-style: auto;
+    }
+    .date-strip-scroll::-webkit-scrollbar {
+      display: block;
+      height: 6px;
+    }
+    .date-strip-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .date-strip-scroll::-webkit-scrollbar-thumb {
+      background-color: #d6d3d1;
+      border-radius: 3px;
+    }
+    .date-strip-scroll::-webkit-scrollbar-thumb:hover {
+      background-color: #a8a29e;
+    }
+  }
+
   /* Proměny karusel – pagination tečky (minimalistické), vždy vidět i na mobilu */
   .carousel-dots {
     display: flex;
