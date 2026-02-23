@@ -364,19 +364,20 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
             })}
           </div>
 
-          {/* Permanentní kontaktní CTA (PMU i Kosmetika – vždy viditelný, bez rámečku) */}
-          <div style={{ marginTop: '30px' }}>
-            <p className="mb-1.5 text-[14px]" style={{ color: '#cccccc' }}>
-              Nenašli jste vhodný termín? Zavolejte a najdeme řešení společně.
-            </p>
-            <a
-              href="tel:+420724875558"
-              className="text-[#a88a7d] hover:underline hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-[#a88a7d]/50 rounded"
-              style={{ fontSize: '16px', fontWeight: 600 }}
-            >
-              +420 724 875 558
-            </a>
-          </div>
+        </div>
+
+        {/* Permanentní kontaktní CTA – vždy viditelný */}
+        <div className={`pt-6 mt-2 border-t text-center md:text-left ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
+          <p className={`mb-1.5 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            Nenašli jste vhodný termín? Zavolejte a najdeme řešení společně.
+          </p>
+          <a
+            href="tel:+420724875558"
+            className="text-lg font-semibold hover:underline transition-all focus:outline-none focus:ring-2 focus:ring-[#a88a7d]/50 rounded"
+            style={{ color: isDark ? '#daa59c' : 'var(--skin-gold-dark)' }}
+          >
+            +420 724 875 558
+          </a>
         </div>
       </div>
 
