@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Instagram, MapPin, Mail, Phone } from 'lucide-react';
+import { Menu, X, MapPin, Mail, Phone } from 'lucide-react';
 import { INSTAGRAM_URL } from '../firebaseConfig';
 import InstagramShowcase from './InstagramShowcase';
 import { TaglineWithHeart } from './FooterTagline';
 import { WEB_CONTENT } from '../constants/content';
 
 const getNav = () => {
-  const items = [...WEB_CONTENT.header.navItems];
-  const rezervace = items.pop();
-  if (INSTAGRAM_URL) items.push({ label: WEB_CONTENT.header.ariaLabelInstagram, to: '/', hash: 'instagram', iconOnly: true });
-  items.push(rezervace);
-  return items;
+  return [...WEB_CONTENT.header.navItems];
 };
 const NAV = getNav();
 
@@ -57,29 +53,6 @@ export default function Layout({ children, setView }) {
 
           <nav className="hidden lg:flex items-center gap-3 xl:gap-4 shrink min-w-0">
             {NAV.map((item) => {
-              if (item.iconOnly) {
-                const href = isHome ? `#${item.hash}` : `/#${item.hash}`;
-                return isHome ? (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => scrollTo(item.hash)}
-                    className={linkClass}
-                    aria-label={WEB_CONTENT.header.ariaLabelInstagram}
-                  >
-                    <Instagram size={20} strokeWidth={1.5} />
-                  </button>
-                ) : (
-                  <Link
-                    key={item.label}
-                    to={href}
-                    className={linkClass}
-                    aria-label={WEB_CONTENT.header.ariaLabelInstagram}
-                  >
-                    <Instagram size={20} strokeWidth={1.5} />
-                  </Link>
-                );
-              }
               if (item.hash) {
                 if (item.to !== '/') {
                   return (
@@ -139,30 +112,6 @@ export default function Layout({ children, setView }) {
             }}
           >
             {NAV.map((item) => {
-              if (item.iconOnly) {
-                const href = isHome ? `#${item.hash}` : `/#${item.hash}`;
-                return isHome ? (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => scrollTo(item.hash)}
-                    className="py-3 text-stone-600 hover:text-[var(--skin-gold-dark)] transition-colors"
-                    aria-label={WEB_CONTENT.header.ariaLabelInstagram}
-                  >
-                    <Instagram size={22} strokeWidth={1.5} />
-                  </button>
-                ) : (
-                  <Link
-                    key={item.label}
-                    to={href}
-                    className="py-3 inline-block text-stone-600 hover:text-[var(--skin-gold-dark)] transition-colors"
-                    onClick={() => setMenuOpen(false)}
-                    aria-label={WEB_CONTENT.header.ariaLabelInstagram}
-                  >
-                    <Instagram size={22} strokeWidth={1.5} />
-                  </Link>
-                );
-              }
               if (item.hash) {
                 if (item.to !== '/') {
                   return (

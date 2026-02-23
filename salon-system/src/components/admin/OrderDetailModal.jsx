@@ -9,7 +9,7 @@ const OrderDetailModal = ({ order, onClose, onExportCalendar, onDelete }) => {
       <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 animate-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h3 className="font-serif text-xl font-bold text-stone-900">{order.name}</h3>
+            <h3 className="font-display text-xl font-bold text-stone-900">{order.name}</h3>
             <p className="text-xs font-bold text-stone-400 mt-1">{order.serviceName}</p>
           </div>
           <button onClick={onClose} className="p-2 bg-stone-50 rounded-full text-stone-400 hover:text-stone-900">

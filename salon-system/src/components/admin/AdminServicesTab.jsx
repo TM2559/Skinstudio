@@ -72,7 +72,7 @@ const AdminServicesTab = ({
 
   return (
   <div className="bg-stone-50/60 rounded-2xl border border-stone-200 p-6 md:p-8 shadow-sm">
-    <h2 className="font-serif text-xl mb-1 flex items-center gap-2 text-stone-800">
+    <h2 className="font-display text-xl mb-1 flex items-center gap-2 text-stone-800">
       <Scissors size={20} className="text-stone-500" />
       Služby
     </h2>

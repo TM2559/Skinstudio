@@ -326,7 +326,7 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
                   <span className="text-[10px] font-bold uppercase tracking-tighter">
                     {d.toLocaleDateString('cs-CZ', { weekday: 'short' })}
                   </span>
-                  <span className="text-xl font-serif leading-none my-1">
+                  <span className="text-xl font-display leading-none my-1">
                     {d.getDate()}
                   </span>
                   <span className="text-[9px] uppercase tracking-widest opacity-80">

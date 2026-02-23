@@ -56,8 +56,8 @@ export default function CosmeticsPage({ services = [] }) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: COSMETICS_BG }}>
       {/* 1. Hero – mobile: text first, compact image strip; desktop: split, viewport height */}
-      <section className="grid grid-cols-1 md:grid-cols-2 grid-rows-[auto_400px] md:grid-rows-none md:h-screen md:max-h-[1080px] w-full overflow-hidden min-h-0">
-        <div className="flex flex-col justify-center items-start px-8 md:px-24 h-full min-h-0 bg-[#F9F8F6] order-1 md:order-1 py-8 md:py-0 max-w-xl md:max-w-2xl">
+      <section className="grid grid-cols-1 md:grid-cols-2 grid-rows-[auto_400px] md:grid-rows-none md:h-screen md:max-h-[1080px] w-full max-w-[1920px] mx-auto overflow-hidden min-h-0">
+        <div className="flex flex-col justify-center items-start px-8 md:px-24 h-full min-h-0 bg-[#F9F8F6] order-1 md:order-1 py-8 md:py-0 max-w-xl md:max-w-2xl md:mx-auto">
           <p className="text-xs sm:text-sm font-sans uppercase tracking-[0.2em] text-stone-600 mb-3">
             {WEB_CONTENT.hero.subtitle}
           </p>
@@ -81,7 +81,7 @@ export default function CosmeticsPage({ services = [] }) {
           <img
             src="/lucie-portrait.jpg"
             alt={WEB_CONTENT.imageAlts.portrait}
-            className="w-full h-full object-cover object-[50%_60%]"
+            className="w-full h-full object-cover object-[50%_48%]"
             loading="eager"
             decoding="async"
             fetchPriority="high"
@@ -123,9 +123,9 @@ export default function CosmeticsPage({ services = [] }) {
         aria-labelledby="pmu-teaser-heading"
       >
         <div className="max-w-4xl mx-auto px-6">
-          <h3 id="pmu-teaser-heading" className="text-3xl md:text-4xl font-serif text-stone-900 mb-4">
+          <h3 id="pmu-teaser-heading" className="text-3xl md:text-4xl font-display text-stone-900 mb-4">
             {WEB_CONTENT.pmu.headline}{' '}
-            <span className="italic font-serif text-stone-400">{WEB_CONTENT.pmu.headlineItalic}</span>
+            <span className="italic font-display text-stone-400">{WEB_CONTENT.pmu.headlineItalic}</span>
           </h3>
           <p className="text-stone-600 max-w-2xl mx-auto mb-8 font-light">
             {WEB_CONTENT.pmu.body}

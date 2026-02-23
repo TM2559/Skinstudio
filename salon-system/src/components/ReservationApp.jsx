@@ -94,7 +94,7 @@ export default function ReservationApp({
           {view === 'login' && (
             <div className="max-w-sm mx-auto py-16 sm:py-20 text-center animate-in zoom-in">
               <Lock className="mx-auto mb-4 text-stone-200" size={48} />
-              <h2 className="font-serif text-2xl mb-6 text-stone-800 font-bold">Admin Vstup</h2>
+              <h2 className="font-display text-2xl mb-6 text-stone-800 font-bold">Admin Vstup</h2>
               <form onSubmit={handleLogin} className="space-y-4">
                 <input
                   autoFocus

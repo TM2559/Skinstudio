@@ -214,7 +214,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
               Filozofie
             </h2>
             <div className="text-left">
-              <h3 className="text-xl font-serif text-white mb-4">Jemnost, která zůstává</h3>
+              <h3 className="text-xl font-display text-white mb-4">Jemnost, která zůstává</h3>
               <p className="mt-4 text-[#A1A1AA] leading-relaxed">
                 Permanentní make-up vnímám jako neviditelného pomocníka. Jeho úkolem není přebít vaši tvář, ale tiše podtrhnout to, co je na ní krásné.
               </p>

@@ -190,7 +190,7 @@ const AdminShiftsTab = ({
     <>
       <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden" style={{ boxShadow: 'none' }}>
         <div className="p-6 md:p-8 pb-4">
-          <h2 className="font-serif text-xl font-semibold text-stone-800 mb-1 flex items-center gap-2">
+          <h2 className="font-display text-xl font-semibold text-stone-800 mb-1 flex items-center gap-2">
             <Calendar size={20} className="text-stone-400" />
             Seznam směn
           </h2>
