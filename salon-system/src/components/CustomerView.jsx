@@ -59,11 +59,13 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
     );
   };
 
+  /** Počet dní dopředu pro výběr termínu (PMU směny mohou být méně časté, proto 60 dní). */
+  const DAYS_AHEAD = 60;
   const clientDates = useMemo(() => {
     const dates = [];
     const today = new Date();
     const sched = effectiveSchedule;
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < DAYS_AHEAD; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       const key = Utils.formatDateKey(d);
