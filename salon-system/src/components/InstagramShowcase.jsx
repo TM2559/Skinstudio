@@ -12,33 +12,14 @@ const STATIC_CONFIG_PATH = '/instagram-showcase/config.json';
 const SWAP_INTERVAL_MS = 3000;
 const FADE_DURATION_MS = 700;
 
-/** Image pool for the living mosaic (8–12 images). Reused for variety. */
-const galleryImages = [
-  'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=600&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=600&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=600&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&h=600&fit=crop',
-];
-
-/** Fallback when no config – first 4 of pool */
-const PLACEHOLDER_IMAGES = galleryImages.slice(0, 4);
-
-/** Build pool: use imageList if available (pad to 8+ with galleryImages), else galleryImages */
+/** Build pool from config only (pad to 8+ by repeating for mosaic variety). No placeholder images. */
 function buildPool(imageList) {
-  if (imageList && imageList.length > 0) {
-    const fromConfig = [...imageList];
-    while (fromConfig.length < 8) {
-      fromConfig.push(galleryImages[fromConfig.length % galleryImages.length]);
-    }
-    return fromConfig.slice(0, 12);
+  if (!imageList || imageList.length === 0) return [];
+  const fromConfig = [...imageList];
+  while (fromConfig.length < 8) {
+    fromConfig.push(imageList[fromConfig.length % imageList.length]);
   }
-  return galleryImages;
+  return fromConfig.slice(0, 12);
 }
 
 export default function InstagramShowcase() {
@@ -124,6 +105,8 @@ export default function InstagramShowcase() {
 
   if (!INSTAGRAM_URL) return null;
 
+  const hasImages = pool.length > 0;
+
   return (
     <section
       className="py-24"
@@ -145,50 +128,53 @@ export default function InstagramShowcase() {
           </a>
         </header>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[0, 1, 2, 3].map((slotIndex) => {
-            const idx = displayedIndices[slotIndex] ?? 0;
-            const src = pool[idx] ?? pool[0];
-            const isFading = fadingSlot === slotIndex;
-            return (
-              <div
-                key={slotIndex}
-                className="relative aspect-square rounded-2xl overflow-hidden"
-              >
-                <a
-                  href={INSTAGRAM_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block absolute inset-0 cursor-pointer"
-                  aria-label={`Instagram – příspěvek ${slotIndex + 1}`}
+        {hasImages ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[0, 1, 2, 3].map((slotIndex) => {
+              const idx = displayedIndices[slotIndex] ?? 0;
+              const src = pool[idx] ?? pool[0];
+              const isFading = fadingSlot === slotIndex;
+              return (
+                <div
+                  key={slotIndex}
+                  className="relative aspect-square rounded-2xl overflow-hidden"
                 >
-                  <img
-                    src={src}
-                    alt={WEB_CONTENT.imageAlts.instagramGallery}
-                    loading="lazy"
-                    decoding="async"
-                    className={`gallery-item absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out group-hover:scale-110 ${
-                      isFading ? 'opacity-0' : 'opacity-100'
-                    }`}
-                    onError={(e) => {
-                      e.target.src = galleryImages[0];
-                    }}
-                  />
-                  <div
-                    className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center z-20 pointer-events-none"
-                    aria-hidden
+                  <a
+                    href={INSTAGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group block absolute inset-0 cursor-pointer"
+                    aria-label={`Instagram – příspěvek ${slotIndex + 1}`}
                   >
-                    <Instagram
-                      size={40}
-                      className="text-white"
-                      strokeWidth={1.5}
+                    <img
+                      src={src}
+                      alt={WEB_CONTENT.imageAlts.instagramGallery}
+                      loading="lazy"
+                      decoding="async"
+                      className={`gallery-item absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out group-hover:scale-110 ${
+                        isFading ? 'opacity-0' : 'opacity-100'
+                      }`}
                     />
-                  </div>
-                </a>
-              </div>
-            );
-          })}
-        </div>
+                    <div
+                      className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center z-20 pointer-events-none"
+                      aria-hidden
+                    >
+                      <Instagram
+                        size={40}
+                        className="text-white"
+                        strokeWidth={1.5}
+                      />
+                    </div>
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-center text-stone-500 text-sm py-8">
+            Fotky budou zobrazeny po přidání v administraci (záložka Instagram).
+          </p>
+        )}
       </div>
     </section>
   );

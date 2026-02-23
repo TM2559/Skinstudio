@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { query, where, onSnapshot } from 'firebase/firestore';
 import { getCollectionPath } from '../firebaseConfig';
@@ -18,6 +18,14 @@ export default function CosmeticsPage({ services = [] }) {
   const [transformations, setTransformations] = useState([]);
   const promenyCarouselRef = useRef(null);
   const [promenyActiveIndex, setPromenyActiveIndex] = useState(0);
+
+  const transformationsWithImages = useMemo(
+    () =>
+      transformations.filter(
+        (item) => item.imageBeforeUrl?.trim() && item.imageAfterUrl?.trim()
+      ),
+    [transformations]
+  );
 
   useEffect(() => {
     const hash = window.location.hash?.slice(1);
@@ -41,17 +49,17 @@ export default function CosmeticsPage({ services = [] }) {
   // Sync pagination dot with carousel scroll position (mobile)
   useEffect(() => {
     const el = promenyCarouselRef.current;
-    if (!el || transformations.length <= 1) return;
+    if (!el || transformationsWithImages.length <= 1) return;
     const onScroll = () => {
       const itemWidth = el.offsetWidth * 0.85 + 24; /* 85vw + gap-6 */
       const index = Math.round(el.scrollLeft / itemWidth);
-      const clamped = Math.min(Math.max(0, index), transformations.length - 1);
+      const clamped = Math.min(Math.max(0, index), transformationsWithImages.length - 1);
       setPromenyActiveIndex(clamped);
     };
     el.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => el.removeEventListener('scroll', onScroll);
-  }, [transformations.length]);
+  }, [transformationsWithImages.length]);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: COSMETICS_BG }}>
@@ -149,7 +157,7 @@ export default function CosmeticsPage({ services = [] }) {
           <h2 className="font-display text-2xl sm:text-3xl font-semibold text-stone-700 text-center mb-12">
             {WEB_CONTENT.promeny.heading}
           </h2>
-          {transformations.length > 0 ? (
+          {transformationsWithImages.length > 0 ? (
             <>
               <LazySection rootMargin="240px">
                 <div
@@ -157,7 +165,7 @@ export default function CosmeticsPage({ services = [] }) {
                   className="transformations-scroll flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory px-4 -mx-4 md:mx-0 md:px-0 min-h-[320px]"
                 >
                   <div id="carousel-track" className="flex gap-6 flex-shrink-0">
-                    {transformations.map((item) => (
+                    {transformationsWithImages.map((item) => (
                       <div
                         key={item.id}
                         className="w-[85vw] md:w-[400px] flex-shrink-0 snap-center flex flex-col"
@@ -185,9 +193,9 @@ export default function CosmeticsPage({ services = [] }) {
                     ))}
                   </div>
                 </div>
-                {transformations.length >= 1 && (
+                {transformationsWithImages.length >= 1 && (
                   <div className="carousel-dots md:hidden" role="tablist" aria-label={WEB_CONTENT.promeny.carouselAriaLabel}>
-                    {transformations.map((_, i) => (
+                    {transformationsWithImages.map((_, i) => (
                       <button
                         key={i}
                         type="button"

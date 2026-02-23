@@ -11,13 +11,6 @@ import { TaglineWithHeart } from './FooterTagline';
 
 const CATEGORY_PMU = 'PMU';
 
-/** Demo před/po slider, když v adminu ještě nic není */
-const DEMO_SLIDER = {
-  beforeImage: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&q=80',
-  afterImage: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&q=80',
-  altText: 'Ukázka před a po (demo)',
-};
-
 export default function PMUPage({ services = [], schedule = {}, reservations = [] }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sliders, setSliders] = useState([]);
@@ -43,13 +36,14 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
     return () => unsub();
   }, []);
 
-  const displaySliders = sliders.length > 0
-    ? sliders.map((item) => ({
+  const displaySliders =
+    sliders
+      .filter((item) => item.imageBeforeUrl?.trim() && item.imageAfterUrl?.trim())
+      .map((item) => ({
         beforeImage: item.imageBeforeUrl,
         afterImage: item.imageAfterUrl,
         altText: item.title || 'Před a po',
-      }))
-    : [DEMO_SLIDER];
+      }));
 
   // Scroll to #pmu when landing on this page with hash (e.g. from main nav link)
   useEffect(() => {
@@ -235,32 +229,29 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             <h2 className="font-display text-2xl sm:text-3xl font-semibold text-white text-center mb-16">
               Portfolio
             </h2>
-            <div
-              ref={pmuCarouselRef}
-              className="transformations-scroll flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory px-4 -mx-4 md:mx-0 md:px-0 min-h-[320px]"
-            >
-              <div id="carousel-track" className="flex gap-6 flex-shrink-0">
-                {displaySliders.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex-shrink-0 w-[85vw] md:w-[400px] snap-center flex flex-col space-y-4"
-                  >
-                    <ComparisonSlider
-                      beforeImage={item.beforeImage}
-                      afterImage={item.afterImage}
-                      altText={item.altText}
-                      theme="dark"
-                    />
-                    {sliders.length === 0 && (
-                      <p className="text-center text-[#A1A1AA]/60 text-sm mt-4">
-                        Demo – vlastní před/po přidáte v adminu v záložce Fotografie → Proměny (kategorie PMU).
-                      </p>
-                    )}
-                    <div className="mobile-carousel-swipe-zone md:hidden pb-2 flex-shrink-0" aria-hidden />
+            {displaySliders.length > 0 ? (
+              <>
+                <div
+                  ref={pmuCarouselRef}
+                  className="transformations-scroll flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory px-4 -mx-4 md:mx-0 md:px-0 min-h-[320px]"
+                >
+                  <div id="carousel-track" className="flex gap-6 flex-shrink-0">
+                    {displaySliders.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex-shrink-0 w-[85vw] md:w-[400px] snap-center flex flex-col space-y-4"
+                      >
+                        <ComparisonSlider
+                          beforeImage={item.beforeImage}
+                          afterImage={item.afterImage}
+                          altText={item.altText}
+                          theme="dark"
+                        />
+                        <div className="mobile-carousel-swipe-zone md:hidden pb-2 flex-shrink-0" aria-hidden />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
             {displaySliders.length >= 1 && (
               <div className="carousel-dots md:hidden" role="tablist" aria-label="PMU proměny">
                 {displaySliders.map((_, i) => (
@@ -280,6 +271,12 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                   />
                 ))}
               </div>
+            )}
+              </>
+            ) : (
+              <p className="text-center text-[#A1A1AA]/60 text-sm py-12">
+                Před/po proměny budou zobrazeny po přidání v administraci (Fotografie → Proměny, kategorie PMU).
+              </p>
             )}
           </div>
         </section>
