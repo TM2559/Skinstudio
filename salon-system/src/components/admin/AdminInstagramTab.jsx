@@ -3,6 +3,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getDoc, setDoc } from 'firebase/firestore';
 import { Instagram, Upload, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { storage, getDocPath } from '../../firebaseConfig';
+import ConfirmDialog from '../ConfirmDialog';
 
 const CONFIG_DOC = 'instagramShowcase';
 const STORAGE_PREFIX = 'instagram-showcase';
@@ -12,6 +13,7 @@ export default function AdminInstagramTab() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [confirmRemove, setConfirmRemove] = useState({ open: false, index: null });
 
   const docRef = getDocPath('config', CONFIG_DOC);
 
@@ -72,9 +74,13 @@ export default function AdminInstagramTab() {
   };
 
   const handleRemove = (index) => {
-    if (!confirm('Obrázek odebrat z galerie?')) return;
-    const newUrls = urls.filter((_, i) => i !== index);
+    setConfirmRemove({ open: true, index });
+  };
+
+  const executeRemove = () => {
+    const newUrls = urls.filter((_, i) => i !== confirmRemove.index);
     save(newUrls);
+    setConfirmRemove({ open: false, index: null });
   };
 
   const move = (index, direction) => {
@@ -180,6 +186,14 @@ export default function AdminInstagramTab() {
           </p>
         )}
       </section>
+
+      <ConfirmDialog
+        open={confirmRemove.open}
+        title="Odebrat obrázek"
+        message="Obrázek odebrat z galerie?"
+        onConfirm={executeRemove}
+        onCancel={() => setConfirmRemove({ open: false, index: null })}
+      />
     </div>
   );
 }

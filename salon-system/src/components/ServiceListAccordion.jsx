@@ -80,6 +80,7 @@ export default function ServiceListAccordion({
               <button
                 type="button"
                 onClick={() => setExpandedServiceId((id) => (id === s.id ? null : s.id))}
+                aria-expanded={isExpanded && hasDescription}
                 className={`w-full flex justify-between items-center text-left transition-colors py-[20px] ${rowHoverClass} ${isDark ? 'px-0' : ''}`}
               >
                 <span className={titleClass}>{s.name}</span>

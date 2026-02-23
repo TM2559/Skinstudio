@@ -46,9 +46,9 @@ const UpsellChip = ({ service, selected: controlledSelected, onToggle, onSelect 
       style={{ transitionProperty: 'background-color, border-color, color, transform' }}
     >
       {selected ? (
-        <>✓ {service.name} added</>
+        <>✓ {service.name} přidáno</>
       ) : (
-        <>+ Add {service.name} for {priceDisplay}</>
+        <>+ Přidat {service.name} za {priceDisplay}</>
       )}
     </button>
   );

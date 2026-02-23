@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Package, Edit2, Trash2 } from 'lucide-react';
 import { addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getCollectionPath, getDocPath } from '../../firebaseConfig';
+import ConfirmDialog from '../ConfirmDialog';
 
 const AdminAddonsTab = ({ addons, onAddonsChange }) => {
   const [editingId, setEditingId] = useState(null);
+  const [dialog, setDialog] = useState({ open: false, title: '', message: '', onConfirm: null, alertOnly: false });
   const [form, setForm] = useState({
     name: '',
     default_price: '',
@@ -41,20 +43,28 @@ const AdminAddonsTab = ({ addons, onAddonsChange }) => {
       if (onAddonsChange) onAddonsChange();
     } catch (err) {
       console.error(err);
-      alert('Chyba při ukládání.');
+      setDialog({ open: true, title: 'Chyba', message: 'Chyba při ukládání.', onConfirm: null, alertOnly: true });
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Opravdu smazat tento add-on? Služby, které ho nabízejí, ho už nebudou mít v konfiguraci.')) return;
-    try {
-      await deleteDoc(getDocPath('addons', id));
-      if (editingId === id) resetForm();
-      if (onAddonsChange) onAddonsChange();
-    } catch (err) {
-      console.error(err);
-      alert('Chyba při mazání.');
-    }
+  const handleDelete = (id) => {
+    setDialog({
+      open: true,
+      title: 'Smazat add-on',
+      message: 'Opravdu smazat tento add-on? Služby, které ho nabízejí, ho už nebudou mít v konfiguraci.',
+      alertOnly: false,
+      onConfirm: async () => {
+        setDialog((d) => ({ ...d, open: false }));
+        try {
+          await deleteDoc(getDocPath('addons', id));
+          if (editingId === id) resetForm();
+          if (onAddonsChange) onAddonsChange();
+        } catch (err) {
+          console.error(err);
+          setDialog({ open: true, title: 'Chyba', message: 'Chyba při mazání.', onConfirm: null, alertOnly: true });
+        }
+      },
+    });
   };
 
   const startEdit = (addon) => {
@@ -198,6 +208,15 @@ const AdminAddonsTab = ({ addons, onAddonsChange }) => {
           ))
         )}
       </div>
+
+      <ConfirmDialog
+        open={dialog.open}
+        title={dialog.title}
+        message={dialog.message}
+        alertOnly={dialog.alertOnly}
+        onConfirm={dialog.onConfirm || (() => setDialog((d) => ({ ...d, open: false })))}
+        onCancel={() => setDialog((d) => ({ ...d, open: false }))}
+      />
     </div>
   );
 };

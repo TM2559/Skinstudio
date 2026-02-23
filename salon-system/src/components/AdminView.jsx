@@ -14,6 +14,7 @@ import AdminPhotosTab from './admin/AdminPhotosTab';
 import ManualBookingModal from './admin/ManualBookingModal';
 import RemindersModal from './admin/RemindersModal';
 import OrderDetailModal from './admin/OrderDetailModal';
+import ConfirmDialog from './ConfirmDialog';
 
 const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons = [], serviceAddonLinks = [], onLogout }) => {
   const [activeTab, setActiveTab] = useState('bookings');
@@ -41,6 +42,8 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   const [isManualSubmitting, setIsManualSubmitting] = useState(false);
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
   const [editingAddonLinks, setEditingAddonLinks] = useState([]);
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null });
+  const [alertDialog, setAlertDialog] = useState({ open: false, title: '', message: '' });
 
   const getComparableDate = (dateStr) => {
     if (!dateStr) return 0;
@@ -76,15 +79,20 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   const periods = dayData?.periods || (dayData?.start ? [{ start: dayData.start, end: dayData.end }] : []);
 
   const handleShift = async (action, index) => {
-    if (action === 'add') {
-      const newP = [...periods, { start: workStart, end: workEnd }].sort(
-        (a, b) => Utils.timeToMinutes(a.start) - Utils.timeToMinutes(b.start)
-      );
-      await setDoc(getDocPath('schedule', currentDayKey), { periods: newP });
-    } else if (action === 'remove') {
-      const newP = periods.filter((_, i) => i !== index);
-      const ref = getDocPath('schedule', currentDayKey);
-      newP.length === 0 ? await deleteDoc(ref) : await setDoc(ref, { periods: newP });
+    try {
+      if (action === 'add') {
+        const newP = [...periods, { start: workStart, end: workEnd }].sort(
+          (a, b) => Utils.timeToMinutes(a.start) - Utils.timeToMinutes(b.start)
+        );
+        await setDoc(getDocPath('schedule', currentDayKey), { periods: newP });
+      } else if (action === 'remove') {
+        const newP = periods.filter((_, i) => i !== index);
+        const ref = getDocPath('schedule', currentDayKey);
+        newP.length === 0 ? await deleteDoc(ref) : await setDoc(ref, { periods: newP });
+      }
+    } catch (err) {
+      console.error('handleShift error:', err);
+      setAlertDialog({ open: true, title: 'Chyba', message: 'Nepodařilo se uložit směnu.' });
     }
   };
 
@@ -127,30 +135,48 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
 
   const handleService = async () => {
     if (!serviceForm.name) return;
-    const data = {
-      name: serviceForm.name,
-      price: parseInt(serviceForm.price) || 0,
-      duration: parseInt(serviceForm.duration),
-      description: (serviceForm.description || '').trim(),
-      category: serviceForm.category || 'STANDARD',
-      isStartingPrice: !!serviceForm.isStartingPrice,
-      order: editingServiceId ? undefined : services.length,
-    };
-    const updateData = { ...data };
-    if (updateData.order === undefined) delete updateData.order;
-    if (editingServiceId) {
-      await updateDoc(getDocPath('services', editingServiceId), updateData);
-      await saveServiceAddonLinks(editingServiceId);
-      setEditingServiceId(null);
-      setEditingAddonLinks([]);
-    } else {
-      await addDoc(getCollectionPath('services'), data);
+    try {
+      const data = {
+        name: serviceForm.name,
+        price: parseInt(serviceForm.price) || 0,
+        duration: parseInt(serviceForm.duration),
+        description: (serviceForm.description || '').trim(),
+        category: serviceForm.category || 'STANDARD',
+        isStartingPrice: !!serviceForm.isStartingPrice,
+        order: editingServiceId ? undefined : services.length,
+      };
+      const updateData = { ...data };
+      if (updateData.order === undefined) delete updateData.order;
+      if (editingServiceId) {
+        await updateDoc(getDocPath('services', editingServiceId), updateData);
+        await saveServiceAddonLinks(editingServiceId);
+        setEditingServiceId(null);
+        setEditingAddonLinks([]);
+      } else {
+        await addDoc(getCollectionPath('services'), data);
+      }
+      setServiceForm({ name: '', price: '', duration: '60', description: '', category: 'STANDARD', isStartingPrice: false });
+    } catch (err) {
+      console.error('handleService error:', err);
+      setAlertDialog({ open: true, title: 'Chyba', message: 'Nepodařilo se uložit službu.' });
     }
-    setServiceForm({ name: '', price: '', duration: '60', description: '', category: 'STANDARD', isStartingPrice: false });
   };
 
-  const handleDeleteService = async (id) => {
-    if (confirm('Smazat tuto proceduru?')) await deleteDoc(getDocPath('services', id));
+  const handleDeleteService = (id) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Smazat proceduru',
+      message: 'Opravdu chcete smazat tuto proceduru?',
+      onConfirm: async () => {
+        setConfirmDialog((d) => ({ ...d, open: false }));
+        try {
+          await deleteDoc(getDocPath('services', id));
+        } catch (err) {
+          console.error(err);
+          setAlertDialog({ open: true, title: 'Chyba', message: 'Nepodařilo se smazat službu.' });
+        }
+      },
+    });
   };
 
   const PMU_DURATIONS = [180, 210, 240, 270];
@@ -179,10 +205,14 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     if (targetIndex < 0 || targetIndex >= newServices.length) return;
     const [movedItem] = newServices.splice(index, 1);
     newServices.splice(targetIndex, 0, movedItem);
-    const updatePromises = newServices.map((service, idx) =>
-      updateDoc(getDocPath('services', service.id), { order: idx })
-    );
-    await Promise.all(updatePromises);
+    try {
+      const updatePromises = newServices.map((service, idx) =>
+        updateDoc(getDocPath('services', service.id), { order: idx })
+      );
+      await Promise.all(updatePromises);
+    } catch (err) {
+      console.error('moveService error:', err);
+    }
   };
 
   const handleDragStart = (e, index) => {
@@ -207,17 +237,32 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     const newServices = [...services];
     const [movedItem] = newServices.splice(draggedItemIndex, 1);
     newServices.splice(dropIndex, 0, movedItem);
-    const updatePromises = newServices.map((service, index) =>
-      updateDoc(getDocPath('services', service.id), { order: index })
-    );
-    await Promise.all(updatePromises);
+    try {
+      const updatePromises = newServices.map((service, index) =>
+        updateDoc(getDocPath('services', service.id), { order: index })
+      );
+      await Promise.all(updatePromises);
+    } catch (err) {
+      console.error('handleDrop error:', err);
+    }
   };
 
-  const handleDeleteRes = async (id) => {
-    if (confirm('Smazat rezervaci?')) {
-      await deleteDoc(getDocPath('reservations', id));
-      setSelectedOrder(null);
-    }
+  const handleDeleteRes = (id) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Smazat rezervaci',
+      message: 'Opravdu chcete smazat tuto rezervaci?',
+      onConfirm: async () => {
+        setConfirmDialog((d) => ({ ...d, open: false }));
+        try {
+          await deleteDoc(getDocPath('reservations', id));
+          setSelectedOrder(null);
+        } catch (err) {
+          console.error(err);
+          setAlertDialog({ open: true, title: 'Chyba', message: 'Nepodařilo se smazat rezervaci.' });
+        }
+      },
+    });
   };
 
   const handleExportCalendar = (order) => {
@@ -267,7 +312,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     }
     setIsSendingReminders(false);
     setShowReminderModal(false);
-    alert(`Odesláno ${count} připomínek.`);
+    setAlertDialog({ open: true, title: 'Hotovo', message: `Odesláno ${count} připomínek.` });
   };
 
   const openReminders = () => {
@@ -306,7 +351,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     if (sendNotification) {
       const hasContact = (manualForm.phone || '').trim() || (manualForm.email || '').trim();
       if (!hasContact) {
-        alert('Pro odeslání potvrzení vyplňte alespoň telefon nebo e-mail.');
+        setAlertDialog({ open: true, title: 'Chybí kontakt', message: 'Pro odeslání potvrzení vyplňte alespoň telefon nebo e-mail.' });
         return;
       }
     }
@@ -368,7 +413,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
       }
     } catch (err) {
       console.error(err);
-      alert('Chyba při ukládání.');
+      setAlertDialog({ open: true, title: 'Chyba', message: 'Chyba při ukládání rezervace.' });
     } finally {
       setIsManualSubmitting(false);
     }
@@ -551,6 +596,22 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           onDelete={handleDeleteRes}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog((d) => ({ ...d, open: false }))}
+      />
+      <ConfirmDialog
+        open={alertDialog.open}
+        title={alertDialog.title}
+        message={alertDialog.message}
+        alertOnly
+        onConfirm={() => setAlertDialog((d) => ({ ...d, open: false }))}
+        onCancel={() => setAlertDialog((d) => ({ ...d, open: false }))}
+      />
     </div>
   );
 };

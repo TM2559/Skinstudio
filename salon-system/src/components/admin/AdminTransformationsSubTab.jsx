@@ -5,64 +5,8 @@ import { Upload, Trash2, ImageIcon } from 'lucide-react';
 import { storage, getCollectionPath, getDocPath } from '../../firebaseConfig';
 import { COSMETICS_CATEGORY, PMU_CATEGORY, TRANSFORMATIONS_COLLECTION, STORAGE_TRANSFORMATIONS_PREFIX } from '../../constants/cosmetics';
 import CategoryToggle from './CategoryToggle';
-
-// Client-side image optimization before upload to Storage.
-// Keeps quality high, but limits max dimension so loading is much faster.
-export async function createOptimizedImageFile(file, maxSize = 1600, quality = 0.85) {
-  if (!file) return file;
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(reader.error || new Error('Nepodařilo se načíst obrázek.'));
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        try {
-          let { width, height } = img;
-          if (width > height && width > maxSize) {
-            height = Math.round((height * maxSize) / width);
-            width = maxSize;
-          } else if (height > maxSize) {
-            width = Math.round((width * maxSize) / height);
-            height = maxSize;
-          }
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            resolve(file);
-            return;
-          }
-          ctx.drawImage(img, 0, 0, width, height);
-
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                resolve(file);
-                return;
-              }
-              const optimizedFile = new File(
-                [blob],
-                file.name.replace(/\.(png|jpg|jpeg|webp)$/i, '.jpg'),
-                { type: 'image/jpeg' }
-              );
-              resolve(optimizedFile);
-            },
-            'image/jpeg',
-            quality
-          );
-        } catch (e) {
-          resolve(file);
-        }
-      };
-      img.onerror = () => reject(new Error('Nepodařilo se načíst obrázek pro zmenšení.'));
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
+import ConfirmDialog from '../ConfirmDialog';
+import { createOptimizedImageFile } from '../../utils/imageOptimize';
 
 export default function AdminTransformationsSubTab() {
   const [loading, setLoading] = useState(true);
@@ -75,6 +19,7 @@ export default function AdminTransformationsSubTab() {
   const [imageAfterFile, setImageAfterFile] = useState(null);
   const [itemsCosmetics, setItemsCosmetics] = useState([]);
   const [itemsPmu, setItemsPmu] = useState([]);
+  const [confirmRemove, setConfirmRemove] = useState({ open: false, id: null });
 
   const colRef = getCollectionPath(TRANSFORMATIONS_COLLECTION);
 
@@ -155,8 +100,13 @@ export default function AdminTransformationsSubTab() {
     }
   };
 
-  const handleRemove = async (id) => {
-    if (!confirm('Tuto proměnu (před/po) odebrat?')) return;
+  const handleRemove = (id) => {
+    setConfirmRemove({ open: true, id });
+  };
+
+  const executeRemove = async () => {
+    const { id } = confirmRemove;
+    setConfirmRemove({ open: false, id: null });
     try {
       await deleteDoc(getDocPath(TRANSFORMATIONS_COLLECTION, id));
     } catch (e) {
@@ -311,6 +261,14 @@ export default function AdminTransformationsSubTab() {
           <p className="text-sm">Zatím žádné před/po proměny. Vyberte oba obrázky a vyplňte název.</p>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmRemove.open}
+        title="Odebrat proměnu"
+        message="Tuto proměnu (před/po) odebrat?"
+        onConfirm={executeRemove}
+        onCancel={() => setConfirmRemove({ open: false, id: null })}
+      />
     </div>
   );
 }

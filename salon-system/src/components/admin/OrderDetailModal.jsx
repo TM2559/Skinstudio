@@ -5,14 +5,14 @@ import { Utils } from '../../utils/helpers';
 const OrderDetailModal = ({ order, onClose, onExportCalendar, onDelete }) => {
   if (!order) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 animate-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose} role="presentation">
+      <div role="dialog" aria-modal="true" aria-labelledby="order-detail-title" className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 animate-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h3 className="font-display text-xl font-bold text-stone-900">{order.name}</h3>
+            <h3 id="order-detail-title" className="font-display text-xl font-bold text-stone-900">{order.name}</h3>
             <p className="text-xs font-bold text-stone-400 mt-1">{order.serviceName}</p>
           </div>
-          <button onClick={onClose} className="p-2 bg-stone-50 rounded-full text-stone-400 hover:text-stone-900">
+          <button onClick={onClose} className="p-2 bg-stone-50 rounded-full text-stone-400 hover:text-stone-900" aria-label="Zavřít">
             <X size={20} />
           </button>
         </div>

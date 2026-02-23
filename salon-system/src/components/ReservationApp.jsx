@@ -3,6 +3,7 @@ import { useSearchParams, useLocation } from 'react-router-dom';
 import { Loader2, Lock } from 'lucide-react';
 import CustomerView from './CustomerView';
 import AdminView from './AdminView';
+import ErrorBoundary from './ErrorBoundary';
 
 export default function ReservationApp({
   loading,
@@ -125,18 +126,20 @@ export default function ReservationApp({
           )}
 
           {view === 'admin' && (
-            <AdminView
-              services={services}
-              schedule={schedule}
-              schedulePmu={schedulePmu}
-              reservations={reservations}
-              addons={addons}
-              serviceAddonLinks={serviceAddonLinks}
-              onLogout={() => {
-                setView('customer');
-                setAdminPassword('');
-              }}
-            />
+            <ErrorBoundary>
+              <AdminView
+                services={services}
+                schedule={schedule}
+                schedulePmu={schedulePmu}
+                reservations={reservations}
+                addons={addons}
+                serviceAddonLinks={serviceAddonLinks}
+                onLogout={() => {
+                  setView('customer');
+                  setAdminPassword('');
+                }}
+              />
+            </ErrorBoundary>
           )}
         </div>
       </div>

@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Public pages read transformations (before/after sliders)
+    match /transformation_items/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Public pages read gallery
+    match /gallery_items/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Public pages read config (Instagram showcase, PMU sliders)
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Services & addons — customers need to read for booking form
+    match /services/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /addons/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /service_addon_links/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // Schedule — customers read to see available slots
+    match /schedule/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /schedule_pmu/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // Reservations — customers can create, admin reads/updates/deletes
+    match /reservations/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn();
+    }
+  }
+}

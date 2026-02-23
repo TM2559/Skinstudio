@@ -33,15 +33,19 @@ const ManualBookingModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose} role="presentation">
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="manual-booking-title"
         className={`bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto border-2 transition-colors ${
           isPmu ? 'border-[var(--pmu-color)]' : 'border-transparent'
         }`}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-display text-xl font-bold text-stone-900">Manuální rezervace</h3>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-800">
+          <h3 id="manual-booking-title" className="font-display text-xl font-bold text-stone-900">Manuální rezervace</h3>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-800" aria-label="Zavřít">
             <X size={20} />
           </button>
         </div>

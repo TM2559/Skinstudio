@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createOptimizedImageFile } from './AdminTransformationsSubTab';
+import { createOptimizedImageFile } from '../../utils/imageOptimize';
 
 // Helper to mock canvas and Image for resize logic
 function setupDomMocks({ width = 4000, height = 2000 } = {}) {

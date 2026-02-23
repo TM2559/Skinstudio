@@ -3,6 +3,7 @@ import { CheckCircle, Sparkles, Loader2 } from 'lucide-react';
 import { addDoc } from "firebase/firestore";
 import { Utils, isPmuService, filterCosmeticsServices } from '../utils/helpers';
 import { getCollectionPath, EMAILJS_CONFIG } from '../firebaseConfig';
+import ConfirmDialog from './ConfirmDialog';
 
 /**
  * Total price: REPLACE options set the base (last one wins), ADD options add on top.
@@ -20,6 +21,7 @@ function calculateReservationTotal(service, upsells) {
 const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBookingSuccess, initialServiceId, theme = 'light' }) => {
   const ADMIN_EMAIL = "info@skinstudio.cz";
   const isDark = theme === 'dark';
+  const [errorAlert, setErrorAlert] = useState({ open: false, message: '' });
 
   /** Na světlé stránce /rezervace zobrazujeme jen kosmetiku; na PMU (dark) všechny předané služby (PMU). */
   const displayServices = useMemo(
@@ -198,7 +200,7 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
 
     } catch (err) {
       console.error(err);
-      alert("Chyba při rezervaci.");
+      setErrorAlert({ open: true, message: 'Nepodařilo se vytvořit rezervaci. Zkuste to prosím znovu.' });
     } finally {
       setIsSending(false);
     }
@@ -457,6 +459,15 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
           </form>
         )}
       </div>
+
+      <ConfirmDialog
+        open={errorAlert.open}
+        title="Chyba"
+        message={errorAlert.message}
+        alertOnly
+        onConfirm={() => setErrorAlert({ open: false, message: '' })}
+        onCancel={() => setErrorAlert({ open: false, message: '' })}
+      />
     </div>
   );
 };

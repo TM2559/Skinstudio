@@ -58,19 +58,26 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
     }
   }, []);
 
-  // Sync pagination dots with horizontal scroll position (mobile)
   useEffect(() => {
     const el = pmuCarouselRef.current;
     if (!el || displaySliders.length <= 1) return;
+    let rafId = null;
     const onScroll = () => {
-      const itemWidth = el.offsetWidth * 0.85 + 24; /* 85vw + gap-6 */
-      const index = Math.round(el.scrollLeft / itemWidth);
-      const clamped = Math.min(Math.max(0, index), displaySliders.length - 1);
-      setPmuActiveIndex(clamped);
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        const itemWidth = el.offsetWidth * 0.85 + 24;
+        const index = Math.round(el.scrollLeft / itemWidth);
+        const clamped = Math.min(Math.max(0, index), displaySliders.length - 1);
+        setPmuActiveIndex(clamped);
+        rafId = null;
+      });
     };
     el.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
-    return () => el.removeEventListener('scroll', onScroll);
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [displaySliders.length]);
 
   const scrollTo = (id) => {

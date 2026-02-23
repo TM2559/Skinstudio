@@ -12,9 +12,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install and Build
+      - name: Lint
         working-directory: salon-system
-        run: npm ci && npm run build
+        run: npm ci && npx eslint src/
+
+      - name: Test
+        working-directory: salon-system
+        run: npx vitest run
+
+      - name: Build
+        working-directory: salon-system
+        run: npm run build
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}

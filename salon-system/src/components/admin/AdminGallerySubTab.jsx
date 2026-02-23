@@ -5,63 +5,8 @@ import { Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { storage, getCollectionPath, getDocPath } from '../../firebaseConfig';
 import { COSMETICS_CATEGORY, PMU_CATEGORY, GALLERY_COLLECTION, STORAGE_GALLERY_PREFIX } from '../../constants/cosmetics';
 import CategoryToggle from './CategoryToggle';
-
-// Client-side image optimization before upload to Storage (same logic as Proměny).
-async function createOptimizedImageFile(file, maxSize = 1600, quality = 0.85) {
-  if (!file) return file;
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(reader.error || new Error('Nepodařilo se načíst obrázek.'));
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        try {
-          let { width, height } = img;
-          if (width > height && width > maxSize) {
-            height = Math.round((height * maxSize) / width);
-            width = maxSize;
-          } else if (height > maxSize) {
-            width = Math.round((width * maxSize) / height);
-            height = maxSize;
-          }
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            resolve(file);
-            return;
-          }
-          ctx.drawImage(img, 0, 0, width, height);
-
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                resolve(file);
-                return;
-              }
-              const optimizedFile = new File(
-                [blob],
-                file.name.replace(/\.(png|jpg|jpeg|webp)$/i, '.jpg'),
-                { type: 'image/jpeg' }
-              );
-              resolve(optimizedFile);
-            },
-            'image/jpeg',
-            quality
-          );
-        } catch (e) {
-          resolve(file);
-        }
-      };
-      img.onerror = () => reject(new Error('Nepodařilo se načíst obrázek pro zmenšení.'));
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
+import ConfirmDialog from '../ConfirmDialog';
+import { createOptimizedImageFile } from '../../utils/imageOptimize';
 
 export default function AdminGallerySubTab() {
   const [loading, setLoading] = useState(true);
@@ -74,6 +19,7 @@ export default function AdminGallerySubTab() {
   const colRef = getCollectionPath(GALLERY_COLLECTION);
   const [itemsCosmetics, setItemsCosmetics] = useState([]);
   const [itemsPmu, setItemsPmu] = useState([]);
+  const [confirmRemove, setConfirmRemove] = useState({ open: false, id: null });
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -137,8 +83,13 @@ export default function AdminGallerySubTab() {
     }
   };
 
-  const handleRemove = async (id) => {
-    if (!confirm('Obrázek odebrat z galerie?')) return;
+  const handleRemove = (id) => {
+    setConfirmRemove({ open: true, id });
+  };
+
+  const executeRemove = async () => {
+    const { id } = confirmRemove;
+    setConfirmRemove({ open: false, id: null });
     try {
       await deleteDoc(getDocPath(GALLERY_COLLECTION, id));
     } catch (e) {
@@ -252,6 +203,14 @@ export default function AdminGallerySubTab() {
           <p className="text-sm">Zatím žádné fotografie. Nahrajte první obrázek výše.</p>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmRemove.open}
+        title="Odebrat obrázek"
+        message="Obrázek odebrat z galerie?"
+        onConfirm={executeRemove}
+        onCancel={() => setConfirmRemove({ open: false, id: null })}
+      />
     </div>
   );
 }
