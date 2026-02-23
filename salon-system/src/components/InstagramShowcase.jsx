@@ -12,21 +12,21 @@ const STATIC_CONFIG_PATH = '/instagram-showcase/config.json';
 const SWAP_INTERVAL_MS = 3000;
 const FADE_DURATION_MS = 700;
 
-/** Build pool from config only (pad to 8+ by repeating for mosaic variety). No placeholder images. */
+/** Build pool of unique images only — never duplicate the same URL. */
 function buildPool(imageList) {
   if (!imageList || imageList.length === 0) return [];
-  const fromConfig = [...imageList];
-  while (fromConfig.length < 8) {
-    fromConfig.push(imageList[fromConfig.length % imageList.length]);
-  }
-  return fromConfig.slice(0, 12);
+  const seen = new Set();
+  return imageList.filter((url) => {
+    const key = url?.trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export default function InstagramShowcase() {
   const [imageList, setImageList] = useState(null);
-  /** Indices into pool for each of the 4 visible slots; initial: first 4 */
   const [displayedIndices, setDisplayedIndices] = useState([0, 1, 2, 3]);
-  /** Which slot is currently fading out (0–3 or null) */
   const [fadingSlot, setFadingSlot] = useState(null);
   const poolRef = useRef(buildPool(null));
   const displayedIndicesRef = useRef([0, 1, 2, 3]);
@@ -34,6 +34,7 @@ export default function InstagramShowcase() {
   const timeoutRef = useRef(null);
 
   const pool = useMemo(() => buildPool(imageList), [imageList]);
+  const visibleCount = Math.min(4, pool.length);
   displayedIndicesRef.current = displayedIndices;
   poolRef.current = pool;
 
@@ -65,25 +66,23 @@ export default function InstagramShowcase() {
   }, [imageList]);
 
   useEffect(() => {
-    const len = pool.length;
-    setDisplayedIndices((prev) => {
-      const next = prev.map((idx) => (idx < len ? idx : 0));
-      return next.every((n, i) => n === prev[i]) ? prev : next;
-    });
+    const count = Math.min(4, pool.length);
+    setDisplayedIndices(Array.from({ length: count }, (_, i) => i));
   }, [pool.length]);
 
   useEffect(() => {
-    if (pool.length < 2) return;
+    const count = Math.min(4, pool.length);
+    if (pool.length <= count) return;
 
     intervalRef.current = setInterval(() => {
       const poolArr = poolRef.current;
       const current = displayedIndicesRef.current;
-      const slot = Math.floor(Math.random() * 4);
+      const slot = Math.floor(Math.random() * current.length);
       const displayedSet = new Set(current);
-      const otherIndices = poolArr
+      const candidates = poolArr
         .map((_, i) => i)
         .filter((i) => !displayedSet.has(i));
-      const candidates = otherIndices.length > 0 ? otherIndices : [...Array(poolArr.length).keys()];
+      if (candidates.length === 0) return;
       const newIdx = candidates[Math.floor(Math.random() * candidates.length)];
 
       setFadingSlot(slot);
@@ -129,8 +128,10 @@ export default function InstagramShowcase() {
         </header>
 
         {hasImages ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[0, 1, 2, 3].map((slotIndex) => {
+          <div className={`grid gap-4 ${
+            visibleCount <= 2 ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-4'
+          }`}>
+            {Array.from({ length: visibleCount }, (_, i) => i).map((slotIndex) => {
               const idx = displayedIndices[slotIndex] ?? 0;
               const src = pool[idx] ?? pool[0];
               const isFading = fadingSlot === slotIndex;

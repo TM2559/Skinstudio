@@ -6,6 +6,7 @@ import { getCollectionPath } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
 import { WEB_CONTENT } from '../constants/content';
 import ComparisonSlider from './ComparisonSlider';
+import EditorialGallery from './EditorialGallery';
 import ReservationApp from './ReservationApp';
 import { TaglineWithHeart } from './FooterTagline';
 
@@ -252,26 +253,26 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                     ))}
                   </div>
                 </div>
-            {displaySliders.length >= 1 && (
-              <div className="carousel-dots md:hidden" role="tablist" aria-label="PMU proměny">
-                {displaySliders.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    role="tab"
-                    aria-label={`Proměna ${i + 1}`}
-                    aria-selected={pmuActiveIndex === i}
-                    onClick={() => {
-                      const el = pmuCarouselRef.current;
-                      if (!el) return;
-                      const itemWidth = el.offsetWidth * 0.85 + 24; /* 85vw + gap-6 */
-                      el.scrollTo({ left: i * itemWidth, behavior: 'smooth' });
-                    }}
-                    className={`dot ${pmuActiveIndex === i ? 'dot-active' : ''}`}
-                  />
-                ))}
-              </div>
-            )}
+                {displaySliders.length >= 1 && (
+                  <div className="carousel-dots md:hidden" role="tablist" aria-label="PMU proměny">
+                    {displaySliders.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        role="tab"
+                        aria-label={`Proměna ${i + 1}`}
+                        aria-selected={pmuActiveIndex === i}
+                        onClick={() => {
+                          const el = pmuCarouselRef.current;
+                          if (!el) return;
+                          const itemWidth = el.offsetWidth * 0.85 + 24; /* 85vw + gap-6 */
+                          el.scrollTo({ left: i * itemWidth, behavior: 'smooth' });
+                        }}
+                        className={`dot ${pmuActiveIndex === i ? 'dot-active' : ''}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </>
             ) : (
               <p className="text-center text-[#A1A1AA]/60 text-sm py-12">
@@ -280,6 +281,9 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             )}
           </div>
         </section>
+
+        {/* Editorial Lookbook – galerie PMU */}
+        <EditorialGallery category={PMU_CATEGORY} theme="dark" />
 
         {/* Ceník a rezervace – dark card jako na main */}
         <section

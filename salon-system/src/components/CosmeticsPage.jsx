@@ -6,6 +6,7 @@ import { TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cos
 import { WEB_CONTENT } from '../constants/content';
 import { filterCosmeticsServices } from '../utils/helpers';
 import ComparisonSlider from './ComparisonSlider';
+import EditorialGallery from './EditorialGallery';
 import LazySection from './LazySection';
 import ServiceListAccordion from './ServiceListAccordion';
 import SocialProofSection from './SocialProofSection';
@@ -222,6 +223,9 @@ export default function CosmeticsPage({ services = [] }) {
           )}
         </div>
       </section>
+
+      {/* 3b. Editorial Lookbook – galerie */}
+      <EditorialGallery category={COSMETICS_CATEGORY} theme="light" />
 
       {/* 4. Services & Pricing ("Ceník" – accordion) */}
       <section
