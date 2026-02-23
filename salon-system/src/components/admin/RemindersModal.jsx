@@ -6,7 +6,7 @@ const RemindersModal = ({ open, onClose, remindersList, onSend, isSending }) => 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95">
-        <h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-stone-900">
+        <h3 className="font-display text-xl font-bold mb-4 flex items-center gap-2 text-stone-900">
           <Send size={20} /> Připomínky
         </h3>
         {remindersList.length > 0 ? (

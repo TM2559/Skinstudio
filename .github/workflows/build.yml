@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - main
   workflow_dispatch:  # Ruční spuštění v záložce Actions
 jobs:
   build:

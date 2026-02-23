@@ -40,7 +40,7 @@ const ManualBookingModal = ({
         }`}
       >
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-serif text-xl font-bold text-stone-900">Manuální rezervace</h3>
+          <h3 className="font-display text-xl font-bold text-stone-900">Manuální rezervace</h3>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-800">
             <X size={20} />
           </button>

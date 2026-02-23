@@ -132,7 +132,7 @@ export default function InstagramShowcase() {
     >
       <div className="max-w-4xl mx-auto px-4">
         <header className="text-center mb-10">
-          <h2 className="font-display text-3xl text-stone-800 mb-2">
+          <h2 className="font-display text-2xl sm:text-3xl font-semibold text-stone-800 mb-2">
             {WEB_CONTENT.landing.sectionInstagram}
           </h2>
           <a

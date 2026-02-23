@@ -299,9 +299,9 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
         </div>
 
         {/* Krok 2: Datum */}
-        <div className={!selectedService ? 'opacity-20 pointer-events-none' : ''}>
+        <div className={`min-w-0 ${!selectedService ? 'opacity-20 pointer-events-none' : ''}`}>
           <h2 className={`text-[10px] font-bold uppercase tracking-widest mb-6 border-b pb-2 ${isDark ? 'text-stone-300 border-stone-800' : 'text-stone-500 border-stone-100'}`}>2. Termín</h2>
-          <div className="mobile-carousel-strip flex gap-3 pb-4">
+          <div className="mobile-carousel-strip date-strip-scroll flex gap-3 pb-4 min-w-0">
             {clientDates.length === 0 && <p className={`text-xs ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>Momentálně nejsou vypsány žádné termíny.</p>}
             {clientDates.map(d => {
               const key = Utils.formatDateKey(d);
@@ -326,7 +326,7 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
                   <span className="text-[10px] font-bold uppercase tracking-tighter">
                     {d.toLocaleDateString('cs-CZ', { weekday: 'short' })}
                   </span>
-                  <span className="text-xl font-serif leading-none my-1">
+                  <span className="text-xl font-display leading-none my-1">
                     {d.getDate()}
                   </span>
                   <span className="text-[9px] uppercase tracking-widest opacity-80">
@@ -364,19 +364,20 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
             })}
           </div>
 
-          {/* Permanentní kontaktní CTA (PMU i Kosmetika – vždy viditelný, bez rámečku) */}
-          <div style={{ marginTop: '30px' }}>
-            <p className="mb-1.5 text-[14px]" style={{ color: '#cccccc' }}>
-              Nenašli jste vhodný termín? Zavolejte a najdeme řešení společně.
-            </p>
-            <a
-              href="tel:+420724875558"
-              className="text-[#a88a7d] hover:underline hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-[#a88a7d]/50 rounded"
-              style={{ fontSize: '16px', fontWeight: 600 }}
-            >
-              +420 724 875 558
-            </a>
-          </div>
+        </div>
+
+        {/* Permanentní kontaktní CTA – vždy viditelný */}
+        <div className={`pt-6 mt-2 border-t text-center md:text-left ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
+          <p className={`mb-1.5 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            Nenašli jste vhodný termín? Zavolejte a najdeme řešení společně.
+          </p>
+          <a
+            href="tel:+420724875558"
+            className="text-lg font-semibold hover:underline transition-all focus:outline-none focus:ring-2 focus:ring-[#a88a7d]/50 rounded"
+            style={{ color: isDark ? '#daa59c' : 'var(--skin-gold-dark)' }}
+          >
+            +420 724 875 558
+          </a>
         </div>
       </div>
 

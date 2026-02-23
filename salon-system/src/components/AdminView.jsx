@@ -378,7 +378,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     <div className="relative min-h-[80vh]">
       <div className="bg-white sticky top-0 z-30 border-b border-stone-200 -mx-4 px-4 sm:px-8 pt-4 pb-0 mb-6 shadow-sm">
         <div className="flex justify-between items-center mb-4">
-          <span className="font-serif font-bold uppercase tracking-widest text-xs text-stone-400">
+          <span className="font-display font-bold uppercase tracking-widest text-xs text-stone-400">
             Admin Panel
           </span>
           <div className="flex gap-3">

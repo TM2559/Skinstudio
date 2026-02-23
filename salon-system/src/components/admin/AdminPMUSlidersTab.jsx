@@ -113,7 +113,7 @@ export default function AdminPMUSlidersTab() {
   return (
     <div className="space-y-6">
       <section>
-        <h2 className="font-serif text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800">
+        <h2 className="font-display text-lg mb-4 border-b border-stone-100 pb-2 flex items-center gap-2 text-stone-800">
           <Sliders size={18} className="text-stone-400" /> PMU Před / Po (stránka PMU)
         </h2>
         <p className="text-sm text-stone-500 mb-4">
