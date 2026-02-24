@@ -110,7 +110,7 @@ function ActionCard({ qrImageSrc = '/Skinstudio_ggl_qr.png', googleReviewUrl = S
           Budu moc ráda za vaše hodnocení. Vaše zpětná vazba mi pomáhá se zlepšovat.
         </p>
         <p className="font-signature text-xl text-gray-700 flex items-center justify-center gap-2 mb-4 md:mb-0" aria-hidden>
-          Vaše Lucie
+          Lucie
           <Heart className="w-4 h-4 shrink-0 stroke-[#E57590] fill-none" strokeWidth={1.5} aria-hidden />
         </p>
         {/* Desktop: text link */}
