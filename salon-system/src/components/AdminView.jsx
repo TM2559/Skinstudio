@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package, Image as ImageIcon, Scissors } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { Utils } from '../utils/helpers';
-import { getCollectionPath, getDocPath, EMAILJS_CONFIG } from '../firebaseConfig';
+import { getCollectionPath, getDocPath, EMAILJS_CONFIG, callSendConfirmationSms } from '../firebaseConfig';
 
 import AdminBookingsTab from './admin/AdminBookingsTab';
 import AdminHistoryTab from './admin/AdminHistoryTab';
@@ -328,6 +328,20 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
         reminderSent: false,
         source: 'admin',
       });
+      if (sendNotification && phone) {
+        try {
+          await callSendConfirmationSms({
+            phone,
+            name: manualForm.name,
+            date: manualDateKey,
+            time: manualForm.time,
+            serviceName: selectedSrv?.name || 'Manual Booking',
+            duration: parseInt(selectedSrv?.duration || 60),
+          });
+        } catch (smsErr) {
+          console.warn('SMS potvrzení se nepodařilo odeslat:', smsErr);
+        }
+      }
       if (sendNotification && EMAILJS_CONFIG.PUBLIC_KEY && email) {
         try {
           await fetch('https://api.emailjs.com/api/v1.0/email/send', {

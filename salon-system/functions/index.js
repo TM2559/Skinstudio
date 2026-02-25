@@ -66,11 +66,12 @@ function formatTimeForSms(time) {
 }
 
 /** Confirmation SMS: full Czech diacritics, Czech date format (D. M.), clean layout. */
-function buildConfirmationSmsMessage(serviceName, date, time) {
+function buildConfirmationSmsMessage(serviceName, date, time, duration) {
   const service = (serviceName || 'rezervace').trim();
   const d = formatDateForSmsCzech(date);
   const t = formatTimeForSms(time);
-  return `Skin Studio: Potvrzujeme vaši rezervaci.\n\nSLUŽBA: ${service}\nTERMÍN: ${d} v ${t}\n\nTěšíme se na vás.`;
+  const dur = duration ? ` (${duration} min)` : '';
+  return `Skin Studio: Váš termín je potvrzen\nSlužba: ${service}${dur}\nKdy: ${d} v ${t}\nKde: Masarykovo nám. 72, Uherský Brod\n\nTěším se na vás, Lucie.`;
 }
 
 /** Build reminder SMS text (Czech, short). */
@@ -165,7 +166,7 @@ export const sendReminderSms = onCall(
 
 /**
  * Callable: sendConfirmationSms
- * Body: { phone, name, date, time, serviceName } – po vytvoření rezervace, jedna SMS na číslo klienta.
+ * Body: { phone, name, date, time, serviceName, duration } – po vytvoření rezervace, jedna SMS na číslo klienta.
  */
 export const sendConfirmationSms = onCall(
   { region: 'europe-west1' },
@@ -176,13 +177,13 @@ export const sendConfirmationSms = onCall(
       throw new HttpsError('failed-precondition', 'BulkGate není nakonfigurován (BULKGATE_APPLICATION_ID / BULKGATE_APPLICATION_TOKEN).');
     }
 
-    const { phone, date, time, serviceName } = request.data || {};
+    const { phone, date, time, serviceName, duration } = request.data || {};
     const number = toE164(phone);
     if (!number) {
       throw new HttpsError('invalid-argument', 'Neplatné nebo chybějící telefonní číslo.');
     }
 
-    const text = buildConfirmationSmsMessage(serviceName, date, time);
+    const text = buildConfirmationSmsMessage(serviceName, date, time, duration);
     const sid = senderId.value();
     const sidVal = senderIdValue.value();
 
