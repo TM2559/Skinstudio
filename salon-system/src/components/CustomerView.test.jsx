@@ -6,6 +6,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CustomerView from './CustomerView';
 
+vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
+
 const mockAddDoc = vi.fn(() => Promise.resolve({ id: 'mock-id' }));
 vi.mock('firebase/firestore', () => ({ addDoc: (...args) => mockAddDoc(...args) }));
 vi.mock('../firebaseConfig', () => ({

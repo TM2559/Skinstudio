@@ -62,5 +62,10 @@ export default defineConfig({
     setupFiles: './src/setupTests.js',
     testTimeout: 10000,
     pool: 'vmThreads',
+    server: {
+      deps: {
+        inline: ['react-router', 'react-router-dom'],
+      },
+    },
   },
 })

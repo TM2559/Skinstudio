@@ -10,6 +10,7 @@ import ReservationApp from './ReservationApp';
 vi.mock('react-router-dom', () => ({
   useSearchParams: () => [new URLSearchParams(''), vi.fn()],
   useLocation: () => ({ pathname: '/rezervace' }),
+  useNavigate: () => vi.fn(),
 }));
 
 const defaultServices = [
