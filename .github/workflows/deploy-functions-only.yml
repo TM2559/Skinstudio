@@ -1,0 +1,20 @@
+# Nasazení pouze Cloud Functions (SMS, připomínky, format-content).
+# Spusť ručně: Actions → Deploy Functions only → Run workflow.
+# Žádný build ani testy – jen deploy funkcí na produkci.
+name: Deploy Functions only
+on:
+  workflow_dispatch:
+jobs:
+  deploy_functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TM_RESERVATIONS }}
+
+      - name: Deploy Cloud Functions
+        working-directory: salon-system
+        run: npx firebase-tools deploy --only functions --project tm-reservations --non-interactive

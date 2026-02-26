@@ -3,13 +3,15 @@
   "description": "Firebase Cloud Functions for Skin Studio (e.g. format-content API)",
   "main": "index.js",
   "type": "module",
-  "engines": { "node": "20" },
+  "engines": {
+    "node": "20"
+  },
   "scripts": {
     "serve": "firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"
   },
   "dependencies": {
-    "firebase-functions": "^6.3.0",
-    "firebase-admin": "^13.0.0"
+    "firebase-admin": "^13.6.1",
+    "firebase-functions": "^7.0.6"
   }
 }

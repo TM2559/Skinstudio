@@ -9,6 +9,7 @@ import Layout from './components/Layout';
 import ReservationApp from './components/ReservationApp';
 import CosmeticsPage from './components/CosmeticsPage';
 import PMUPage from './components/PMUPage';
+import ThankYouPage from './components/ThankYouPage';
 import { filterCosmeticsServices } from './utils/helpers';
 import { auth, getCollectionPath } from './firebaseConfig';
 
@@ -186,6 +187,7 @@ export default function App() {
           />
         }
       />
+      <Route path="/dekujeme" element={<ThankYouPage />} />
       <Route
         path="/rezervace"
         element={
