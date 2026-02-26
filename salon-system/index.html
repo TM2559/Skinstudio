@@ -6,7 +6,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Skin Studio">
     <link rel="apple-touch-icon" href="/pwa-192x192.png">
-    <script src="https://cdn.tailwindcss.com"></script>
     <meta charset="UTF-8" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,24 +29,38 @@
     <meta property="og:image" content="https://www.skinstudio.cz/og-hero.jpg" />
     <meta property="og:url" content="https://www.skinstudio.cz/" />
     <meta property="og:locale" content="cs_CZ" />
+    <meta property="og:site_name" content="Skin Studio" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Skin Studio | Lucie Metelková" />
+    <meta name="twitter:description" content="Prémiová péče o pleť a relaxace v Uherském Brodě." />
+    <meta name="twitter:image" content="https://www.skinstudio.cz/og-hero.jpg" />
+
+    <!-- Mobile theme color -->
+    <meta name="theme-color" content="#fdfbf7" />
 
     <!-- Local SEO: Schema.org BeautySalon (JSON-LD) for Local Pack -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "BeautySalon",
+      "@id": "https://www.skinstudio.cz/#salon",
+      "url": "https://www.skinstudio.cz",
       "name": "Skin Studio | Lucie Metelková",
+      "description": "Kosmetické studio Lucie Metelkové. Profesionální péče o pleť, laminace obočí, permanentní make-up a relaxace v Uherském Brodě.",
       "image": [
-        "https://www.skinstudio.cz/og-hero.jpg",
-        "https://www.pinterest.com/pin/300052393898930237/"
+        "https://www.skinstudio.cz/og-hero.jpg"
       ],
       "priceRange": "$$",
       "telephone": "+420 724 875 558",
+      "email": "lucie@skinstudio.cz",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": "Masarykovo nám. 72",
         "addressLocality": "Uherský Brod",
         "postalCode": "688 01",
+        "addressRegion": "Zlínský kraj",
         "addressCountry": "CZ"
       },
       "geo": {
@@ -55,6 +68,7 @@
         "latitude": 49.0253456,
         "longitude": 17.6469656
       },
+      "hasMap": "https://maps.google.com/?q=49.0253456,17.6469656",
       "openingHoursSpecification": [
         {
           "@type": "OpeningHoursSpecification",
@@ -65,7 +79,24 @@
       ],
       "sameAs": [
         "https://www.instagram.com/skin_studio_lucie_metelkova"
-      ]
+      ],
+      "potentialAction": {
+        "@type": "ReserveAction",
+        "target": "https://www.skinstudio.cz/rezervace",
+        "name": "Rezervovat termín"
+      }
+    }
+    </script>
+
+    <!-- WebSite structured data for sitelinks / site search -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "https://www.skinstudio.cz/#website",
+      "url": "https://www.skinstudio.cz",
+      "name": "Skin Studio",
+      "publisher": { "@id": "https://www.skinstudio.cz/#salon" }
     }
     </script>
   </head>

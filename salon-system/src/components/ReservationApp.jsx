@@ -3,6 +3,8 @@ import { useSearchParams, useLocation } from 'react-router-dom';
 import { Loader2, Lock } from 'lucide-react';
 import CustomerView from './CustomerView';
 import AdminView from './AdminView';
+import useSEO from '../hooks/useSEO';
+import { SEO } from '../constants/seo';
 
 export default function ReservationApp({
   loading,
@@ -26,6 +28,8 @@ export default function ReservationApp({
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const initialServiceId = searchParams.get('service') || null;
+  const isRezervacePage = location.pathname === '/rezervace';
+  useSEO(isRezervacePage ? SEO.rezervace : { title: '', description: '' });
   // PMU page must always use dark widget (bg-stone-950, rose gold accents)
   const isPmuRoute = widgetOnly && location.pathname === '/pmu';
   const isDark = mode === 'dark' || isPmuRoute;
