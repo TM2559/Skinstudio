@@ -37,6 +37,10 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TM_RESERVATIONS }}
 
-      - name: Deploy to Firebase (Hosting + Functions)
+      - name: Deploy Hosting
         working-directory: salon-system
-        run: npx firebase-tools deploy --only hosting,functions --project tm-reservations --non-interactive
+        run: npx firebase-tools deploy --only hosting --project tm-reservations --non-interactive
+
+      - name: Deploy Functions
+        working-directory: salon-system
+        run: npx firebase-tools deploy --only functions --project tm-reservations --non-interactive
