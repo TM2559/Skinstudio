@@ -14,6 +14,17 @@ jobs:
         working-directory: salon-system/functions
         run: npm ci
 
+      - name: Create Functions .env
+        working-directory: salon-system/functions
+        run: |
+          cat > .env <<EOL
+          BULKGATE_APPLICATION_ID=${{ secrets.BULKGATE_APPLICATION_ID }}
+          BULKGATE_APPLICATION_TOKEN=${{ secrets.BULKGATE_APPLICATION_TOKEN }}
+          BULKGATE_SENDER_ID=${{ secrets.BULKGATE_SENDER_ID }}
+          BULKGATE_SENDER_ID_VALUE=${{ secrets.BULKGATE_SENDER_ID_VALUE }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          EOL
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
