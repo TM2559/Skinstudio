@@ -10,6 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Functions dependencies
+        working-directory: salon-system/functions
+        run: npm ci
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
