@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { query, where, onSnapshot } from 'firebase/firestore';
 import { getCollectionPath } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
@@ -11,10 +11,16 @@ import LazySection from './LazySection';
 import ServiceListAccordion from './ServiceListAccordion';
 import SocialProofSection from './SocialProofSection';
 import { GOOGLE_REVIEW_URL } from '../firebaseConfig';
+import useSEO from '../hooks/useSEO';
+import { SEO } from '../constants/seo';
+import ServiceSchema from './ServiceSchema';
 
 const COSMETICS_BG = '#F9F8F6';
 
 export default function CosmeticsPage({ services = [] }) {
+  const { pathname } = useLocation();
+  const seo = pathname === '/kosmetika' ? SEO.kosmetika : SEO.home;
+  useSEO(seo);
   const cosmeticServices = filterCosmeticsServices(services);
   const [transformations, setTransformations] = useState([]);
   const promenyCarouselRef = useRef(null);
@@ -257,6 +263,7 @@ export default function CosmeticsPage({ services = [] }) {
         <SocialProofSection qrImageSrc="/Skinstudio_ggl_qr.png" googleReviewUrl={GOOGLE_REVIEW_URL} />
       </section>
 
+      <ServiceSchema services={cosmeticServices} />
     </div>
   );
 }

@@ -9,10 +9,13 @@ import ComparisonSlider from './ComparisonSlider';
 import EditorialGallery from './EditorialGallery';
 import ReservationApp from './ReservationApp';
 import { TaglineWithHeart } from './FooterTagline';
+import useSEO from '../hooks/useSEO';
+import { SEO } from '../constants/seo';
 
 const CATEGORY_PMU = 'PMU';
 
 export default function PMUPage({ services = [], schedule = {}, reservations = [] }) {
+  useSEO(SEO.pmu);
   const [menuOpen, setMenuOpen] = useState(false);
   const [sliders, setSliders] = useState([]);
   const pmuCarouselRef = useRef(null);
