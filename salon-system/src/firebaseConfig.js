@@ -10,6 +10,9 @@ const getEnv = (key) => {
   try { return import.meta.env[key] || ""; } catch { return ""; }
 };
 
+// V testech (Vitest) bez API klíče neinicializovat Firebase – zabrání auth/invalid-api-key v CI
+const isVitestNoKey = typeof import.meta.env.VITEST !== 'undefined' && import.meta.env.VITEST && !getEnv('VITE_FIREBASE_API_KEY');
+
 // Detekce prostředí (Canvas vs Lokální Vite)
 // V lokálním prostředí tyto proměnné neexistují, proto je kontrolujeme přes typeof
 const isCanvas = typeof __firebase_config !== 'undefined';
@@ -44,25 +47,47 @@ export const INSTAGRAM_POST_URLS = (getEnv('VITE_INSTAGRAM_POST_URLS') || '').sp
 // Google Recenze – stejná URL jako v QR kódu (fallback = Skin Studio place ID)
 export const GOOGLE_REVIEW_URL = getEnv('VITE_GOOGLE_REVIEW_URL') || 'https://g.page/r/CWkt9xHMgMjqEAE/review';
 
-// Inicializace
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export const functions = getFunctions(app, 'europe-west1');
-
 // Pokud jsme v Canvasu, použijeme injektované ID, jinak defaultní nebo prázdné
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
+// Inicializace (v testech bez API klíče použít mocky, aby CI nepadalo na auth/invalid-api-key)
+let app;
+let auth;
+let db;
+let storage;
+let functions;
+
+if (isVitestNoKey) {
+  app = {};
+  auth = { currentUser: null };
+  db = {};
+  storage = {};
+  functions = {};
+} else {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+  functions = getFunctions(app, 'europe-west1');
+}
+
+export { auth, db, storage };
+
 // Helpery pro cesty
-export const getCollectionPath = (colName) => 
-  isCanvas 
-    ? collection(db, 'artifacts', appId, 'public', 'data', colName)
-    : collection(db, colName);
+export const getCollectionPath = (colName) =>
+  isVitestNoKey
+    ? {}
+    : isCanvas
+      ? collection(db, 'artifacts', appId, 'public', 'data', colName)
+      : collection(db, colName);
 
-export const getDocPath = (colName, docId) => 
-  isCanvas 
-    ? doc(db, 'artifacts', appId, 'public', 'data', colName, docId)
-    : doc(db, colName, docId);
+export const getDocPath = (colName, docId) =>
+  isVitestNoKey
+    ? {}
+    : isCanvas
+      ? doc(db, 'artifacts', appId, 'public', 'data', colName, docId)
+      : doc(db, colName, docId);
 
-export const callSendConfirmationSms = httpsCallable(functions, 'sendConfirmationSms');
+export const callSendConfirmationSms = isVitestNoKey
+  ? () => Promise.resolve({ data: {} })
+  : httpsCallable(functions, 'sendConfirmationSms');
