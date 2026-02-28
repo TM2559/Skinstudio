@@ -431,17 +431,24 @@ export const verifyAdminWebAuthnRegistration = onCall(
     }
     const { credential: regCred, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
     const publicKeyB64 = Buffer.from(regCred.publicKey).toString('base64');
-    const credentials = [
-      {
-        id: regCred.id,
-        publicKey: publicKeyB64,
-        counter: regCred.counter,
-        transports: regCred.transports || [],
-        deviceType: credentialDeviceType,
-        backedUp: credentialBackedUp,
-      },
-    ];
-    await db.doc(ADMIN_WEBAUTHN_DOC).set({ credentials });
+    const newCred = {
+      id: regCred.id,
+      publicKey: publicKeyB64,
+      counter: regCred.counter,
+      transports: regCred.transports || [],
+      deviceType: credentialDeviceType,
+      backedUp: credentialBackedUp,
+    };
+    const docRef = db.doc(ADMIN_WEBAUTHN_DOC);
+    const existingSnap = await docRef.get();
+    const existingData = existingSnap.data();
+    const existingCreds = (existingData && existingData.credentials) || [];
+    const alreadyExists = existingCreds.some((c) => c.id === regCred.id);
+    if (alreadyExists) {
+      throw new HttpsError('invalid-argument', 'Toto zařízení už je zaregistrované.');
+    }
+    const credentials = [...existingCreds, newCred];
+    await docRef.set({ credentials });
     return { verified: true };
   }
 );
