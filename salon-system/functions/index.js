@@ -13,10 +13,6 @@ const applicationToken = defineString('BULKGATE_APPLICATION_TOKEN', { default: '
 const senderId = defineString('BULKGATE_SENDER_ID', { default: '' });
 const senderIdValue = defineString('BULKGATE_SENDER_ID_VALUE', { default: '' });
 const geminiApiKey = defineString('GEMINI_API_KEY', { default: '' });
-/** EmailJS pro automatické e-mailové připomínky (scheduled). */
-const emailjsServiceId = defineString('EMAILJS_SERVICE_ID', { default: '' });
-const emailjsReminderTemplateId = defineString('EMAILJS_REMINDER_TEMPLATE_ID', { default: '' });
-const emailjsPublicKey = defineString('EMAILJS_PUBLIC_KEY', { default: '' });
 
 const BULKGATE_URL = 'https://portal.bulkgate.com/api/1.0/simple/transactional';
 
@@ -330,9 +326,10 @@ export const sendDailyReminders = onSchedule(
     const sidVal = senderIdValue.value();
     const hasSms = Boolean(appId && appToken);
 
-    const emailServiceId = emailjsServiceId.value();
-    const emailTemplateId = emailjsReminderTemplateId.value();
-    const emailPublicKey = emailjsPublicKey.value();
+    /** EmailJS pouze z process.env (volitelné), aby deploy v non-interactive nevyžadoval tyto proměnné. */
+    const emailServiceId = process.env.EMAILJS_SERVICE_ID || '';
+    const emailTemplateId = process.env.EMAILJS_REMINDER_TEMPLATE_ID || '';
+    const emailPublicKey = process.env.EMAILJS_PUBLIC_KEY || '';
     const hasEmail = Boolean(emailServiceId && emailTemplateId && emailPublicKey);
 
     let smsSent = 0;
