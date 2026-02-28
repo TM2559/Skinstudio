@@ -13,19 +13,19 @@ export const SEO = {
   },
 
   kosmetika: {
-    title: 'Kosmetika Uherský Brod | Ošetření pleti – Skin Studio',
+    title: 'Kosmetika Uherský Brod | Ošetření pleti, laminace obočí – Skin Studio',
     description:
-      'Prémiová kosmetická ošetření v Uherském Brodě – čištění pleti, anti-aging, chemický peeling, laminace obočí a lashlifting. Ceník a online rezervace.',
-    ogTitle: 'Kosmetika Uherský Brod | Skin Studio',
-    ogDescription: 'Profesionální kosmetická ošetření, anti-aging péče a laminace obočí v Uherském Brodě.',
+      'Kosmetika Uherský Brod – čištění pleti, anti-aging, chemický peeling, laminace obočí a lashlifting. Ceník služeb a online rezervace u Lucie Metelkové.',
+    ogTitle: 'Kosmetika Uherský Brod | Ošetření pleti – Skin Studio',
+    ogDescription: 'Prémiová kosmetická ošetření v Uherském Brodě: péče o pleť, laminace obočí, lashlifting. Ceník a rezervace online.',
   },
 
   pmu: {
-    title: 'Permanentní make-up Uherský Brod | PMU obočí a rty – Skin Studio',
+    title: 'Permanentní make-up Uherský Brod | PMU obočí, rty – Skin Studio',
     description:
-      'Permanentní make-up v Uherském Brodě – pudrové obočí, meziřasová linka, Soft Lips. Přirozený výsledek a precizní práce. Portfolio a online rezervace.',
-    ogTitle: 'Permanentní make-up | Skin Studio Uherský Brod',
-    ogDescription: 'PMU obočí, rty a meziřasová linka. Přirozený výsledek v Skin Studiu Uherský Brod.',
+      'Permanentní make-up Uherský Brod – PMU obočí (pudrové, microblading), meziřasová linka, Soft Lips. Portfolio před/po a online rezervace.',
+    ogTitle: 'Permanentní make-up Uherský Brod | PMU obočí a rty – Skin Studio',
+    ogDescription: 'PMU obočí, rty a meziřasová linka v Uherském Brodě. Přirozený výsledek, portfolio a rezervace – Skin Studio.',
   },
 
   rezervace: {

@@ -15,6 +15,7 @@ import { GOOGLE_REVIEW_URL } from '../firebaseConfig';
 import useSEO from '../hooks/useSEO';
 import { SEO } from '../constants/seo';
 import ServiceSchema from './ServiceSchema';
+import BreadcrumbSchema from './BreadcrumbSchema';
 
 const COSMETICS_BG = '#F9F8F6';
 
@@ -71,6 +72,14 @@ export default function CosmeticsPage({ services = [] }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: COSMETICS_BG }}>
+      {pathname === '/kosmetika' && (
+        <BreadcrumbSchema
+          items={[
+            { name: 'Domů', url: '/' },
+            { name: 'Kosmetika', url: '/kosmetika' },
+          ]}
+        />
+      )}
       {/* 1. Hero – mobile: text first, compact image strip; desktop: split, viewport height */}
       <section className="grid grid-cols-1 md:grid-cols-2 grid-rows-[auto_400px] md:grid-rows-none md:h-screen md:max-h-[1080px] w-full max-w-[1920px] mx-auto overflow-hidden min-h-0">
         <div className="flex flex-col justify-center items-start px-8 md:px-24 h-full min-h-0 bg-[#F9F8F6] order-1 md:order-1 py-8 md:py-0 max-w-xl md:max-w-2xl md:mx-auto">
@@ -245,7 +254,11 @@ export default function CosmeticsPage({ services = [] }) {
         <SocialProofSection qrImageSrc="/Skinstudio_ggl_qr.png" googleReviewUrl={GOOGLE_REVIEW_URL} />
       </section>
 
-      <ServiceSchema services={cosmeticServices} />
+      <ServiceSchema
+        services={cosmeticServices}
+        catalogName="Kosmetické služby – Skin Studio"
+        pagePath={pathname === '/kosmetika' ? '/kosmetika' : '/'}
+      />
     </div>
   );
 }

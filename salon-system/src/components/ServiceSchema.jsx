@@ -1,11 +1,17 @@
 import { useEffect, useRef } from 'react';
 
+const BASE_URL = 'https://www.skinstudio.cz';
+
 /**
  * Injects a JSON-LD <script> with Schema.org Service/OfferCatalog
- * structured data for each visible cosmetics service.
+ * structured data for each visible service (cosmetics or PMU).
  * Helps Google show rich results for service pages.
+ *
+ * @param {{ services: Array, catalogName?: string, pagePath?: string }}
+ *   catalogName – e.g. "Kosmetické služby – Skin Studio" or "Permanentní make-up – Skin Studio"
+ *   pagePath – e.g. "/kosmetika" or "/pmu" (used for service URLs)
  */
-export default function ServiceSchema({ services = [] }) {
+export default function ServiceSchema({ services = [], catalogName = 'Kosmetické služby – Skin Studio', pagePath = '/kosmetika' }) {
   const scriptRef = useRef(null);
 
   useEffect(() => {
@@ -14,7 +20,8 @@ export default function ServiceSchema({ services = [] }) {
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'OfferCatalog',
-      name: 'Kosmetické služby – Skin Studio',
+      name: catalogName,
+      url: `${BASE_URL}${pagePath}`,
       itemListElement: services.map((s) => ({
         '@type': 'Offer',
         itemOffered: {
@@ -29,7 +36,7 @@ export default function ServiceSchema({ services = [] }) {
         },
         priceCurrency: 'CZK',
         ...(s.price != null && s.price > 0 ? { price: String(s.price) } : {}),
-        url: `https://www.skinstudio.cz/rezervace?service=${encodeURIComponent(s.id)}`,
+        url: `${BASE_URL}/rezervace?service=${encodeURIComponent(s.id)}`,
       })),
     };
 
@@ -44,7 +51,7 @@ export default function ServiceSchema({ services = [] }) {
         scriptRef.current.parentNode.removeChild(scriptRef.current);
       }
     };
-  }, [services]);
+  }, [services, catalogName, pagePath]);
 
   return null;
 }

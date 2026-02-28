@@ -9,6 +9,8 @@ import ComparisonSlider from './ComparisonSlider';
 import EditorialGallery from './EditorialGallery';
 import ReservationApp from './ReservationApp';
 import { TaglineWithHeart } from './FooterTagline';
+import ServiceSchema from './ServiceSchema';
+import BreadcrumbSchema from './BreadcrumbSchema';
 import useSEO from '../hooks/useSEO';
 import { SEO } from '../constants/seo';
 
@@ -80,6 +82,17 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
 
   return (
     <div id="pmu" className="min-h-screen bg-[#0F0F0F] text-[#A1A1AA] font-sans antialiased">
+      <ServiceSchema
+        services={pmuServices}
+        catalogName="Permanentní make-up – Skin Studio"
+        pagePath="/pmu"
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Domů', url: '/' },
+          { name: 'Permanentní make-up', url: '/pmu' },
+        ]}
+      />
       {/* Dark theme header – jako na main/produkci */}
       <header
         className="fixed top-0 left-0 right-0 z-50 bg-[#0F0F0F]/80 backdrop-blur-md border-b border-white/5"
