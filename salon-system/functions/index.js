@@ -1,4 +1,5 @@
 import { onCall, HttpsError, onRequest } from 'firebase-functions/v2/https';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { getFirestore } from 'firebase-admin/firestore';
 import { defineString } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
@@ -12,6 +13,10 @@ const applicationToken = defineString('BULKGATE_APPLICATION_TOKEN', { default: '
 const senderId = defineString('BULKGATE_SENDER_ID', { default: '' });
 const senderIdValue = defineString('BULKGATE_SENDER_ID_VALUE', { default: '' });
 const geminiApiKey = defineString('GEMINI_API_KEY', { default: '' });
+/** EmailJS pro automatické e-mailové připomínky (scheduled). */
+const emailjsServiceId = defineString('EMAILJS_SERVICE_ID', { default: '' });
+const emailjsReminderTemplateId = defineString('EMAILJS_REMINDER_TEMPLATE_ID', { default: '' });
+const emailjsPublicKey = defineString('EMAILJS_PUBLIC_KEY', { default: '' });
 
 const BULKGATE_URL = 'https://portal.bulkgate.com/api/1.0/simple/transactional';
 
@@ -278,5 +283,109 @@ export const formatContent = onRequest(
       console.error('formatContent error', err);
       send(500, { error: err.message || 'Formatting failed' });
     }
+  }
+);
+
+/** Vrátí klíč data ve formátu DD-MM-YYYY pro zítřek (lokální čas). */
+function getTomorrowDateKey() {
+  const t = new Date();
+  t.setDate(t.getDate() + 1);
+  const d = t.getDate();
+  const m = t.getMonth() + 1;
+  const y = t.getFullYear();
+  return `${String(d).padStart(2, '0')}-${String(m).padStart(2, '0')}-${y}`;
+}
+
+/** Formát data pro zobrazení (DD/MM/YYYY). */
+function formatDateDisplay(dateKey) {
+  return dateKey ? String(dateKey).replace(/-/g, '/') : '';
+}
+
+/**
+ * Naplánovaná funkce: každý den v 16:00 (Praha) odešle připomínky na zítřek.
+ * SMS přes BulkGate (rezervace s telefonem), e-mail přes EmailJS (rezervace s e-mailem).
+ * Vyžaduje: BULKGATE_* pro SMS; EMAILJS_* volitelně pro e-mail.
+ */
+export const sendDailyReminders = onSchedule(
+  {
+    schedule: '0 16 * * *',
+    timeZone: 'Europe/Prague',
+    region: 'europe-west1',
+  },
+  async () => {
+    const tomorrowKey = getTomorrowDateKey();
+    const snap = await db.collection('reservations').where('date', '==', tomorrowKey).get();
+    const reservations = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((r) => !r.reminderSent);
+
+    if (reservations.length === 0) {
+      console.log('sendDailyReminders: žádné rezervace na zítřek k připomenutí.');
+      return;
+    }
+
+    const appId = applicationId.value();
+    const appToken = applicationToken.value();
+    const sid = senderId.value();
+    const sidVal = senderIdValue.value();
+    const hasSms = Boolean(appId && appToken);
+
+    const emailServiceId = emailjsServiceId.value();
+    const emailTemplateId = emailjsReminderTemplateId.value();
+    const emailPublicKey = emailjsPublicKey.value();
+    const hasEmail = Boolean(emailServiceId && emailTemplateId && emailPublicKey);
+
+    let smsSent = 0;
+    let emailSent = 0;
+
+    for (const res of reservations) {
+      const dateDisplay = formatDateDisplay(res.date);
+
+      if (hasSms && res.phone) {
+        const number = toE164(res.phone);
+        if (number) {
+          try {
+            const text = buildReminderText(res.name || '', dateDisplay, res.time || '', res.serviceName || 'rezervace');
+            const { ok } = await sendOneSms(appId, appToken, number, text, true, sid || undefined, sidVal || undefined);
+            if (ok) {
+              await db.doc(`reservations/${res.id}`).update({ reminderSent: true });
+              smsSent++;
+            }
+          } catch (err) {
+            console.error('sendDailyReminders SMS', res.id, err);
+          }
+        }
+      }
+
+      if (hasEmail && res.email) {
+        try {
+          const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              service_id: emailServiceId,
+              template_id: emailTemplateId,
+              user_id: emailPublicKey,
+              template_params: {
+                name: res.name,
+                to_email: res.email,
+                date: dateDisplay,
+                time: res.time,
+                service: res.serviceName,
+                reply_to: 'rezervace@skinstudio.cz',
+              },
+            }),
+          });
+          if (emailRes.ok) {
+            await db.doc(`reservations/${res.id}`).update({ reminderSent: true });
+            emailSent++;
+          }
+        } catch (err) {
+          console.error('sendDailyReminders email', res.id, err);
+        }
+      }
+    }
+
+    console.log(`sendDailyReminders: ${tomorrowKey} – odesláno ${smsSent} SMS, ${emailSent} e-mailů.`);
   }
 );

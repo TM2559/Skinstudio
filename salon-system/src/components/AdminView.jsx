@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package, Image as ImageIcon, Scissors } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { Utils } from '../utils/helpers';
-import { getCollectionPath, getDocPath, EMAILJS_CONFIG, callSendConfirmationSms } from '../firebaseConfig';
+import { getCollectionPath, getDocPath, EMAILJS_CONFIG, callSendConfirmationSms, callSendReminderSms } from '../firebaseConfig';
 
 import AdminBookingsTab from './admin/AdminBookingsTab';
 import AdminHistoryTab from './admin/AdminHistoryTab';
@@ -237,8 +237,31 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
 
   const handleReminders = async () => {
     setIsSendingReminders(true);
-    let count = 0;
-    for (const res of remindersList) {
+    const withPhone = remindersList.filter((r) => r.phone && String(r.phone).trim());
+    const withEmail = remindersList.filter((r) => r.email && String(r.email).trim());
+    let smsSent = 0;
+    let emailSent = 0;
+
+    if (withPhone.length > 0) {
+      try {
+        const payload = {
+          reservations: withPhone.map((r) => ({
+            id: r.id,
+            phone: r.phone,
+            name: r.name,
+            date: r.date,
+            time: r.time,
+            serviceName: r.serviceName || 'rezervace',
+          })),
+        };
+        const result = await callSendReminderSms(payload);
+        smsSent = result?.data?.sent ?? 0;
+      } catch (e) {
+        console.error('SMS připomínky:', e);
+      }
+    }
+
+    for (const res of withEmail) {
       try {
         if (EMAILJS_CONFIG.PUBLIC_KEY) {
           await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -260,21 +283,26 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           });
         }
         await updateDoc(getDocPath('reservations', res.id), { reminderSent: true });
-        count++;
+        emailSent++;
       } catch (e) {
         console.error(e);
       }
     }
+
     setIsSendingReminders(false);
     setShowReminderModal(false);
-    alert(`Odesláno ${count} připomínek.`);
+    const parts = [];
+    if (smsSent > 0) parts.push(`${smsSent} SMS`);
+    if (emailSent > 0) parts.push(`${emailSent} e-mail`);
+    alert(parts.length ? `Odesláno: ${parts.join(', ')}.` : 'Připomínky se nepodařilo odeslat.');
   };
 
   const openReminders = () => {
     const tmr = new Date();
     tmr.setDate(tmr.getDate() + 1);
     const key = Utils.formatDateKey(tmr);
-    setRemindersList(reservations.filter((r) => r.date === key && !r.reminderSent && r.email));
+    const hasContact = (r) => (r.phone && r.phone.trim()) || (r.email && r.email.trim());
+    setRemindersList(reservations.filter((r) => r.date === key && !r.reminderSent && hasContact(r)));
     setShowReminderModal(true);
   };
 

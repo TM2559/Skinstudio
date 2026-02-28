@@ -91,3 +91,7 @@ export const getDocPath = (colName, docId) =>
 export const callSendConfirmationSms = isVitestNoKey
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'sendConfirmationSms');
+
+export const callSendReminderSms = isVitestNoKey
+  ? () => Promise.resolve({ data: { sent: 0, errors: [] } })
+  : httpsCallable(functions, 'sendReminderSms');

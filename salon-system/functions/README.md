@@ -1,9 +1,10 @@
-# Cloud Functions – BulkGate SMS
+# Cloud Functions – BulkGate SMS, připomínky, naplánované úlohy
 
 - **`sendConfirmationSms`** – jedna SMS klientovi hned po vytvoření rezervace (web i manuální v adminu).
-- **`sendReminderSms`** – připomínky zítřejších rezervací z adminu (tlačítko Připomínky).
+- **`sendReminderSms`** – připomínky zítřejších rezervací z adminu (tlačítko Připomínky): SMS přes BulkGate.
+- **`sendDailyReminders`** – **naplánovaná funkce** (každý den 16:00 Praha): automaticky odešle připomínky na zítřek (SMS + e-mail podle kontaktu). Vyžaduje BulkGate pro SMS; pro e-mail volitelně EmailJS env (viz níže).
 
-Obojí přes [BulkGate](https://www.bulkgate.com/) (HTTP Simple API).
+SMS přes [BulkGate](https://www.bulkgate.com/) (HTTP Simple API). E-mail v scheduled funkci přes EmailJS API.
 
 ## Nastavení
 
@@ -24,6 +25,14 @@ Obojí přes [BulkGate](https://www.bulkgate.com/) (HTTP Simple API).
 
    Při prvním `firebase deploy --only functions` může CLI místo toho vyzvat k zadání hodnot a uložit je do `.env.<project_id>`.
 
+   **Pro automatické e-mailové připomínky** (funkce `sendDailyReminders`) přidej do `.env` (volitelné):
+   ```
+   EMAILJS_SERVICE_ID=tvůj_service_id
+   EMAILJS_REMINDER_TEMPLATE_ID=id_šablony_připomínky
+   EMAILJS_PUBLIC_KEY=tvůj_public_key
+   ```
+   Stejné hodnoty jako v frontendu (VITE_EMAILJS_*). Bez nich scheduled funkce pošle jen SMS.
+
 2. **Lokální test**  
    `npm run serve` spustí emulátor; pro přístup k BulkGate API použij stejné `.env`.
 
@@ -41,4 +50,5 @@ Obojí přes [BulkGate](https://www.bulkgate.com/) (HTTP Simple API).
 ## Chování
 
 - **Potvrzení:** Po odeslání rezervace (CustomerView nebo manuální v adminu) se při vyplněném telefonu zavolá `sendConfirmationSms`. Text s plnou diakritikou (správná čeština), datum ve formátu „D. M.“ (např. 14. 2.), šablona: „Potvrzujeme vaši rezervaci.“ + SLUŽBA / TERMÍN + „Těšíme se na vás.“
-- **Připomínky:** Admin zvolí „Připomínky“ pro zítřek; pro rezervace s telefonem se zavolá `sendReminderSms`, odešle se SMS a nastaví `reminderSent: true`. Rezervace jen s e-mailem řeší frontend (EmailJS).
+- **Připomínky (tlačítko):** Admin zvolí „Připomínky“ pro zítřek. Rezervace s telefonem → SMS přes `sendReminderSms` (BulkGate). Rezervace s e-mailem → e-mail přes EmailJS z frontendu. U obou se nastaví `reminderSent: true`.
+- **Připomínky (automatické):** `sendDailyReminders` běží každý den v 16:00 (Europe/Prague), načte rezervace na zítřek bez `reminderSent`, odešle SMS (BulkGate) a/nebo e-mail (EmailJS) a nastaví `reminderSent: true`.

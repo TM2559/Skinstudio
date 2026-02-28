@@ -11,7 +11,7 @@ const RemindersModal = ({ open, onClose, remindersList, onSend, isSending }) => 
         </h3>
         {remindersList.length > 0 ? (
           <>
-            <p className="text-stone-500 text-sm mb-6">Odeslat {remindersList.length} připomínek?</p>
+            <p className="text-stone-500 text-sm mb-6">Odeslat {remindersList.length} připomínek (SMS a e-mail podle kontaktu)?</p>
             <div className="flex gap-3">
               <button
                 onClick={onSend}
