@@ -10,6 +10,7 @@ import EditorialGallery from './EditorialGallery';
 import LazySection from './LazySection';
 import ServiceListAccordion from './ServiceListAccordion';
 import SocialProofSection from './SocialProofSection';
+import PMUSpotlightSection from './PMUSpotlightSection';
 import { GOOGLE_REVIEW_URL } from '../firebaseConfig';
 import useSEO from '../hooks/useSEO';
 import { SEO } from '../constants/seo';
@@ -132,27 +133,8 @@ export default function CosmeticsPage({ services = [] }) {
         </div>
       </section>
 
-      {/* PMU strip – pure typography (after Filozofie, before Proměny) */}
-      <section
-        className="py-16 bg-[#faf9f6] border-y border-stone-100 text-center"
-        aria-labelledby="pmu-teaser-heading"
-      >
-        <div className="max-w-4xl mx-auto px-6">
-          <h3 id="pmu-teaser-heading" className="text-3xl md:text-4xl font-display text-stone-900 mb-4">
-            {WEB_CONTENT.pmu.headline}{' '}
-            <span className="italic font-display text-stone-400">{WEB_CONTENT.pmu.headlineItalic}</span>
-          </h3>
-          <p className="text-stone-600 max-w-2xl mx-auto mb-8 font-light">
-            {WEB_CONTENT.pmu.body}
-          </p>
-          <Link
-            to="/pmu#pmu"
-            className="inline-block px-8 py-4 border border-stone-800 text-xs uppercase tracking-[0.2em] text-stone-900 hover:bg-stone-900 hover:text-white transition-all duration-300 mt-8"
-          >
-            {WEB_CONTENT.pmu.cta}
-          </Link>
-        </div>
-      </section>
+      {/* PMU Spotlight – two-column, image + text, fade-in-up */}
+      <PMUSpotlightSection />
 
       {/* 3. Transformations ("Proměny") */}
       <section

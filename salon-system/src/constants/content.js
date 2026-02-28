@@ -39,6 +39,7 @@ export const WEB_CONTENT = {
   imageAlts: {
     instagramGallery: 'Kosmetika a péče o pleť – Skin Studio Lucie Metelková, Uherský Brod',
     portrait: 'Lucie Metelková – prémiová kosmetika a péče o pleť, Skin Studio Uherský Brod',
+    pmuSpotlight: 'Ukázka permanentního make-upu – před a po, Skin Studio',
   },
 
   filozofie: {
@@ -55,10 +56,13 @@ export const WEB_CONTENT = {
   },
 
   pmu: {
+    spotlightLabel: 'SPECIALIZACE',
     headline: 'Vaše já.',
     headlineItalic: 'Jen dokonalejší.',
     body: 'Mým cílem není vytvořit make-up, ale podtrhnout vaše rysy tak jemně, že si okolí všimne jen toho, jak skvěle vypadáte. Neviditelná práce, viditelný rozdíl.',
     cta: 'Více o permanentním make-upu',
+    /** Optional: path to PMU Spotlight image (e.g. /pmu-spotlight.jpg). Falls back to placeholder. */
+    spotlightImage: '/pmu-spotlight.jpg',
   },
 
   promeny: {
