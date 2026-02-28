@@ -1,8 +1,18 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package, Image as ImageIcon, Scissors } from 'lucide-react';
+import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package, Image as ImageIcon, Scissors, ScanFace } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
+import { startRegistration } from '@simplewebauthn/browser';
+import { platformAuthenticatorIsAvailable } from '@simplewebauthn/browser';
 import { Utils } from '../utils/helpers';
-import { getCollectionPath, getDocPath, EMAILJS_CONFIG, callSendConfirmationSms, callSendReminderSms } from '../firebaseConfig';
+import {
+  getCollectionPath,
+  getDocPath,
+  EMAILJS_CONFIG,
+  callSendConfirmationSms,
+  callSendReminderSms,
+  getAdminWebAuthnRegistrationOptions,
+  verifyAdminWebAuthnRegistration,
+} from '../firebaseConfig';
 
 import AdminBookingsTab from './admin/AdminBookingsTab';
 import AdminHistoryTab from './admin/AdminHistoryTab';
@@ -42,6 +52,42 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   const [isManualSubmitting, setIsManualSubmitting] = useState(false);
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
   const [editingAddonLinks, setEditingAddonLinks] = useState([]);
+  const [showFaceIdModal, setShowFaceIdModal] = useState(false);
+  const [faceIdPassword, setFaceIdPassword] = useState('');
+  const [faceIdError, setFaceIdError] = useState('');
+  const [faceIdLoading, setFaceIdLoading] = useState(false);
+  const [faceIdAvailable, setFaceIdAvailable] = useState(false);
+
+  useEffect(() => {
+    platformAuthenticatorIsAvailable().then((ok) => setFaceIdAvailable(!!ok));
+  }, []);
+
+  const handleSetupFaceId = async (e) => {
+    e.preventDefault();
+    setFaceIdError('');
+    setFaceIdLoading(true);
+    try {
+      const origin = window.location.origin;
+      const { data: options } = await getAdminWebAuthnRegistrationOptions({ password: faceIdPassword, origin });
+      if (!options) throw new Error('Nepodařilo načíst možnosti registrace.');
+      const credential = await startRegistration(options);
+      const { data } = await verifyAdminWebAuthnRegistration({ password: faceIdPassword, origin, credential });
+      if (data?.verified) {
+        setShowFaceIdModal(false);
+        setFaceIdPassword('');
+      } else {
+        setFaceIdError('Registrace Face ID selhala.');
+      }
+    } catch (err) {
+      if (err.name === 'NotAllowedError') {
+        setFaceIdError('Registrace byla zrušena.');
+      } else {
+        setFaceIdError(err.message || 'Nastavení Face ID selhalo.');
+      }
+    } finally {
+      setFaceIdLoading(false);
+    }
+  };
 
   // Při načtení: pokud dnešek nemá rezervace, aktivní datum = nejbližší den s rezervací
   useEffect(() => {
@@ -448,6 +494,15 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
             >
               <PlusCircle size={14} /> <span className="hidden sm:inline">Nová rezervace</span>
             </button>
+            {faceIdAvailable && (
+              <button
+                onClick={() => setShowFaceIdModal(true)}
+                className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-lg transition-all"
+                title="Nastavit Face ID pro rychlé přihlášení"
+              >
+                <ScanFace size={18} />
+              </button>
+            )}
             <button
               onClick={onLogout}
               className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
@@ -613,6 +668,42 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           onExportCalendar={handleExportCalendar}
           onDelete={handleDeleteRes}
         />
+      )}
+
+      {showFaceIdModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => !faceIdLoading && setShowFaceIdModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-display font-bold text-lg text-stone-800 mb-2">Nastavit Face ID</h3>
+            <p className="text-sm text-stone-500 mb-4">Pro příště se budete moci přihlásit rychle pomocí Face ID. Zadejte heslo.</p>
+            <form onSubmit={handleSetupFaceId} className="space-y-3">
+              <input
+                type="password"
+                placeholder="Heslo"
+                value={faceIdPassword}
+                onChange={(e) => setFaceIdPassword(e.target.value)}
+                className="w-full p-3 rounded-xl border border-stone-200 outline-none focus:ring-1 focus:ring-stone-400"
+                autoFocus
+              />
+              {faceIdError && <p className="text-red-500 text-xs">{faceIdError}</p>}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowFaceIdModal(false); setFaceIdError(''); setFaceIdPassword(''); }}
+                  className="flex-1 py-2 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium"
+                >
+                  Zrušit
+                </button>
+                <button
+                  type="submit"
+                  disabled={faceIdLoading || !faceIdPassword}
+                  className="flex-1 py-2 rounded-xl bg-stone-800 text-white text-sm font-medium disabled:opacity-50"
+                >
+                  {faceIdLoading ? 'Nastavuji…' : 'Nastavit'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

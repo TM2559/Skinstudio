@@ -7,6 +7,7 @@ import { initializeApp } from 'firebase-admin/app';
 initializeApp();
 const db = getFirestore();
 
+const adminPasswordParam = defineString('ADMIN_PASSWORD', { default: '' });
 const applicationId = defineString('BULKGATE_APPLICATION_ID', { default: '' });
 const applicationToken = defineString('BULKGATE_APPLICATION_TOKEN', { default: '' });
 /** Shortcode: např. sender_id = "gShort", sender_id_value = "90999" (vaše krátké číslo). */
@@ -279,6 +280,199 @@ export const formatContent = onRequest(
       console.error('formatContent error', err);
       send(500, { error: err.message || 'Formatting failed' });
     }
+  }
+);
+
+// --- Admin WebAuthn (Face ID / Touch ID) ---
+const ADMIN_WEBAUTHN_DOC = 'config/admin_webauthn';
+const ADMIN_WEBAUTHN_CHALLENGE_DOC = 'config/admin_webauthn_challenge';
+const CHALLENGE_TTL_MS = 5 * 60 * 1000;
+
+function getAllowedOrigins() {
+  return [
+    'http://localhost',
+    'http://localhost:5173',
+    'http://127.0.0.1',
+    'http://127.0.0.1:5173',
+    'https://localhost',
+  ];
+}
+
+function isOriginAllowed(origin) {
+  if (!origin || typeof origin !== 'string') return false;
+  const o = origin.replace(/\/$/, '');
+  if (getAllowedOrigins().includes(o)) return true;
+  try {
+    const host = new URL(origin).hostname;
+    if (host === 'localhost' || host.endsWith('.web.app') || host.endsWith('.firebaseapp.com')) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function getRpIdFromOrigin(origin) {
+  try {
+    return new URL(origin).hostname;
+  } catch {
+    return 'localhost';
+  }
+}
+
+/** Callable: getAdminWebAuthnRegistrationOptions. Tělo: { password, origin }. */
+export const getAdminWebAuthnRegistrationOptions = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { generateRegistrationOptions } = await import('@simplewebauthn/server');
+    const adminPw = adminPasswordParam.value();
+    if (!adminPw) throw new HttpsError('failed-precondition', 'ADMIN_PASSWORD není nastaven v prostředí functions.');
+    const { password, origin } = request.data || {};
+    if (password !== adminPw) throw new HttpsError('permission-denied', 'Chybné heslo.');
+    if (!isOriginAllowed(origin)) throw new HttpsError('invalid-argument', 'Neplatný origin.');
+    const rpID = getRpIdFromOrigin(origin);
+    const rpName = 'Skin Studio Admin';
+    const options = await generateRegistrationOptions({
+      rpName,
+      rpID,
+      userName: 'admin',
+      userDisplayName: 'Admin',
+      attestationType: 'none',
+      authenticatorSelection: {
+        residentKey: 'preferred',
+        userVerification: 'required',
+        authenticatorAttachment: 'platform',
+      },
+      supportedAlgorithmIDs: [-7, -257],
+    });
+    await db.doc(ADMIN_WEBAUTHN_CHALLENGE_DOC).set({
+      challenge: options.challenge,
+      createdAt: Date.now(),
+      type: 'registration',
+    });
+    return options;
+  }
+);
+
+/** Callable: verifyAdminWebAuthnRegistration. Tělo: { password, origin, credential }. */
+export const verifyAdminWebAuthnRegistration = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { verifyRegistrationResponse } = await import('@simplewebauthn/server');
+    const adminPw = adminPasswordParam.value();
+    if (!adminPw) throw new HttpsError('failed-precondition', 'ADMIN_PASSWORD není nastaven.');
+    const { password, origin, credential } = request.data || {};
+    if (password !== adminPw) throw new HttpsError('permission-denied', 'Chybné heslo.');
+    if (!isOriginAllowed(origin)) throw new HttpsError('invalid-argument', 'Neplatný origin.');
+    const rpID = getRpIdFromOrigin(origin);
+    const snap = await db.doc(ADMIN_WEBAUTHN_CHALLENGE_DOC).get();
+    const data = snap.data();
+    if (!data || data.type !== 'registration' || Date.now() - (data.createdAt || 0) > CHALLENGE_TTL_MS) {
+      throw new HttpsError('failed-precondition', 'Vypršela platnost registrace. Zkuste znovu.');
+    }
+    const expectedChallenge = data.challenge;
+    let verification;
+    try {
+      verification = await verifyRegistrationResponse({
+        response: credential,
+        expectedChallenge,
+        expectedOrigin: origin,
+        expectedRPID: rpID,
+      });
+    } catch (err) {
+      console.error('verifyAdminWebAuthnRegistration', err);
+      throw new HttpsError('invalid-argument', err.message || 'Ověření registrace selhalo.');
+    }
+    await db.doc(ADMIN_WEBAUTHN_CHALLENGE_DOC).delete();
+    if (!verification.verified || !verification.registrationInfo) {
+      throw new HttpsError('invalid-argument', 'Registrace nebyla ověřena.');
+    }
+    const { credential: regCred, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
+    const publicKeyB64 = Buffer.from(regCred.publicKey).toString('base64');
+    const credentials = [
+      {
+        id: regCred.id,
+        publicKey: publicKeyB64,
+        counter: regCred.counter,
+        transports: regCred.transports || [],
+        deviceType: credentialDeviceType,
+        backedUp: credentialBackedUp,
+      },
+    ];
+    await db.doc(ADMIN_WEBAUTHN_DOC).set({ credentials });
+    return { verified: true };
+  }
+);
+
+/** Callable: getAdminWebAuthnLoginOptions. Tělo: { origin }. */
+export const getAdminWebAuthnLoginOptions = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { generateAuthenticationOptions } = await import('@simplewebauthn/server');
+    const { origin } = request.data || {};
+    if (!isOriginAllowed(origin)) throw new HttpsError('invalid-argument', 'Neplatný origin.');
+    const rpID = getRpIdFromOrigin(origin);
+    const docSnap = await db.doc(ADMIN_WEBAUTHN_DOC).get();
+    const data = docSnap.data();
+    const creds = (data && data.credentials) || [];
+    if (creds.length === 0) throw new HttpsError('failed-precondition', 'Face ID není nastaven. Nejprve se přihlaste heslem a nastavte Face ID.');
+    const options = await generateAuthenticationOptions({
+      rpID,
+      allowCredentials: creds.map((c) => ({ id: c.id, type: 'public-key', transports: c.transports })),
+      userVerification: 'required',
+    });
+    await db.doc(ADMIN_WEBAUTHN_CHALLENGE_DOC).set({
+      challenge: options.challenge,
+      createdAt: Date.now(),
+      type: 'authentication',
+    });
+    return options;
+  }
+);
+
+/** Callable: verifyAdminWebAuthnLogin. Tělo: { origin, assertion }. */
+export const verifyAdminWebAuthnLogin = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { verifyAuthenticationResponse } = await import('@simplewebauthn/server');
+    const { origin, assertion } = request.data || {};
+    if (!isOriginAllowed(origin)) throw new HttpsError('invalid-argument', 'Neplatný origin.');
+    const rpID = getRpIdFromOrigin(origin);
+    const docSnap = await db.doc(ADMIN_WEBAUTHN_DOC).get();
+    const creds = (docSnap.data() && docSnap.data().credentials) || [];
+    const challengeSnap = await db.doc(ADMIN_WEBAUTHN_CHALLENGE_DOC).get();
+    const challengeData = challengeSnap.data();
+    if (!challengeData || challengeData.type !== 'authentication' || Date.now() - (challengeData.createdAt || 0) > CHALLENGE_TTL_MS) {
+      throw new HttpsError('failed-precondition', 'Vypršela platnost přihlášení. Zkuste znovu.');
+    }
+    const cred = creds.find((c) => c.id === assertion.id);
+    if (!cred) throw new HttpsError('permission-denied', 'Neznámý přihlašovací klíč.');
+    const publicKey = new Uint8Array(Buffer.from(cred.publicKey, 'base64'));
+    let verification;
+    try {
+      verification = await verifyAuthenticationResponse({
+        response: assertion,
+        expectedChallenge: challengeData.challenge,
+        expectedOrigin: origin,
+        expectedRPID: rpID,
+        credential: {
+          id: cred.id,
+          publicKey,
+          counter: cred.counter,
+          transports: cred.transports,
+        },
+      });
+    } catch (err) {
+      console.error('verifyAdminWebAuthnLogin', err);
+      throw new HttpsError('invalid-argument', err.message || 'Ověření přihlášení selhalo.');
+    }
+    await db.doc(ADMIN_WEBAUTHN_CHALLENGE_DOC).delete();
+    if (!verification.verified) throw new HttpsError('permission-denied', 'Přihlášení nebylo ověřeno.');
+    const { newCounter } = verification.authenticationInfo || {};
+    if (typeof newCounter === 'number') {
+      const updated = creds.map((c) => (c.id === cred.id ? { ...c, counter: newCounter } : c));
+      await db.doc(ADMIN_WEBAUTHN_DOC).update({ credentials: updated });
+    }
+    return { verified: true };
   }
 );
 

@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { query, onSnapshot } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
@@ -26,6 +26,7 @@ export default function App() {
   const [view, setView] = useState('customer');
   const [adminPassword, setAdminPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [showFaceIdSetupPrompt, setShowFaceIdSetupPrompt] = useState(false);
   const [clicks, setClicks] = useState(0);
 
   // Při přepnutí stránky vždy zobrazit začátek (scroll nahoru)
@@ -145,14 +146,36 @@ export default function App() {
     [servicesWithAddons]
   );
 
+  const adminPasswordExpected =
+    typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_ADMIN_PASSWORD
+      ? import.meta.env.VITE_ADMIN_PASSWORD
+      : '';
+
   const handleLogin = (e) => {
     e.preventDefault();
-    if (adminPassword === 'salon123') {
-      setView('admin');
+    if (adminPasswordExpected && adminPassword === adminPasswordExpected) {
       setLoginError('');
+      setShowFaceIdSetupPrompt(true);
     } else {
       setLoginError('Chybné heslo');
     }
+  };
+
+  const handleWebAuthnLoginSuccess = () => {
+    setView('admin');
+    setLoginError('');
+  };
+
+  const handleSkipFaceIdSetup = () => {
+    setShowFaceIdSetupPrompt(false);
+    setView('admin');
+    setAdminPassword('');
+  };
+
+  const handleFaceIdSetupDone = () => {
+    setShowFaceIdSetupPrompt(false);
+    setView('admin');
+    setAdminPassword('');
   };
 
   if (loading) {
@@ -192,6 +215,7 @@ export default function App() {
         }
       />
       <Route path="/dekujeme" element={<ThankYouPage />} />
+      <Route path="/cenik" element={<Navigate to="/#cenik" replace />} />
       <Route
         path="/rezervace"
         element={
@@ -206,6 +230,10 @@ export default function App() {
               setLoginError={setLoginError}
               handleLogoClick={handleLogoClick}
               handleLogin={handleLogin}
+              onWebAuthnLoginSuccess={handleWebAuthnLoginSuccess}
+              showFaceIdSetupPrompt={showFaceIdSetupPrompt}
+              onSkipFaceIdSetup={handleSkipFaceIdSetup}
+              onFaceIdSetupDone={handleFaceIdSetupDone}
               services={servicesWithAddons}
               schedule={schedule}
               schedulePmu={schedulePmu}

@@ -95,3 +95,17 @@ export const callSendConfirmationSms = isVitestNoKey
 export const callSendReminderSms = isVitestNoKey
   ? () => Promise.resolve({ data: { sent: 0, errors: [] } })
   : httpsCallable(functions, 'sendReminderSms');
+
+// Admin WebAuthn (Face ID / Touch ID)
+export const getAdminWebAuthnRegistrationOptions = isVitestNoKey
+  ? () => Promise.resolve({ data: {} })
+  : httpsCallable(functions, 'getAdminWebAuthnRegistrationOptions');
+export const verifyAdminWebAuthnRegistration = isVitestNoKey
+  ? () => Promise.resolve({ data: {} })
+  : httpsCallable(functions, 'verifyAdminWebAuthnRegistration');
+export const getAdminWebAuthnLoginOptions = isVitestNoKey
+  ? () => Promise.resolve({ data: {} })
+  : httpsCallable(functions, 'getAdminWebAuthnLoginOptions');
+export const verifyAdminWebAuthnLogin = isVitestNoKey
+  ? () => Promise.resolve({ data: {} })
+  : httpsCallable(functions, 'verifyAdminWebAuthnLogin');

@@ -11,6 +11,7 @@
     "deploy": "firebase deploy --only functions"
   },
   "dependencies": {
+    "@simplewebauthn/server": "^13.2.3",
     "firebase-admin": "^13.6.1",
     "firebase-functions": "^7.0.6"
   }

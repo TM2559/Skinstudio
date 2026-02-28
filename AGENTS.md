@@ -21,3 +21,4 @@ The app requires `VITE_FIREBASE_*` env vars for Firebase initialization. Without
 - ESLint exits with errors (pre-existing); this does not block development.
 - The Express API server (`npm run server` on port 3001) is optional — only needed for the "Magic Wand" AI content formatting feature and requires `OPENAI_API_KEY` or `GEMINI_API_KEY`.
 - Firebase Cloud Functions live in `salon-system/functions/` and require a separate `npm install`. They are optional for local development.
+- **Admin login:** 7× klik na logo „Skin Studio“ otevře přihlášení. Heslo je z `VITE_ADMIN_PASSWORD` (`.env` v `salon-system/`). Pro Face ID / Touch ID musí být v prostředí Functions nastaveno `ADMIN_PASSWORD` (stejná hodnota) a po prvním přihlášení heslem lze v adminu nastavit Face ID (ikona u odhlášení).
