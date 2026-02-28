@@ -226,7 +226,7 @@ export default function CosmeticsPage({ services = [] }) {
 
       {/* 4. Services & Pricing ("Ceník" – accordion) */}
       <section
-        id="procedury"
+        id="cenik"
         className="scroll-mt-20 py-24 px-4 border-t border-stone-200/80"
         style={{ backgroundColor: '#fcfbf7' }}
       >

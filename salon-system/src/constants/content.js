@@ -11,6 +11,7 @@ export const WEB_CONTENT = {
     ariaLabelInstagram: 'Instagram',
     navItems: [
       { label: 'KOSMETIKA', to: '/kosmetika' },
+      { label: 'CENÍK', to: '/', hash: 'cenik' },
       { label: 'PERMANENTNÍ MAKE-UP', to: '/pmu', hash: 'pmu' },
       { label: 'KONTAKT', to: '/', hash: 'kontakt' },
       { label: 'REZERVACE', to: '/rezervace', cta: true },
