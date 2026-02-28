@@ -297,6 +297,10 @@ function getAllowedOrigins() {
     'https://localhost',
     'https://tm-reservations.web.app',
     'https://tm-reservations.firebaseapp.com',
+    'http://skinstudio.cz',
+    'https://skinstudio.cz',
+    'http://www.skinstudio.cz',
+    'https://www.skinstudio.cz',
   ];
 }
 
