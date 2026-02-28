@@ -1,21 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ReactCompareSlider, ReactCompareSliderImage } from 'react-compare-slider';
-
-const MOBILE_BREAKPOINT = 767;
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth <= MOBILE_BREAKPOINT : false
-  );
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
-    const update = () => setIsMobile(mql.matches);
-    mql.addEventListener('change', update);
-    update();
-    return () => mql.removeEventListener('change', update);
-  }, []);
-  return isMobile;
-}
+import useIsMobile from '../hooks/useIsMobile';
 
 /**
  * Before/After comparison slider.
@@ -30,7 +15,7 @@ function useIsMobile() {
  */
 
 /** @type {React.FC<ComparisonProps>} */
-export default function ComparisonSlider({ beforeImage, afterImage, altText, theme = 'dark' }) {
+export default function ComparisonSlider({ beforeImage, afterImage, altText = 'Srovnání', theme = 'dark' }) {
   const isMobile = useIsMobile();
   const hasImages = beforeImage && afterImage && beforeImage.trim() && afterImage.trim();
 
@@ -76,14 +61,14 @@ export default function ComparisonSlider({ beforeImage, afterImage, altText, the
           itemOne={
             <ReactCompareSliderImage
               src={beforeImage}
-              alt="Před"
+              alt={`${altText} – Před`}
               style={imageStyle}
             />
           }
           itemTwo={
             <ReactCompareSliderImage
               src={afterImage}
-              alt="Po"
+              alt={`${altText} – Po`}
               style={imageStyle}
             />
           }

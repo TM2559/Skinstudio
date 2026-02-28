@@ -1,184 +1,34 @@
-/* eslint-disable no-undef */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { query, onSnapshot } from 'firebase/firestore';
-import { signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 
 import Layout from './components/Layout';
-import ReservationApp from './components/ReservationApp';
-import CosmeticsPage from './components/CosmeticsPage';
-import PMUPage from './components/PMUPage';
-import ThankYouPage from './components/ThankYouPage';
-import { filterCosmeticsServices } from './utils/helpers';
-import { auth, getCollectionPath } from './firebaseConfig';
+import { useData } from './contexts/DataContext';
+import { useAdminAuth } from './contexts/AdminAuthContext';
+
+const ReservationApp = lazy(() => import('./components/ReservationApp'));
+const CosmeticsPage = lazy(() => import('./components/CosmeticsPage'));
+const PMUPage = lazy(() => import('./components/PMUPage'));
+const ThankYouPage = lazy(() => import('./components/ThankYouPage'));
+
+function PageLoader() {
+  return (
+    <div className="min-h-[40vh] flex items-center justify-center">
+      <Loader2 className="animate-spin text-stone-400" size={24} />
+    </div>
+  );
+}
 
 export default function App() {
   const location = useLocation();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [reservations, setReservations] = useState([]);
-  const [schedule, setSchedule] = useState({});
-  const [schedulePmu, setSchedulePmu] = useState({});
-  const [services, setServices] = useState([]);
-  const [addons, setAddons] = useState([]);
-  const [serviceAddonLinks, setServiceAddonLinks] = useState([]);
-  const [view, setView] = useState('customer');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
-  const [showFaceIdSetupPrompt, setShowFaceIdSetupPrompt] = useState(false);
-  const [clicks, setClicks] = useState(0);
+  const data = useData();
+  const adminAuth = useAdminAuth();
 
-  // Při přepnutí stránky vždy zobrazit začátek (scroll nahoru)
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Na stránce /rezervace vždy zobrazit rezervační formulář (ne admin)
-  useEffect(() => {
-    if (location.pathname === '/rezervace') {
-      setView('customer');
-    }
-  }, [location.pathname]);
-
-  useEffect(() => {
-    if (clicks > 0) {
-      const t = setTimeout(() => setClicks(0), 2000);
-      return () => clearTimeout(t);
-    }
-  }, [clicks]);
-
-  const handleLogoClick = () => {
-    const newCount = clicks + 1;
-    if (newCount >= 7) {
-      setView('login');
-      setClicks(0);
-    } else {
-      setClicks(newCount);
-    }
-  };
-
-  useEffect(() => {
-    const init = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (e) {
-        console.error('Auth error:', e);
-      }
-    };
-    init();
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-    return () => unsub();
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    const unsub1 = onSnapshot(query(getCollectionPath('reservations')), (s) =>
-      setReservations(s.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
-    const unsub2 = onSnapshot(getCollectionPath('schedule'), (s) => {
-      const data = {};
-      s.forEach((d) => (data[d.id] = d.data()));
-      setSchedule(data);
-    });
-    const unsub2b = onSnapshot(getCollectionPath('schedule_pmu'), (s) => {
-      const data = {};
-      s.forEach((d) => (data[d.id] = d.data()));
-      setSchedulePmu(data);
-    });
-    const unsub3 = onSnapshot(query(getCollectionPath('services')), (s) => {
-      const loadedServices = s.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setServices([...loadedServices].sort((a, b) => (a.order || 0) - (b.order || 0)));
-    });
-    const unsub4 = onSnapshot(query(getCollectionPath('addons')), (s) =>
-      setAddons(s.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
-    const unsub5 = onSnapshot(query(getCollectionPath('service_addon_links')), (s) =>
-      setServiceAddonLinks(s.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
-    return () => {
-      unsub1();
-      unsub2();
-      unsub2b();
-      unsub3();
-      unsub4();
-      unsub5();
-    };
-  }, [user]);
-
-  const servicesStandardOnly = useMemo(
-    () => filterCosmeticsServices(services),
-    [services]
-  );
-
-  const servicesWithAddons = useMemo(() => {
-    return services.map((service) => {
-      const links = serviceAddonLinks.filter((l) => l.main_service_id === service.id);
-      const available_addons = links
-        .map((link) => {
-          const addon = addons.find((a) => a.id === link.addon_id);
-          if (!addon || addon.is_active === false) return null;
-          const final_price = link.custom_price != null ? link.custom_price : addon.default_price;
-          return {
-            id: addon.id,
-            name: addon.name,
-            price: final_price,
-            duration_minutes: addon.duration_minutes,
-            is_recommended: !!link.is_recommended,
-            price_behavior: addon.price_behavior === 'REPLACE' ? 'REPLACE' : 'ADD',
-          };
-        })
-        .filter(Boolean);
-      return { ...service, available_addons };
-    });
-  }, [services, addons, serviceAddonLinks]);
-
-  /** Služby s addony pouze pro kosmetiku (STANDARD) – pro stránky, kde zobrazujeme jen kosmetiku. */
-  const servicesStandardWithAddons = useMemo(
-    () => filterCosmeticsServices(servicesWithAddons),
-    [servicesWithAddons]
-  );
-
-  const adminPasswordExpected =
-    typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_ADMIN_PASSWORD
-      ? import.meta.env.VITE_ADMIN_PASSWORD
-      : '';
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (adminPasswordExpected && adminPassword === adminPasswordExpected) {
-      setLoginError('');
-      setShowFaceIdSetupPrompt(true);
-    } else {
-      setLoginError('Chybné heslo');
-    }
-  };
-
-  const handleWebAuthnLoginSuccess = () => {
-    setView('admin');
-    setLoginError('');
-  };
-
-  const handleSkipFaceIdSetup = () => {
-    setShowFaceIdSetupPrompt(false);
-    setView('admin');
-    setAdminPassword('');
-  };
-
-  const handleFaceIdSetupDone = () => {
-    setShowFaceIdSetupPrompt(false);
-    setView('admin');
-    setAdminPassword('');
-  };
-
-  if (loading) {
+  if (data.loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50">
         <Loader2 className="animate-spin text-stone-400" size={32} />
@@ -187,63 +37,66 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <Layout setView={setView}>
-            <CosmeticsPage services={servicesStandardOnly} />
-          </Layout>
-        }
-      />
-      <Route
-        path="/kosmetika"
-        element={
-          <Layout setView={setView}>
-            <CosmeticsPage services={servicesStandardOnly} />
-          </Layout>
-        }
-      />
-      <Route
-        path="/pmu"
-        element={
-          <PMUPage
-            services={servicesWithAddons}
-            schedule={schedulePmu}
-            reservations={reservations}
-          />
-        }
-      />
-      <Route path="/dekujeme" element={<ThankYouPage />} />
-      <Route path="/cenik" element={<Navigate to="/#cenik" replace />} />
-      <Route
-        path="/rezervace"
-        element={
-          <Layout setView={setView}>
-            <ReservationApp
-              loading={false}
-              view={view}
-              setView={setView}
-              adminPassword={adminPassword}
-              setAdminPassword={setAdminPassword}
-              loginError={loginError}
-              setLoginError={setLoginError}
-              handleLogoClick={handleLogoClick}
-              handleLogin={handleLogin}
-              onWebAuthnLoginSuccess={handleWebAuthnLoginSuccess}
-              showFaceIdSetupPrompt={showFaceIdSetupPrompt}
-              onSkipFaceIdSetup={handleSkipFaceIdSetup}
-              onFaceIdSetupDone={handleFaceIdSetupDone}
-              services={servicesWithAddons}
-              schedule={schedule}
-              schedulePmu={schedulePmu}
-              reservations={reservations}
-              addons={addons}
-              serviceAddonLinks={serviceAddonLinks}
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Layout setView={adminAuth.setView}>
+              <CosmeticsPage services={data.servicesStandardOnly} />
+            </Layout>
+          }
+        />
+        <Route
+          path="/kosmetika"
+          element={
+            <Layout setView={adminAuth.setView}>
+              <CosmeticsPage services={data.servicesStandardOnly} />
+            </Layout>
+          }
+        />
+        <Route
+          path="/pmu"
+          element={
+            <PMUPage
+              services={data.servicesWithAddons}
+              schedule={data.schedulePmu}
+              reservations={data.reservations}
             />
-          </Layout>
-        }
-      />
-    </Routes>
+          }
+        />
+        <Route path="/dekujeme" element={<ThankYouPage />} />
+        <Route path="/cenik" element={<Navigate to="/#cenik" replace />} />
+        <Route
+          path="/rezervace"
+          element={
+            <Layout setView={adminAuth.setView}>
+              <ReservationApp
+                loading={false}
+                view={adminAuth.view}
+                setView={adminAuth.setView}
+                adminPassword={adminAuth.adminPassword}
+                setAdminPassword={adminAuth.setAdminPassword}
+                loginError={adminAuth.loginError}
+                setLoginError={adminAuth.setLoginError}
+                handleLogoClick={adminAuth.handleLogoClick}
+                handleLogin={adminAuth.handleLogin}
+                isLoggingIn={adminAuth.isLoggingIn}
+                onWebAuthnLoginSuccess={adminAuth.handleWebAuthnLoginSuccess}
+                showFaceIdSetupPrompt={adminAuth.showFaceIdSetupPrompt}
+                onSkipFaceIdSetup={adminAuth.handleSkipFaceIdSetup}
+                onFaceIdSetupDone={adminAuth.handleFaceIdSetupDone}
+                services={data.servicesWithAddons}
+                schedule={data.schedule}
+                schedulePmu={data.schedulePmu}
+                reservations={data.reservations}
+                addons={data.addons}
+                serviceAddonLinks={data.serviceAddonLinks}
+              />
+            </Layout>
+          }
+        />
+      </Routes>
+    </Suspense>
   );
 }

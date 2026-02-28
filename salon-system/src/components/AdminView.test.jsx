@@ -3,7 +3,8 @@
  * Testuje: po kliknutí na „Upravit“ u služby zůstane zobrazen záložka Služby a formulář pro úpravu (ne prázdná obrazovka).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import { renderWithProviders } from '../utils/testUtils';
 import AdminView from './AdminView';
 
 vi.mock('firebase/firestore', () => ({
@@ -44,7 +45,7 @@ describe('AdminView', () => {
   });
 
   it('after clicking Služby and then Edit on a service, edit form is visible (not blank screen)', () => {
-    render(<AdminView {...defaultProps} />);
+    renderWithProviders(<AdminView {...defaultProps} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Služby/ }));
     expect(screen.getByText('Nový produkt / Služba')).toBeInTheDocument();

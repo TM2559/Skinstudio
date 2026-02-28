@@ -25,6 +25,7 @@ export default function ReservationApp({
   setLoginError,
   handleLogoClick,
   handleLogin,
+  isLoggingIn = false,
   onWebAuthnLoginSuccess,
   showFaceIdSetupPrompt = false,
   onSkipFaceIdSetup,
@@ -200,9 +201,14 @@ export default function ReservationApp({
                   )}
                   <button
                     type="submit"
-                    className="w-full bg-stone-800 text-white py-4 rounded-xl font-bold uppercase tracking-widest text-[10px] hover:bg-black transition-all"
+                    disabled={isLoggingIn}
+                    className="w-full bg-stone-800 text-white py-4 rounded-xl font-bold uppercase tracking-widest text-[10px] hover:bg-black transition-all disabled:opacity-60"
                   >
-                    Přihlásit
+                    {isLoggingIn ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="animate-spin" size={14} /> Ověřuji…
+                      </span>
+                    ) : 'Přihlásit'}
                   </button>
                   {faceIdConfigured === true && faceIdAvailable && (
                     <button

@@ -23,11 +23,6 @@ export default function Layout({ children, setView }) {
     setMenuOpen(false);
   };
 
-  const navLinkTo = (item) => {
-    if (item.hash) return isHome ? `#${item.hash}` : `/#${item.hash}`;
-    return item.to;
-  };
-
   const linkClass =
     'text-xs xl:text-sm font-semibold uppercase tracking-widest transition-colors text-stone-600 hover:text-[var(--skin-gold-dark)] whitespace-nowrap';
   const ctaClass =

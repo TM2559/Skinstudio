@@ -1,5 +1,6 @@
 import React from 'react';
 import { Star, ExternalLink, Heart } from 'lucide-react';
+import { GOOGLE_REVIEW_URL as CONFIG_REVIEW_URL } from '../firebaseConfig';
 
 const MOCK_REVIEWS = [
   {
@@ -72,7 +73,7 @@ function GoogleGIcon({ className = 'w-6 h-6' }) {
   );
 }
 
-const SKIN_STUDIO_GOOGLE_REVIEW_URL = 'https://g.page/r/CWkt9xHMgMjqEAE/review';
+const SKIN_STUDIO_GOOGLE_REVIEW_URL = CONFIG_REVIEW_URL || 'https://g.page/r/CWkt9xHMgMjqEAE/review';
 
 function ActionCard({ qrImageSrc = '/Skinstudio_ggl_qr.png', googleReviewUrl = SKIN_STUDIO_GOOGLE_REVIEW_URL }) {
   return (

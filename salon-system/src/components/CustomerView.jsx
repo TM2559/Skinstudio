@@ -1,138 +1,21 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Sparkles, Loader2, AlertCircle, Calendar as CalendarIcon, CalendarPlus } from 'lucide-react';
 import { addDoc } from "firebase/firestore";
 import { Utils, isPmuService, filterCosmeticsServices } from '../utils/helpers';
-import { getCollectionPath, EMAILJS_CONFIG, callSendConfirmationSms } from '../firebaseConfig';
-
-/**
- * Total price: REPLACE options set the base (last one wins), ADD options add on top.
- * If service has isStartingPrice ("od"), base is 0 – "od" is only informational.
- */
-function calculateReservationTotal(service, upsells) {
-  const base = service?.isStartingPrice ? 0 : (service?.price ?? 0);
-  const overrides = (upsells || []).filter((u) => u.price_behavior === 'REPLACE');
-  const additions = (upsells || []).filter((u) => u.price_behavior !== 'REPLACE');
-  let total = overrides.length > 0 ? (overrides[overrides.length - 1].price ?? 0) : base;
-  additions.forEach((u) => { total += (u.price ?? 0); });
-  return total;
-}
-
-export const BookingSuccess = ({ isDark, reservationDetails, onReset }) => {
-  const { date, time, duration, serviceName, price } = reservationDetails;
-
-  const calendarTitle = `Skin Studio: ${serviceName}`;
-  const calendarDesc = `Rezervace ošetření: ${serviceName}. Těšíme se na vás!`;
-  const googleCalendarUrl = Utils.createGoogleCalendarLink(date, time, duration, calendarTitle, calendarDesc);
-
-  const handleAppleCalendar = () => {
-    Utils.downloadICSFile(date, time, duration, calendarTitle, calendarDesc);
-  };
-
-  return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* 1. Okamžité potvrzení */}
-      <div className="text-center mb-8 mt-4">
-        <div className={`mx-auto mb-4 w-16 h-16 rounded-full flex items-center justify-center ${isDark ? 'bg-[#daa59c]/10' : 'bg-[#a3803d]/10'}`}>
-          <CheckCircle size={32} className={isDark ? 'text-[#daa59c]' : 'text-[var(--skin-gold-dark)]'} />
-        </div>
-        <h2 className={`font-display text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-[var(--skin-charcoal)]'}`}>
-          Vaše rezervace je potvrzena
-        </h2>
-        <p className={`text-sm mt-3 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>
-          Potvrzení s detaily jsme právě odeslali na váš e-mail.
-        </p>
-      </div>
-
-      {/* 2. Shrnutí rezervace */}
-      <div className={`p-6 rounded-xl border mb-6 ${isDark ? 'bg-white/5 border-stone-800' : 'bg-white border-[var(--skin-beige-muted)] shadow-sm'}`}>
-        <h3 className={`text-[10px] font-bold uppercase tracking-widest mb-4 border-b pb-3 ${isDark ? 'text-stone-400 border-stone-800' : 'text-stone-400 border-stone-100'}`}>
-          Shrnutí termínu
-        </h3>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className={`text-sm ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>Služba</span>
-            <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-[var(--skin-charcoal)]'}`}>{serviceName}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className={`text-sm ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>Kdy</span>
-            <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-[var(--skin-charcoal)]'}`}>
-              {Utils.formatDateDisplay(date)} v {time}
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className={`text-sm ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>Cena</span>
-            <span className={`text-sm font-semibold ${isDark ? 'text-[#daa59c]' : 'text-[var(--skin-gold-dark)]'}`}>{price} Kč</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. PMU Specifikum - Instrukce před zákrokem */}
-      {isDark && (
-        <div className="p-5 rounded-xl border border-[#daa59c]/30 bg-[#daa59c]/5 mb-8">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-[#daa59c] flex items-center gap-2 mb-3">
-            <AlertCircle size={16} /> Důležité před zákrokem
-          </h3>
-          <ul className="text-sm text-stone-300 space-y-2 list-disc pl-4">
-            <li>24 hodin před zákrokem nepijte kávu, energetické nápoje ani alkohol.</li>
-            <li>Neberte léky na ředění krve (např. Ibalgin, Aspirin).</li>
-            <li>V případě těhotenství či nemoci nás obratem kontaktujte pro přesun termínu.</li>
-          </ul>
-        </div>
-      )}
-
-      {/* 4. Kalendáře */}
-      <div className="space-y-3">
-        <h3 className={`text-[10px] font-bold uppercase tracking-widest text-center mb-3 ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>
-          Uložit termín do kalendáře
-        </h3>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            type="button"
-            onClick={handleAppleCalendar}
-            className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all border ${
-              isDark 
-                ? 'bg-stone-900 border-stone-800 text-stone-300 hover:bg-stone-800 hover:text-white' 
-                : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50 hover:border-stone-300'
-            }`}
-          >
-            <CalendarIcon size={16} /> Apple Kalendář
-          </button>
-          <a
-            href={googleCalendarUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all border ${
-              isDark 
-                ? 'bg-stone-900 border-stone-800 text-stone-300 hover:bg-stone-800 hover:text-white' 
-                : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50 hover:border-stone-300'
-            }`}
-          >
-            <CalendarPlus size={16} /> Google Kalendář
-          </a>
-        </div>
-      </div>
-
-      {/* 5. Zpět */}
-      <div className="mt-8 text-center border-t pt-6" style={{ borderColor: isDark ? '#292524' : 'var(--skin-beige-muted)' }}>
-        <button 
-          type="button"
-          onClick={onReset}
-          className={`text-xs uppercase tracking-widest font-semibold hover:underline ${isDark ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-[var(--skin-charcoal)]'}`}
-        >
-          Zpět na nabídku služeb
-        </button>
-      </div>
-    </div>
-  );
-};
+import { getCollectionPath } from '../firebaseConfig';
+import { BOOKING, CONTACT, COLLECTIONS } from '../constants/config';
+import { sendBookingConfirmations } from '../services/notificationService';
+import { useToastContext } from '../contexts/ToastContext';
+import ServiceSelector from './booking/ServiceSelector';
+import DateStrip from './booking/DateStrip';
+import TimeGrid from './booking/TimeGrid';
+import BookingSummaryForm, { calculateReservationTotal } from './booking/BookingSummaryForm';
 
 const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBookingSuccess, initialServiceId, theme = 'light' }) => {
   const navigate = useNavigate();
-  const ADMIN_EMAIL = "info@skinstudio.cz";
+  const toast = useToastContext();
   const isDark = theme === 'dark';
 
-  /** Na světlé stránce /rezervace zobrazujeme jen kosmetiku; na PMU (dark) všechny předané služby (PMU). */
   const displayServices = useMemo(
     () => (isDark ? services : filterCosmeticsServices(services)),
     [services, isDark]
@@ -149,13 +32,13 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
       hasAppliedInitialService.current = true;
     }
   }, [initialServiceId, displayServices]);
+
   const [selectedDateStr, setSelectedDateStr] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
   const [isSending, setIsSending] = useState(false);
   const [selectedUpsells, setSelectedUpsells] = useState([]);
 
-  /** Use PMU schedule when a PMU service is selected and schedulePmu is provided; otherwise cosmetics schedule. */
   const effectiveSchedule = useMemo(() => {
     if (selectedService && isPmuService(selectedService) && schedulePmu && Object.keys(schedulePmu).length > 0) {
       return schedulePmu;
@@ -169,17 +52,14 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
     );
   };
 
-  /** Počet dní dopředu pro výběr termínu (PMU směny mohou být méně časté, proto 60 dní). */
-  const DAYS_AHEAD = 60;
   const clientDates = useMemo(() => {
     const dates = [];
     const today = new Date();
-    const sched = effectiveSchedule;
-    for (let i = 0; i < DAYS_AHEAD; i++) {
+    for (let i = 0; i < BOOKING.DAYS_AHEAD; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       const key = Utils.formatDateKey(d);
-      const dayData = sched[key];
+      const dayData = effectiveSchedule[key];
       if (dayData && (dayData.periods?.length > 0 || dayData.start)) dates.push(d);
     }
     return dates;
@@ -187,7 +67,6 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
 
   const activeDateStr = selectedDateStr || (clientDates.length > 0 ? Utils.formatDateKey(clientDates[0]) : null);
 
-  /** Počet volných slotů pro každý den (pro vybranou službu) – pro zakázání dnů s 0 volných */
   const slotsPerDate = useMemo(() => {
     const map = new Map();
     if (!selectedService) return map;
@@ -200,33 +79,20 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
       const bookedIntervals = reservations
         .filter((r) => r.date === key)
         .map((r) => ({ start: Utils.timeToMinutes(r.time), end: Utils.timeToMinutes(r.time) + (r.duration || 60) }));
-      const slots = Utils.getSmartSlots(periods, duration, bookedIntervals);
-      map.set(key, slots.length);
+      map.set(key, Utils.getSmartSlots(periods, duration, bookedIntervals).length);
     });
     return map;
   }, [clientDates, selectedService, effectiveSchedule, reservations]);
 
-  // --- ZMĚNA: Použití chytré logiky (getSmartSlots) ---
   const availableSlots = useMemo(() => {
     if (!activeDateStr || !selectedService) return [];
     const dayData = effectiveSchedule[activeDateStr];
     if (!dayData) return [];
-
-    // 1. Získáme pracovní bloky
     const periods = dayData.periods || (dayData.start ? [{ start: dayData.start, end: dayData.end }] : []);
-    
-    // 2. Získáme obsazené intervaly ten den
     const bookedIntervals = reservations
       .filter(r => r.date === activeDateStr)
       .map(r => ({ start: Utils.timeToMinutes(r.time), end: Utils.timeToMinutes(r.time) + (r.duration || 60) }));
-
-    // 3. Zavoláme naši novou funkci "Magnet"
-    return Utils.getSmartSlots(
-      periods, 
-      parseInt(selectedService.duration), 
-      bookedIntervals
-    );
-
+    return Utils.getSmartSlots(periods, parseInt(selectedService.duration), bookedIntervals);
   }, [activeDateStr, selectedService, effectiveSchedule, reservations]);
 
   const handleSubmit = async (e) => {
@@ -240,7 +106,7 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
         `REZERVACE: ${selectedService.name} (${formData.name})`, `Klient: ${formData.name}, Tel: ${formData.phone}`
       );
 
-      await addDoc(getCollectionPath("reservations"), {
+      await addDoc(getCollectionPath(COLLECTIONS.RESERVATIONS), {
         date: activeDateStr,
         time: selectedTime,
         name: formData.name,
@@ -254,64 +120,16 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
         source: 'web'
       });
 
-      if (formData.phone && formData.phone.trim()) {
-        try {
-          await callSendConfirmationSms({
-            phone: formData.phone.trim(),
-            name: formData.name,
-            date: activeDateStr,
-            time: selectedTime,
-            serviceName: selectedService.name,
-            duration: parseInt(selectedService.duration),
-          });
-        } catch (smsErr) {
-          console.warn('SMS potvrzení se nepodařilo odeslat:', smsErr);
-        }
-      }
-
-      if (EMAILJS_CONFIG.PUBLIC_KEY) {
-        // Klient
-        await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            service_id: EMAILJS_CONFIG.SERVICE_ID,
-            template_id: EMAILJS_CONFIG.CONFIRM_TEMPLATE,
-            user_id: EMAILJS_CONFIG.PUBLIC_KEY,
-            template_params: {
-              name: formData.name,
-              to_email: formData.email,
-              date: Utils.formatDateDisplay(activeDateStr),
-              time: selectedTime,
-              service: selectedService.name,
-              reply_to: ADMIN_EMAIL 
-            }
-          })
-        });
-
-        // Admin
-        if (EMAILJS_CONFIG.ADMIN_TEMPLATE) {
-            await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                service_id: EMAILJS_CONFIG.SERVICE_ID,
-                template_id: EMAILJS_CONFIG.ADMIN_TEMPLATE,
-                user_id: EMAILJS_CONFIG.PUBLIC_KEY,
-                template_params: {
-                name: formData.name,
-                to_email: ADMIN_EMAIL,
-                date: Utils.formatDateDisplay(activeDateStr),
-                time: selectedTime,
-                service: selectedService.name,
-                phone: formData.phone,
-                reply_to: formData.email,
-                calendar_link: calendarLink 
-                }
-            })
-            });
-        }
-      }
+      await sendBookingConfirmations({
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        date: activeDateStr,
+        time: selectedTime,
+        serviceName: selectedService.name,
+        duration: parseInt(selectedService.duration),
+        calendarLink,
+      });
 
       if (onBookingSuccess) onBookingSuccess();
 
@@ -329,257 +147,79 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
 
     } catch (err) {
       console.error(err);
-      alert("Chyba při rezervaci.");
+      toast.error("Chyba při rezervaci. Zkuste to prosím znovu.");
     } finally {
       setIsSending(false);
     }
   };
 
+  const handleServiceSelect = (s) => {
+    setSelectedService(s);
+    setSelectedTime(null);
+  };
+
+  const handleDateSelect = (key) => {
+    setSelectedDateStr(key);
+    setSelectedTime(null);
+  };
+
   return (
     <div className="flex flex-col gap-10 md:grid md:grid-cols-2 md:gap-12">
       <div className="flex flex-col gap-10">
-        <div>
-          <h2 className={`text-[10px] font-bold uppercase tracking-widest mb-6 flex items-center gap-2 border-b pb-2 ${isDark ? 'text-stone-300 border-stone-800' : 'text-stone-500 border-stone-100'}`}>
-            <span
-              className={`w-5 h-5 rounded-full text-white flex items-center justify-center text-[8px] ${isDark ? 'bg-[#daa59c]' : ''}`}
-              style={!isDark ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}
-            >
-              1
-            </span>
-            1. Výběr procedury
-          </h2>
-          <div className="grid gap-3">
-            {displayServices.map(s => {
-              const isSelected = selectedService?.id === s.id;
-              const addons = s.available_addons ?? [];
-              return (
-                <div
-                  key={s.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => { setSelectedService(s); setSelectedTime(null); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedService(s); setSelectedTime(null); } }}
-                  className={`p-4 rounded-xl border transition-all text-left relative shadow-sm cursor-pointer ${
-                    isDark
-                      ? isSelected
-                        ? 'bg-stone-900 border-[#daa59c]/70 border-l-4 border-l-[#daa59c]'
-                        : 'bg-stone-900 border-stone-800 hover:border-stone-700'
-                      : isSelected
-                        ? 'bg-[#F9F7F2] border border-stone-200 border-l-2'
-                        : 'bg-white border-gray-100 hover:border-stone-200'
-                  }`}
-                  style={!isDark && isSelected ? { borderLeftColor: 'var(--skin-gold-dark)' } : undefined}
-                >
-                  <div className="flex justify-between items-start gap-4">
-                    <span className={`text-sm leading-tight ${isDark ? (isSelected ? 'font-bold text-white' : 'font-medium text-stone-200') : isSelected ? 'font-bold text-stone-900' : 'font-medium text-stone-800'}`}>{s.name}</span>
-                    {!(isSelected && s.isStartingPrice) && (
-                      <span className={`text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap ${isDark ? 'text-[#daa59c] bg-stone-800' : 'text-stone-700 bg-stone-100'}`}>
-                        {s.isStartingPrice ? `od ${s.price} Kč` : `${s.price} Kč`}
-                      </span>
-                    )}
-                  </div>
-                  {isSelected && addons.length > 0 && (
-                    <div className={`mt-4 pt-3 border-t space-y-2 ${isDark ? 'border-stone-800' : 'border-stone-100'}`}>
-                      {addons.map((upsell) => {
-                        const isUpsellActive = selectedUpsells.some((u) => u.id === upsell.id);
-                        const hasPrice = upsell.price != null && upsell.price !== '';
-                        return (
-                          <div
-                            key={upsell.id}
-                            className={`flex justify-between items-center rounded-lg py-1 -mx-1 px-1 transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <div className="flex flex-col justify-center min-w-0">
-                              <span className={`text-sm font-medium ${isDark ? (isUpsellActive ? 'text-white' : 'text-stone-300') : isUpsellActive ? 'text-stone-900' : 'text-stone-700'}`}>
-                                {upsell.name}
-                              </span>
-                              {hasPrice && (
-                                <span className={`text-[10px] font-light tracking-wide uppercase mt-0.5 ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>
-                                  zvýhodněná cena k ošetření
-                                </span>
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleUpsellToggle(upsell, !isUpsellActive);
-                              }}
-                              className={`ml-4 rounded-full px-3 py-1 text-xs font-semibold transition-colors border flex-shrink-0 ${
-                                isDark
-                                  ? isUpsellActive
-                                    ? 'bg-[#daa59c]/90 text-white border-[#daa59c]/50'
-                                    : 'bg-stone-800 text-stone-200 border-stone-700 hover:border-stone-600'
-                                  : isUpsellActive
-                                    ? 'bg-stone-800 text-white border-stone-800'
-                                    : 'bg-white text-stone-800 border-stone-200 hover:border-stone-300'
-                              }`}
-                              aria-label={isUpsellActive ? 'Odebrat' : 'Přidat'}
-                            >
-                              {isUpsellActive ? '✓' : (hasPrice ? `+ ${upsell.price} Kč` : '+')}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <ServiceSelector
+          services={displayServices}
+          selectedService={selectedService}
+          selectedUpsells={selectedUpsells}
+          isDark={isDark}
+          onSelect={handleServiceSelect}
+          onUpsellToggle={handleUpsellToggle}
+        />
 
-        {/* Krok 2: Datum */}
         <div className={`min-w-0 ${!selectedService ? 'opacity-20 pointer-events-none' : ''}`}>
-          <h2 className={`text-[10px] font-bold uppercase tracking-widest mb-6 border-b pb-2 ${isDark ? 'text-stone-300 border-stone-800' : 'text-stone-500 border-stone-100'}`}>2. Termín</h2>
-          <div className="mobile-carousel-strip date-strip-scroll flex gap-3 pb-4 min-w-0">
-            {clientDates.length === 0 && <p className={`text-xs ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>Momentálně nejsou vypsány žádné termíny.</p>}
-            {clientDates.map(d => {
-              const key = Utils.formatDateKey(d);
-              const isActive = activeDateStr === key;
-              const slotCount = slotsPerDate.get(key) ?? -1;
-              const hasNoSlots = selectedService && slotCount === 0;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => { if (!hasNoSlots) { setSelectedDateStr(key); setSelectedTime(null); } }}
-                  disabled={hasNoSlots}
-                  className={`mobile-carousel-strip-item flex flex-col items-center justify-center w-16 h-24 rounded-xl border transition-all shadow-sm ${
-                    hasNoSlots ? 'opacity-50 pointer-events-none cursor-not-allowed' : ''
-                  } ${
-                    isDark
-                      ? isActive ? 'bg-[#daa59c]/90 text-white border-[#daa59c]/60' : 'bg-stone-900 text-stone-300 border-stone-800 hover:border-stone-700'
-                      : isActive ? 'text-white border-[var(--skin-gold-dark)]' : 'bg-white text-stone-500 border-gray-100'
-                  }`}
-                  style={!isDark && isActive ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}
-                >
-                  <span className="text-[10px] font-bold uppercase tracking-tighter">
-                    {d.toLocaleDateString('cs-CZ', { weekday: 'short' })}
-                  </span>
-                  <span className="text-xl font-display leading-none my-1">
-                    {d.getDate()}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-widest opacity-80">
-                    {d.toLocaleDateString('cs-CZ', { month: 'short' })}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <DateStrip
+            dates={clientDates}
+            activeDateStr={activeDateStr}
+            slotsPerDate={slotsPerDate}
+            selectedService={selectedService}
+            isDark={isDark}
+            onSelect={handleDateSelect}
+          />
         </div>
 
-        {/* Krok 3: Čas */}
         <div className={!activeDateStr ? 'opacity-20 pointer-events-none' : ''}>
-          <h2 className={`text-[10px] font-bold uppercase tracking-widest mb-6 border-b pb-2 ${isDark ? 'text-stone-300 border-stone-800' : 'text-stone-500 border-stone-100'}`}>3. Čas</h2>
-          {availableSlots.length > 0 && <p className="text-[10px] text-stone-400 mb-3 italic" />}
-
-          <div className="grid grid-cols-3 gap-3">
-            {availableSlots.map(t => {
-              const isTimeSelected = selectedTime === t;
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setSelectedTime(t)}
-                  className={`py-3 rounded-lg text-sm border transition-all ${
-                    isDark
-                      ? isTimeSelected ? 'text-white border-[#daa59c]/60 bg-[#daa59c]/90' : 'bg-stone-900 border-stone-800 text-stone-200 hover:border-stone-700'
-                      : isTimeSelected ? 'text-white border-[var(--skin-gold-dark)]' : 'bg-white border-stone-200 text-stone-700 hover:bg-[#F9F7F2] hover:border-stone-300'
-                  }`}
-                  style={!isDark && isTimeSelected ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}
-                >
-                  {t}
-                </button>
-              );
-            })}
-          </div>
-
+          <TimeGrid
+            slots={availableSlots}
+            selectedTime={selectedTime}
+            isDark={isDark}
+            onSelect={setSelectedTime}
+          />
         </div>
 
-        {/* Permanentní kontaktní CTA – vždy viditelný */}
         <div className={`pt-6 mt-2 border-t text-center md:text-left ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
           <p className={`mb-1.5 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             Nenašli jste vhodný termín? Zavolejte a najdeme řešení společně.
           </p>
           <a
-            href="tel:+420724875558"
+            href={CONTACT.PHONE_LINK}
             className="text-lg font-semibold hover:underline transition-all focus:outline-none focus:ring-2 focus:ring-[#a88a7d]/50 rounded"
             style={{ color: isDark ? '#daa59c' : 'var(--skin-gold-dark)' }}
           >
-            +420 724 875 558
+            {CONTACT.PHONE}
           </a>
         </div>
       </div>
 
-      <div className={`p-8 rounded-2xl border shadow-lg h-fit md:sticky md:top-4 ${isDark ? 'bg-stone-950 border-stone-800' : 'border-stone-100 bg-white'}`}>
-        <h2 className={`text-lg font-display font-semibold mb-6 border-b pb-4 ${isDark ? 'text-[#daa59c] border-stone-800' : 'text-stone-800 border-stone-100'}`}>
-          <Sparkles className={`inline-block mr-2 ${isDark ? 'text-[#daa59c]' : 'text-stone-400'}`} size={16} /> Rezervace
-        </h2>
-
-        <form onSubmit={handleSubmit} className={`space-y-4 ${!selectedTime ? 'opacity-40 pointer-events-none' : ''}`}>
-            <div className={`text-xs space-y-1 mb-4 border-b pb-4 font-medium ${isDark ? 'border-stone-800 text-stone-400' : 'border-stone-100 text-stone-600'}`}>
-              <div className="flex justify-between"><span>Služba:</span><span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{selectedService?.name || '-'}</span></div>
-              <div className="flex justify-between"><span>Cena:</span><span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{selectedService?.isStartingPrice ? '—' : (selectedService?.price != null ? `${selectedService.price} Kč` : '—')}</span></div>
-              {selectedUpsells.length > 0 && (
-                <>
-                  {selectedUpsells.map((u) => (
-                    <div key={u.id} className="flex justify-between">
-                      <span>+ {u.name}:</span>
-                      <span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{u.price} Kč</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between font-medium">
-                    <span>Celkem{selectedUpsells.some(u => u.price_behavior === 'REPLACE') ? '' : ' (+ doplňky)'}:</span>
-                    <span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>
-                      {calculateReservationTotal(selectedService, selectedUpsells)} Kč
-                    </span>
-                  </div>
-                </>
-              )}
-              <div className="flex justify-between"><span>Termín:</span><span className={isDark ? 'font-bold text-stone-100' : 'font-bold text-stone-900'}>{Utils.formatDateDisplay(activeDateStr)} v {selectedTime || '-'}</span></div>
-            </div>
-
-            <input
-              required
-              type="text"
-              placeholder="Vaše jméno"
-              value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className={`w-full p-3 rounded-lg border text-sm font-medium ${isDark ? 'bg-stone-900 border-stone-800 text-stone-200 placeholder-stone-500 focus:ring-[#daa59c]/50 focus:border-[#daa59c]' : 'input-focus border-stone-200 bg-white'}`}
-            />
-            <input
-              required
-              type="tel"
-              placeholder="Telefon"
-              value={formData.phone}
-              onChange={e => setFormData({ ...formData, phone: e.target.value })}
-              className={`w-full p-3 rounded-lg border text-sm font-medium ${isDark ? 'bg-stone-900 border-stone-800 text-stone-200 placeholder-stone-500 focus:ring-[#daa59c]/50 focus:border-[#daa59c]' : 'input-focus border-stone-200 bg-white'}`}
-            />
-            <input
-              required
-              type="email"
-              placeholder="E-mail pro potvrzení"
-              value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
-              className={`w-full p-3 rounded-lg border text-sm font-medium ${isDark ? 'bg-stone-900 border-stone-800 text-stone-200 placeholder-stone-500 focus:ring-[#daa59c]/50 focus:border-[#daa59c]' : 'input-focus border-stone-200 bg-white'}`}
-            />
-
-            <button
-              type="submit"
-              disabled={isSending}
-              className={`w-full py-4 rounded-full font-sans font-semibold text-xs uppercase tracking-widest text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ${isDark ? 'bg-gradient-to-b from-[#B37E76] via-[#D49A91] to-[#B37E76] hover:brightness-95 border border-[#D49A91]/20 shadow-[0_4px_20px_rgba(179,126,118,0.3)] hover:shadow-[0_6px_25px_rgba(179,126,118,0.45)]' : 'bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]'}`}
-            >
-              {isSending ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="animate-spin" size={14} /> Odesílám...
-                </span>
-              ) : (
-                'Potvrdit termín'
-              )}
-            </button>
-          </form>
-      </div>
+      <BookingSummaryForm
+        selectedService={selectedService}
+        selectedUpsells={selectedUpsells}
+        selectedTime={selectedTime}
+        activeDateStr={activeDateStr}
+        isDark={isDark}
+        formData={formData}
+        setFormData={setFormData}
+        isSending={isSending}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 };

@@ -7,13 +7,13 @@ import { Utils } from '../utils/helpers';
 import {
   getCollectionPath,
   getDocPath,
-  EMAILJS_CONFIG,
-  callSendConfirmationSms,
-  callSendReminderSms,
   getAdminWebAuthnRegistrationOptions,
   verifyAdminWebAuthnRegistration,
 } from '../firebaseConfig';
+import { PMU_DURATIONS, CONTACT, COLLECTIONS } from '../constants/config';
+import { sendBookingConfirmations, sendReminders } from '../services/notificationService';
 
+import { useToastContext } from '../contexts/ToastContext';
 import AdminBookingsTab from './admin/AdminBookingsTab';
 import AdminHistoryTab from './admin/AdminHistoryTab';
 import AdminShiftsTab from './admin/AdminShiftsTab';
@@ -26,12 +26,11 @@ import RemindersModal from './admin/RemindersModal';
 import OrderDetailModal from './admin/OrderDetailModal';
 
 const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons = [], serviceAddonLinks = [], onLogout }) => {
+  const toast = useToastContext();
   const [activeTab, setActiveTab] = useState('bookings');
   const [searchTerm, setSearchTerm] = useState('');
   const [adminDateInput, setAdminDateInput] = useState(Utils.getLocalISODate());
   const initialDateSetRef = useRef(false);
-  const [workStart, setWorkStart] = useState('09:00');
-  const [workEnd, setWorkEnd] = useState('17:00');
   const [editingServiceId, setEditingServiceId] = useState(null);
   const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60', description: '', category: 'STANDARD', isStartingPrice: false });
   const [showReminderModal, setShowReminderModal] = useState(false);
@@ -135,26 +134,9 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     return { dailyReservations: daily, historyReservations: history, isGlobalSearchMode: isGlobal };
   }, [reservations, searchTerm, adminDateInput, todayComparable]);
 
-  const currentDayKey = Utils.getDateKeyFromISO(adminDateInput);
-  const dayData = schedule[currentDayKey];
-  const periods = dayData?.periods || (dayData?.start ? [{ start: dayData.start, end: dayData.end }] : []);
-
-  const handleShift = async (action, index) => {
-    if (action === 'add') {
-      const newP = [...periods, { start: workStart, end: workEnd }].sort(
-        (a, b) => Utils.timeToMinutes(a.start) - Utils.timeToMinutes(b.start)
-      );
-      await setDoc(getDocPath('schedule', currentDayKey), { periods: newP });
-    } else if (action === 'remove') {
-      const newP = periods.filter((_, i) => i !== index);
-      const ref = getDocPath('schedule', currentDayKey);
-      newP.length === 0 ? await deleteDoc(ref) : await setDoc(ref, { periods: newP });
-    }
-  };
-
   const handleSaveDay = async (dateKey, type, periodsToSave) => {
-    const scheduleRef = getDocPath('schedule', dateKey);
-    const schedulePmuRef = getDocPath('schedule_pmu', dateKey);
+    const scheduleRef = getDocPath(COLLECTIONS.SCHEDULE, dateKey);
+    const schedulePmuRef = getDocPath(COLLECTIONS.SCHEDULE_PMU, dateKey);
     if (type === 'closed') {
       await Promise.all([deleteDoc(scheduleRef).catch(() => {}), deleteDoc(schedulePmuRef).catch(() => {})]);
     } else if (type === 'kosmetika') {
@@ -175,7 +157,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   };
 
   const saveServiceAddonLinks = async (mainServiceId) => {
-    const col = getCollectionPath('service_addon_links');
+    const col = getCollectionPath(COLLECTIONS.SERVICE_ADDON_LINKS);
     const snapshot = await getDocs(query(col, where('main_service_id', '==', mainServiceId)));
     await Promise.all(snapshot.docs.map((d) => deleteDoc(d.ref)));
     const toAdd = editingAddonLinks.filter((row) => row.addon_id);
@@ -203,21 +185,21 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     const updateData = { ...data };
     if (updateData.order === undefined) delete updateData.order;
     if (editingServiceId) {
-      await updateDoc(getDocPath('services', editingServiceId), updateData);
+      await updateDoc(getDocPath(COLLECTIONS.SERVICES, editingServiceId), updateData);
       await saveServiceAddonLinks(editingServiceId);
       setEditingServiceId(null);
       setEditingAddonLinks([]);
     } else {
-      await addDoc(getCollectionPath('services'), data);
+      await addDoc(getCollectionPath(COLLECTIONS.SERVICES), data);
     }
     setServiceForm({ name: '', price: '', duration: '60', description: '', category: 'STANDARD', isStartingPrice: false });
   };
 
   const handleDeleteService = async (id) => {
-    if (confirm('Smazat tuto proceduru?')) await deleteDoc(getDocPath('services', id));
+    if (confirm('Smazat tuto proceduru?')) await deleteDoc(getDocPath(COLLECTIONS.SERVICES, id));
   };
 
-  const PMU_DURATIONS = [180, 210, 240, 270];
+  // PMU_DURATIONS imported from constants/config
   const startEdit = (s) => {
     setActiveTab('services');
     setEditingServiceId(s.id);
@@ -244,7 +226,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     const [movedItem] = newServices.splice(index, 1);
     newServices.splice(targetIndex, 0, movedItem);
     const updatePromises = newServices.map((service, idx) =>
-      updateDoc(getDocPath('services', service.id), { order: idx })
+      updateDoc(getDocPath(COLLECTIONS.SERVICES, service.id), { order: idx })
     );
     await Promise.all(updatePromises);
   };
@@ -272,14 +254,14 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     const [movedItem] = newServices.splice(draggedItemIndex, 1);
     newServices.splice(dropIndex, 0, movedItem);
     const updatePromises = newServices.map((service, index) =>
-      updateDoc(getDocPath('services', service.id), { order: index })
+      updateDoc(getDocPath(COLLECTIONS.SERVICES, service.id), { order: index })
     );
     await Promise.all(updatePromises);
   };
 
   const handleDeleteRes = async (id) => {
     if (confirm('Smazat rezervaci?')) {
-      await deleteDoc(getDocPath('reservations', id));
+      await deleteDoc(getDocPath(COLLECTIONS.RESERVATIONS, id));
       setSelectedOrder(null);
     }
   };
@@ -301,64 +283,26 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
 
   const handleReminders = async () => {
     setIsSendingReminders(true);
-    const withPhone = remindersList.filter((r) => r.phone && String(r.phone).trim());
-    const withEmail = remindersList.filter((r) => r.email && String(r.email).trim());
-    let smsSent = 0;
-    let emailSent = 0;
-
-    if (withPhone.length > 0) {
-      try {
-        const payload = {
-          reservations: withPhone.map((r) => ({
-            id: r.id,
-            phone: r.phone,
-            name: r.name,
-            date: r.date,
-            time: r.time,
-            serviceName: r.serviceName || 'rezervace',
-          })),
-        };
-        const result = await callSendReminderSms(payload);
-        smsSent = result?.data?.sent ?? 0;
-      } catch (e) {
-        console.error('SMS připomínky:', e);
-      }
-    }
-
-    for (const res of withEmail) {
-      try {
-        if (EMAILJS_CONFIG.PUBLIC_KEY) {
-          await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              service_id: EMAILJS_CONFIG.SERVICE_ID,
-              template_id: EMAILJS_CONFIG.REMINDER_TEMPLATE,
-              user_id: EMAILJS_CONFIG.PUBLIC_KEY,
-              template_params: {
-                name: res.name,
-                to_email: res.email,
-                date: Utils.formatDateDisplay(res.date),
-                time: res.time,
-                service: res.serviceName,
-                reply_to: 'rezervace@skinstudio.cz',
-              },
-            }),
-          });
+    try {
+      const { smsSent, emailSent } = await sendReminders(remindersList);
+      for (const res of remindersList) {
+        try {
+          await updateDoc(getDocPath(COLLECTIONS.RESERVATIONS, res.id), { reminderSent: true });
+        } catch (e) {
+          console.error('Failed to mark reminder sent:', e);
         }
-        await updateDoc(getDocPath('reservations', res.id), { reminderSent: true });
-        emailSent++;
-      } catch (e) {
-        console.error(e);
       }
+      const parts = [];
+      if (smsSent > 0) parts.push(`${smsSent} SMS`);
+      if (emailSent > 0) parts.push(`${emailSent} e-mail`);
+      parts.length ? toast.success(`Odesláno: ${parts.join(', ')}.`) : toast.error('Připomínky se nepodařilo odeslat.');
+    } catch (e) {
+      console.error('Reminders failed:', e);
+      toast.error('Připomínky se nepodařilo odeslat.');
+    } finally {
+      setIsSendingReminders(false);
+      setShowReminderModal(false);
     }
-
-    setIsSendingReminders(false);
-    setShowReminderModal(false);
-    const parts = [];
-    if (smsSent > 0) parts.push(`${smsSent} SMS`);
-    if (emailSent > 0) parts.push(`${emailSent} e-mail`);
-    alert(parts.length ? `Odesláno: ${parts.join(', ')}.` : 'Připomínky se nepodařilo odeslat.');
   };
 
   const openReminders = () => {
@@ -398,7 +342,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     if (sendNotification) {
       const hasContact = (manualForm.phone || '').trim() || (manualForm.email || '').trim();
       if (!hasContact) {
-        alert('Pro odeslání potvrzení vyplňte alespoň telefon nebo e-mail.');
+        toast.info('Pro odeslání potvrzení vyplňte alespoň telefon nebo e-mail.');
         return;
       }
     }
@@ -407,7 +351,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     const phone = (manualForm.phone || '').trim() || null;
     const email = (manualForm.email || '').trim() || null;
     try {
-      await addDoc(getCollectionPath('reservations'), {
+      await addDoc(getCollectionPath(COLLECTIONS.RESERVATIONS), {
         date: manualDateKey,
         time: manualForm.time,
         name: manualForm.name,
@@ -420,42 +364,16 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
         reminderSent: false,
         source: 'admin',
       });
-      if (sendNotification && phone) {
-        try {
-          await callSendConfirmationSms({
-            phone,
-            name: manualForm.name,
-            date: manualDateKey,
-            time: manualForm.time,
-            serviceName: selectedSrv?.name || 'Manual Booking',
-            duration: parseInt(selectedSrv?.duration || 60),
-          });
-        } catch (smsErr) {
-          console.warn('SMS potvrzení se nepodařilo odeslat:', smsErr);
-        }
-      }
-      if (sendNotification && EMAILJS_CONFIG.PUBLIC_KEY && email) {
-        try {
-          await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              service_id: EMAILJS_CONFIG.SERVICE_ID,
-              template_id: EMAILJS_CONFIG.CONFIRM_TEMPLATE,
-              user_id: EMAILJS_CONFIG.PUBLIC_KEY,
-              template_params: {
-                name: manualForm.name,
-                to_email: email,
-                date: Utils.formatDateDisplay(manualDateKey),
-                time: manualForm.time,
-                service: selectedSrv?.name || 'Manual Booking',
-                reply_to: 'rezervace@skinstudio.cz',
-              },
-            }),
-          });
-        } catch (notifErr) {
-          console.error(notifErr);
-        }
+      if (sendNotification) {
+        await sendBookingConfirmations({
+          name: manualForm.name,
+          phone,
+          email,
+          date: manualDateKey,
+          time: manualForm.time,
+          serviceName: selectedSrv?.name || 'Manual Booking',
+          duration: parseInt(selectedSrv?.duration || 60),
+        });
       }
       setShowManualBooking(false);
       setManualForm({
@@ -474,7 +392,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
       }
     } catch (err) {
       console.error(err);
-      alert('Chyba při ukládání.');
+      toast.error('Chyba při ukládání.');
     } finally {
       setIsManualSubmitting(false);
     }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { BookingSuccess } from './CustomerView';
+import BookingSuccess from './booking/BookingSuccess';
 
 export default function ThankYouPage() {
   const location = useLocation();

@@ -3,6 +3,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { getFirestore } from 'firebase-admin/firestore';
 import { defineString } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 initializeApp();
 const db = getFirestore();
@@ -283,6 +284,33 @@ export const formatContent = onRequest(
   }
 );
 
+/**
+ * Callable: verifyAdminPassword
+ * Body: { password }
+ * Server-side admin password verification – password never exposed in client bundle.
+ */
+export const verifyAdminPassword = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const adminPw = adminPasswordParam.value();
+    if (!adminPw) throw new HttpsError('failed-precondition', 'ADMIN_PASSWORD není nastaven v prostředí functions.');
+    const { password } = request.data || {};
+    if (!password || typeof password !== 'string') {
+      throw new HttpsError('invalid-argument', 'Heslo je povinné.');
+    }
+    if (password !== adminPw) {
+      throw new HttpsError('permission-denied', 'Chybné heslo.');
+    }
+
+    const uid = request.auth?.uid;
+    if (uid) {
+      await getAuth().setCustomUserClaims(uid, { admin: true });
+    }
+
+    return { verified: true };
+  }
+);
+
 // --- Admin WebAuthn (Face ID / Touch ID) ---
 const ADMIN_WEBAUTHN_DOC = 'config/admin_webauthn';
 const ADMIN_WEBAUTHN_CHALLENGE_DOC = 'config/admin_webauthn_challenge';
@@ -526,6 +554,10 @@ export const verifyAdminWebAuthnLogin = onCall(
     if (typeof newCounter === 'number') {
       const updated = creds.map((c) => (c.id === cred.id ? { ...c, counter: newCounter } : c));
       await db.doc(ADMIN_WEBAUTHN_DOC).update({ credentials: updated });
+    }
+    const uid = request.auth?.uid;
+    if (uid) {
+      await getAuth().setCustomUserClaims(uid, { admin: true });
     }
     return { verified: true };
   }

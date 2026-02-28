@@ -3,7 +3,8 @@
  * Testuje: výběr služby, termínu a času, formulář, odeslání rezervace (s mockem Firebase/EmailJS).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { renderWithProviders } from '../utils/testUtils';
 import CustomerView from './CustomerView';
 
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
@@ -41,7 +42,7 @@ describe('CustomerView', () => {
 
   // Základní render: zobrazení všech služeb včetně názvů a cen.
   it('renders list of services', () => {
-    render(
+    renderWithProviders(
       <CustomerView
         services={defaultServices}
         schedule={defaultSchedule}
@@ -56,7 +57,7 @@ describe('CustomerView', () => {
 
   // Kroky rezervace: 1. Výběr procedury, 2. Termín, 3. Čas a blok Rezervace.
   it('shows step headers', () => {
-    render(
+    renderWithProviders(
       <CustomerView
         services={defaultServices}
         schedule={defaultSchedule}
@@ -71,7 +72,7 @@ describe('CustomerView', () => {
 
   // Klik na službu: zobrazí se výběr termínů (ne hláška „žádné termíny“ při platném rozvrhu).
   it('selecting a service highlights it and shows date picker', () => {
-    render(
+    renderWithProviders(
       <CustomerView
         services={defaultServices}
         schedule={defaultSchedule}
@@ -85,7 +86,7 @@ describe('CustomerView', () => {
 
   // Prázdný rozvrh: po výběru služby se zobrazí „Momentálně nejsou vypsány žádné termíny.“
   it('shows "no dates" message when schedule has no available days', () => {
-    render(
+    renderWithProviders(
       <CustomerView
         services={defaultServices}
         schedule={{}}
@@ -98,7 +99,7 @@ describe('CustomerView', () => {
 
   // Při vybrané službě a rozvrhu: zobrazí se tlačítka časů (např. 09:00, 09:30).
   it('with schedule and service shows date buttons and time slots', () => {
-    render(
+    renderWithProviders(
       <CustomerView
         services={defaultServices}
         schedule={defaultSchedule}
@@ -112,7 +113,7 @@ describe('CustomerView', () => {
 
   // Po výběru služby a času: formulář obsahuje jméno, telefon, e-mail a tlačítko „Potvrdit termín“.
   it('form has name, phone, email inputs and submit button', () => {
-    render(
+    renderWithProviders(
       <CustomerView
         services={defaultServices}
         schedule={defaultSchedule}
@@ -130,7 +131,7 @@ describe('CustomerView', () => {
 
   // Bez zvoleného času je formulář neaktivní (pointer-events-none).
   it('submit is disabled without time selected', () => {
-    render(
+    renderWithProviders(
       <CustomerView
         services={defaultServices}
         schedule={defaultSchedule}
@@ -145,7 +146,7 @@ describe('CustomerView', () => {
   // Po vyplnění a odeslání: addDoc je zavolán a callback onBookingSuccess se zavolá.
   it('calls onBookingSuccess after successful submit', async () => {
     const onBookingSuccess = vi.fn();
-    render(
+    renderWithProviders(
       <CustomerView
         services={defaultServices}
         schedule={defaultSchedule}
@@ -171,7 +172,7 @@ describe('CustomerView', () => {
 
   // Prop initialServiceId (např. z query ?service=): daná služba je předvybraná (vizuálně zvýrazněná).
   it('applies initialServiceId when provided', () => {
-    render(
+    renderWithProviders(
       <CustomerView
         services={defaultServices}
         schedule={defaultSchedule}
@@ -186,7 +187,7 @@ describe('CustomerView', () => {
 
   // theme=dark: v DOM je třída pro tmavý režim (např. .bg-stone-950).
   it('renders with dark theme when theme=dark', () => {
-    const { container } = render(
+    const { container } = renderWithProviders(
       <CustomerView
         services={defaultServices}
         schedule={defaultSchedule}

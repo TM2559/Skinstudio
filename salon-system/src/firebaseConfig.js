@@ -96,6 +96,11 @@ export const callSendReminderSms = isVitestNoKey
   ? () => Promise.resolve({ data: { sent: 0, errors: [] } })
   : httpsCallable(functions, 'sendReminderSms');
 
+// Admin password verification (server-side)
+export const callVerifyAdminPassword = isVitestNoKey
+  ? () => Promise.resolve({ data: { verified: true } })
+  : httpsCallable(functions, 'verifyAdminPassword');
+
 // Admin WebAuthn (Face ID / Touch ID)
 export const getAdminWebAuthnRegistrationOptions = isVitestNoKey
   ? () => Promise.resolve({ data: {} })

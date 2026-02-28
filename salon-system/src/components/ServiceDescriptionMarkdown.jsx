@@ -21,17 +21,17 @@ function getMarkdownComponents(theme) {
   const accentClass = isDark ? 'font-semibold' : 'font-semibold text-[var(--skin-gold)]';
   const accentStyle = isDark ? { color: ROSE_ACCENT } : undefined;
   return {
-    p: ({ node, children, ...props }) => <p className="mb-3 last:mb-0" {...props}>{children}</p>,
-    strong: ({ node, children, ...props }) => (
+    p: ({ children, ...props }) => <p className="mb-3 last:mb-0" {...props}>{children}</p>,
+    strong: ({ children, ...props }) => (
       <span className={accentClass} style={accentStyle} {...props}>{children}</span>
     ),
-    ul: ({ node, children, ...props }) => (
+    ul: ({ children, ...props }) => (
       <ul className="list-disc pl-5 space-y-2 my-3" {...props}>{children}</ul>
     ),
-    ol: ({ node, children, ...props }) => (
+    ol: ({ children, ...props }) => (
       <ol className="list-decimal pl-5 space-y-2 my-3" {...props}>{children}</ol>
     ),
-    li: ({ node, children, ...props }) => <li className="pl-1" {...props}>{children}</li>,
+    li: ({ children, ...props }) => <li className="pl-1" {...props}>{children}</li>,
   };
 }
 

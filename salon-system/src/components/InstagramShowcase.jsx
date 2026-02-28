@@ -35,8 +35,14 @@ export default function InstagramShowcase() {
 
   const pool = useMemo(() => buildPool(imageList), [imageList]);
   const visibleCount = Math.min(4, pool.length);
-  displayedIndicesRef.current = displayedIndices;
-  poolRef.current = pool;
+
+  useEffect(() => {
+    displayedIndicesRef.current = displayedIndices;
+  }, [displayedIndices]);
+
+  useEffect(() => {
+    poolRef.current = pool;
+  }, [pool]);
 
   useEffect(() => {
     const docRef = getDocPath('config', CONFIG_DOC);

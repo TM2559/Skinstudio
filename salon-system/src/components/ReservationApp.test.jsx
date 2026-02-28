@@ -3,7 +3,8 @@
  * Testuje: výchozí view, přihlašovací formulář, widgetOnly režim, že na rezervaci (kosmetika) neproniknou PMU služby.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import { renderWithProviders } from '../utils/testUtils';
 import { filterCosmeticsServices } from '../utils/helpers';
 import ReservationApp from './ReservationApp';
 
@@ -22,7 +23,7 @@ const defaultSchedule = {
 };
 
 const renderApp = (props = {}) => {
-  return render(<ReservationApp {...props} />);
+  return renderWithProviders(<ReservationApp {...props} />);
 };
 
 describe('ReservationApp', () => {
