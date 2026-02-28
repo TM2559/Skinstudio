@@ -3,7 +3,22 @@
  * Testují převody času, formátování dat, filtraci služeb (kosmetika vs PMU) a logiku volných slotů (getSmartSlots).
  */
 import { describe, it, expect } from 'vitest';
-import { filterCosmeticsServices, filterPmuServices, isPmuService, Utils } from './helpers';
+import { slugify, filterCosmeticsServices, filterPmuServices, isPmuService, Utils } from './helpers';
+
+describe('slugify', () => {
+  it('removes diacritics and produces hyphenated lowercase slug', () => {
+    expect(slugify('Čištění pleti')).toBe('cisteni-pleti');
+    expect(slugify('Pudrové obočí')).toBe('pudrove-oboci');
+  });
+  it('handles empty or invalid input', () => {
+    expect(slugify('')).toBe('');
+    expect(slugify(null)).toBe('');
+    expect(slugify(undefined)).toBe('');
+  });
+  it('strips leading/trailing hyphens and collapses spaces', () => {
+    expect(slugify('  něco  jiného  ')).toBe('neco-jineho');
+  });
+});
 
 describe('isPmuService and filterPmuServices', () => {
   it('isPmuService returns true for category PMU or pmu (case-insensitive)', () => {

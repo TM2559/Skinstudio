@@ -4,6 +4,7 @@ import { addDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { Upload, Trash2, ImageIcon } from 'lucide-react';
 import { storage, getCollectionPath, getDocPath } from '../../firebaseConfig';
 import { COSMETICS_CATEGORY, PMU_CATEGORY, TRANSFORMATIONS_COLLECTION, STORAGE_TRANSFORMATIONS_PREFIX } from '../../constants/cosmetics';
+import { slugify } from '../../utils/helpers';
 import CategoryToggle from './CategoryToggle';
 
 // Client-side image optimization before upload to Storage.
@@ -122,9 +123,10 @@ export default function AdminTransformationsSubTab() {
       const optimizedAfter = await createOptimizedImageFile(imageAfterFile);
 
       const ts = Date.now();
-      const safe = (f) => (f?.name || 'image').replace(/[^a-zA-Z0-9.-]/g, '_');
-      const pathBefore = `${STORAGE_TRANSFORMATIONS_PREFIX}/${ts}-before-${safe(optimizedBefore)}`;
-      const pathAfter = `${STORAGE_TRANSFORMATIONS_PREFIX}/${ts}-after-${safe(optimizedAfter)}`;
+      const categorySlug = category === PMU_CATEGORY ? 'pmu' : 'cosmetics';
+      const titleSlug = slugify(trimmedTitle);
+      const pathBefore = `${STORAGE_TRANSFORMATIONS_PREFIX}/${ts}-${categorySlug}-${titleSlug}-before-uhersky-brod-skin-studio.jpg`;
+      const pathAfter = `${STORAGE_TRANSFORMATIONS_PREFIX}/${ts}-${categorySlug}-${titleSlug}-after-uhersky-brod-skin-studio.jpg`;
       const refBefore = ref(storage, pathBefore);
       const refAfter = ref(storage, pathAfter);
       await uploadBytes(refBefore, optimizedBefore || imageBeforeFile);

@@ -1,3 +1,18 @@
+/**
+ * Slugify for SEO filenames: remove diacritics, spaces, special chars.
+ * e.g. "Čištění pleti" -> "cisteni-pleti"
+ */
+export function slugify(text) {
+  if (text == null || typeof text !== 'string') return '';
+  return text
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 /** Normalized category: STANDARD (cosmetics) vs PMU. Handles legacy lowercase 'pmu'. */
 function normalizeCategory(category) {
   const c = (category || 'STANDARD').toString().toUpperCase();

@@ -4,6 +4,7 @@ import { addDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { storage, getCollectionPath, getDocPath } from '../../firebaseConfig';
 import { COSMETICS_CATEGORY, PMU_CATEGORY, GALLERY_COLLECTION, STORAGE_GALLERY_PREFIX } from '../../constants/cosmetics';
+import { slugify } from '../../utils/helpers';
 import CategoryToggle from './CategoryToggle';
 
 // Client-side image optimization before upload to Storage (same logic as Proměny).
@@ -115,8 +116,12 @@ export default function AdminGallerySubTab() {
     try {
       const optimized = await createOptimizedImageFile(selectedFile);
       const ts = Date.now();
-      const safe = (f) => (f?.name || 'image').replace(/[^a-zA-Z0-9.-]/g, '_');
-      const path = `${STORAGE_GALLERY_PREFIX}/${ts}-${safe(optimized)}`;
+      const categorySlug = category === PMU_CATEGORY ? 'pmu' : 'cosmetics';
+      const parts = [categorySlug];
+      if ((caption || '').trim()) parts.push(slugify(caption.trim()));
+      parts.push('uhersky-brod', 'skin-studio');
+      const slugPart = parts.join('-');
+      const path = `${STORAGE_GALLERY_PREFIX}/${ts}-${slugPart}.jpg`;
       const storageRef = ref(storage, path);
       await uploadBytes(storageRef, optimized || selectedFile);
       const imageUrl = await getDownloadURL(storageRef);
