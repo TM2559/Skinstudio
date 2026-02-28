@@ -295,7 +295,18 @@ function getAllowedOrigins() {
     'http://127.0.0.1',
     'http://127.0.0.1:5173',
     'https://localhost',
+    'https://tm-reservations.web.app',
+    'https://tm-reservations.firebaseapp.com',
   ];
+}
+
+function getExtraOriginHosts() {
+  try {
+    const raw = process.env.WEBAPP_ORIGIN_HOSTS || '';
+    return raw.split(',').map((h) => h.trim().toLowerCase()).filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 function isOriginAllowed(origin) {
@@ -303,8 +314,9 @@ function isOriginAllowed(origin) {
   const o = origin.replace(/\/$/, '');
   if (getAllowedOrigins().includes(o)) return true;
   try {
-    const host = new URL(origin).hostname;
+    const host = new URL(origin).hostname.toLowerCase();
     if (host === 'localhost' || host.endsWith('.web.app') || host.endsWith('.firebaseapp.com')) return true;
+    if (getExtraOriginHosts().includes(host)) return true;
     return false;
   } catch {
     return false;
