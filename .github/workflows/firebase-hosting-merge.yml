@@ -1,8 +1,9 @@
+# Deploy na Firebase Hosting při push do main (produkce)
 name: Deploy to Firebase Hosting on merge
 on:
   push:
     branches:
-      - main
+      - main  # main = produkce
   workflow_dispatch:  # Ruční spuštění v záložce Actions
 jobs:
   build_and_deploy:

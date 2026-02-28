@@ -1,9 +1,9 @@
-# Build (test + vite) na push do main – ověří, že build projde.
+# Build (test + vite) na push do main (produkce) – ověří, že build projde.
 name: Build
 on:
   push:
     branches:
-      - main
+      - main  # main = produkce
   workflow_dispatch:  # Ruční spuštění v záložce Actions
 jobs:
   build:
