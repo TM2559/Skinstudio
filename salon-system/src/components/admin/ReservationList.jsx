@@ -1,14 +1,23 @@
 import React from 'react';
-import { Mail, UserX } from 'lucide-react';
+import { Mail, UserX, PlusCircle } from 'lucide-react';
 import { Utils } from '../../utils/helpers';
 
 const hasContact = (val) => (val != null && String(val).trim() !== '');
 
-const ReservationList = ({ data, emptyMsg, onSelectOrder, todayKey }) => (
+const ReservationList = ({ data, emptyMsg, onSelectOrder, onAddReservation, todayKey }) => (
   <div className="space-y-3">
     {data.length === 0 && (
-      <div className="text-center py-10 bg-stone-50 rounded-xl border border-stone-100">
-        <p className="text-stone-400 italic text-sm">{emptyMsg}</p>
+      <div className="text-left py-6">
+        <p className="text-stone-500 text-sm mb-4">{emptyMsg}</p>
+        {onAddReservation && (
+          <button
+            type="button"
+            onClick={onAddReservation}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-stone-800 text-white text-sm font-semibold rounded-xl hover:bg-stone-700 transition-colors"
+          >
+            <PlusCircle size={16} /> Přidat rezervaci
+          </button>
+        )}
       </div>
     )}
 

@@ -109,7 +109,32 @@ export const Utils = {
     const offset = d.getTimezoneOffset() * 60000;
     return new Date(d.getTime() - offset).toISOString().split('T')[0];
   },
-  
+
+  /** dateKey DD-MM-YYYY → ISO YYYY-MM-DD (pro type="date" a setAdminDateInput). */
+  getISOFromDateKey: (dateKey) => {
+    if (!dateKey) return '';
+    const [d, m, y] = dateKey.split('-');
+    return `${y}-${m}-${d}`;
+  },
+
+  /**
+   * Vrátí nejbližší datum s alespoň jednou rezervací (dnes nebo v budoucnu).
+   * reservations: pole objektů s .date (DD-MM-YYYY).
+   * Návrat: ISO řetězec YYYY-MM-DD.
+   */
+  getNearestDateWithReservations: (reservations) => {
+    const todayISO = Utils.getLocalISODate();
+    const todayKey = Utils.getDateKeyFromISO(todayISO);
+    const todayNum = parseInt(todayKey.split('-').reverse().join(''), 10); // YYYYMMDD pro porovnání
+    const futureDates = [...new Set((reservations || []).map((r) => r.date).filter(Boolean))]
+      .map((key) => ({ key, num: parseInt(key.split('-').reverse().join(''), 10) }))
+      .filter(({ num }) => num >= todayNum)
+      .sort((a, b) => a.num - b.num);
+    if (futureDates.length === 0) return todayISO;
+    const firstKey = futureDates[0].key;
+    return firstKey === todayKey ? todayISO : Utils.getISOFromDateKey(firstKey);
+  },
+
   generateTimeOptions: () => {
     const opts = [];
     for (let i = 6; i <= 22; i++) {

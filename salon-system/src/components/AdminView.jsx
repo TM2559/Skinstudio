@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package, Image as ImageIcon, Scissors } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { Utils } from '../utils/helpers';
@@ -19,6 +19,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   const [activeTab, setActiveTab] = useState('bookings');
   const [searchTerm, setSearchTerm] = useState('');
   const [adminDateInput, setAdminDateInput] = useState(Utils.getLocalISODate());
+  const initialDateSetRef = useRef(false);
   const [workStart, setWorkStart] = useState('09:00');
   const [workEnd, setWorkEnd] = useState('17:00');
   const [editingServiceId, setEditingServiceId] = useState(null);
@@ -42,6 +43,13 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
   const [editingAddonLinks, setEditingAddonLinks] = useState([]);
 
+  // Při načtení: pokud dnešek nemá rezervace, aktivní datum = nejbližší den s rezervací
+  useEffect(() => {
+    if (reservations.length === 0 || initialDateSetRef.current) return;
+    setAdminDateInput(Utils.getNearestDateWithReservations(reservations));
+    initialDateSetRef.current = true;
+  }, [reservations]);
+
   const getComparableDate = (dateStr) => {
     if (!dateStr) return 0;
     const [d, m, y] = dateStr.split('-');
@@ -51,24 +59,34 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   const todayKey = Utils.formatDateKey(new Date());
   const todayComparable = getComparableDate(todayKey);
 
-  const { dailyReservations, historyReservations } = useMemo(() => {
+  const matchSearch = (r, term) => {
+    if (!term || term.length < 3) return true;
+    const t = term.toLowerCase().trim();
+    return (
+      (r.name && r.name.toLowerCase().includes(t)) ||
+      (r.phone && String(r.phone).includes(term)) ||
+      (r.email && r.email.toLowerCase().includes(t)) ||
+      (r.serviceName && r.serviceName.toLowerCase().includes(t)) ||
+      (r.id && r.id.toLowerCase().includes(t))
+    );
+  };
+
+  const { dailyReservations, historyReservations, isGlobalSearchMode } = useMemo(() => {
     const sorted = [...reservations].sort((a, b) => {
       const dateDiff = getComparableDate(a.date) - getComparableDate(b.date);
       if (dateDiff !== 0) return dateDiff;
       return a.time.localeCompare(b.time);
     });
-    const filtered = sorted.filter(
-      (r) =>
-        r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.phone && r.phone.includes(searchTerm)) ||
-        (r.email && r.email.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filtered = sorted.filter((r) => matchSearch(r, searchTerm));
     const selectedDateKey = Utils.getDateKeyFromISO(adminDateInput);
-    const daily = filtered.filter((r) => r.date === selectedDateKey);
+    const isGlobal = searchTerm.length >= 3;
+    const daily = isGlobal
+      ? filtered.filter((r) => getComparableDate(r.date) >= todayComparable)
+      : filtered.filter((r) => r.date === selectedDateKey);
     const history = filtered
       .filter((r) => getComparableDate(r.date) < todayComparable)
       .reverse();
-    return { dailyReservations: daily, historyReservations: history };
+    return { dailyReservations: daily, historyReservations: history, isGlobalSearchMode: isGlobal };
   }, [reservations, searchTerm, adminDateInput, todayComparable]);
 
   const currentDayKey = Utils.getDateKeyFromISO(adminDateInput);
@@ -516,7 +534,10 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
             dailyReservations={dailyReservations}
             onOpenReminders={openReminders}
             onSelectOrder={setSelectedOrder}
+            onAddReservation={() => setShowManualBooking(true)}
             todayKey={todayKey}
+            reservations={reservations}
+            isGlobalSearchMode={isGlobalSearchMode}
           />
         )}
         {activeTab === 'history' && (
