@@ -35,6 +35,7 @@ jobs:
         working-directory: salon-system/functions
         run: |
           cat > .env <<EOL
+          ADMIN_PASSWORD=${{ secrets.VITE_ADMIN_PASSWORD }}
           BULKGATE_APPLICATION_ID=${{ secrets.BULKGATE_APPLICATION_ID }}
           BULKGATE_APPLICATION_TOKEN=${{ secrets.BULKGATE_APPLICATION_TOKEN }}
           BULKGATE_SENDER_ID=${{ secrets.BULKGATE_SENDER_ID }}
