@@ -311,16 +311,37 @@ function getExtraOriginHosts() {
 
 function isOriginAllowed(origin) {
   if (!origin || typeof origin !== 'string') return false;
-  const o = origin.replace(/\/$/, '');
+  const o = origin.replace(/\/$/, '').trim();
+  if (!o) return false;
   if (getAllowedOrigins().includes(o)) return true;
   try {
-    const host = new URL(origin).hostname.toLowerCase();
+    const url = new URL(origin);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return false;
+    const host = url.hostname.toLowerCase();
     if (host === 'localhost' || host.endsWith('.web.app') || host.endsWith('.firebaseapp.com')) return true;
     if (getExtraOriginHosts().includes(host)) return true;
     return false;
   } catch {
     return false;
   }
+}
+
+/** Získá origin z request.data nebo z HTTP hlaviček (pro callable). */
+function getOriginFromRequest(request) {
+  const fromData = request.data?.origin;
+  if (fromData && typeof fromData === 'string' && fromData.trim()) return fromData.trim();
+  const raw = request.rawRequest;
+  const h = raw?.headers;
+  const originVal = (h && (typeof h.get === 'function' ? h.get('origin') : h.origin)) ?? null;
+  if (typeof originVal === 'string' && originVal.trim()) return originVal.trim();
+  const referer = (h && (typeof h.get === 'function' ? h.get('referer') : h.referer)) ?? null;
+  if (typeof referer === 'string' && referer.trim()) {
+    try {
+      const u = new URL(referer);
+      return `${u.protocol}//${u.host}`;
+    } catch (_) {}
+  }
+  return null;
 }
 
 function getRpIdFromOrigin(origin) {
@@ -338,9 +359,12 @@ export const getAdminWebAuthnRegistrationOptions = onCall(
     const { generateRegistrationOptions } = await import('@simplewebauthn/server');
     const adminPw = adminPasswordParam.value();
     if (!adminPw) throw new HttpsError('failed-precondition', 'ADMIN_PASSWORD není nastaven v prostředí functions.');
-    const { password, origin } = request.data || {};
+    const { password } = request.data || {};
+    const origin = getOriginFromRequest(request);
     if (password !== adminPw) throw new HttpsError('permission-denied', 'Chybné heslo.');
-    if (!isOriginAllowed(origin)) throw new HttpsError('invalid-argument', 'Neplatný origin.');
+    if (!origin || !isOriginAllowed(origin)) {
+      throw new HttpsError('invalid-argument', `Neplatný origin. Obdrženo: ${origin ?? '(prázdné)'}`);
+    }
     const rpID = getRpIdFromOrigin(origin);
     const rpName = 'Skin Studio Admin';
     const options = await generateRegistrationOptions({
@@ -372,9 +396,12 @@ export const verifyAdminWebAuthnRegistration = onCall(
     const { verifyRegistrationResponse } = await import('@simplewebauthn/server');
     const adminPw = adminPasswordParam.value();
     if (!adminPw) throw new HttpsError('failed-precondition', 'ADMIN_PASSWORD není nastaven.');
-    const { password, origin, credential } = request.data || {};
+    const { password, credential } = request.data || {};
+    const origin = getOriginFromRequest(request);
     if (password !== adminPw) throw new HttpsError('permission-denied', 'Chybné heslo.');
-    if (!isOriginAllowed(origin)) throw new HttpsError('invalid-argument', 'Neplatný origin.');
+    if (!origin || !isOriginAllowed(origin)) {
+      throw new HttpsError('invalid-argument', `Neplatný origin. Obdrženo: ${origin ?? '(prázdné)'}`);
+    }
     const rpID = getRpIdFromOrigin(origin);
     const snap = await db.doc(ADMIN_WEBAUTHN_CHALLENGE_DOC).get();
     const data = snap.data();
@@ -420,8 +447,10 @@ export const getAdminWebAuthnLoginOptions = onCall(
   { region: 'europe-west1' },
   async (request) => {
     const { generateAuthenticationOptions } = await import('@simplewebauthn/server');
-    const { origin } = request.data || {};
-    if (!isOriginAllowed(origin)) throw new HttpsError('invalid-argument', 'Neplatný origin.');
+    const origin = getOriginFromRequest(request);
+    if (!origin || !isOriginAllowed(origin)) {
+      throw new HttpsError('invalid-argument', `Neplatný origin. Obdrženo: ${origin ?? '(prázdné)'}`);
+    }
     const rpID = getRpIdFromOrigin(origin);
     const docSnap = await db.doc(ADMIN_WEBAUTHN_DOC).get();
     const data = docSnap.data();
@@ -446,8 +475,11 @@ export const verifyAdminWebAuthnLogin = onCall(
   { region: 'europe-west1' },
   async (request) => {
     const { verifyAuthenticationResponse } = await import('@simplewebauthn/server');
-    const { origin, assertion } = request.data || {};
-    if (!isOriginAllowed(origin)) throw new HttpsError('invalid-argument', 'Neplatný origin.');
+    const { assertion } = request.data || {};
+    const origin = getOriginFromRequest(request);
+    if (!origin || !isOriginAllowed(origin)) {
+      throw new HttpsError('invalid-argument', `Neplatný origin. Obdrženo: ${origin ?? '(prázdné)'}`);
+    }
     const rpID = getRpIdFromOrigin(origin);
     const docSnap = await db.doc(ADMIN_WEBAUTHN_DOC).get();
     const creds = (docSnap.data() && docSnap.data().credentials) || [];
