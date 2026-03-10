@@ -226,6 +226,8 @@ export default function LandingPage({ services = [] }) {
                     +420 724 875 558
                   </a>
                 </li>
+                <li className="text-[var(--skin-charcoal)]">IČO {WEB_CONTENT.footer.ico}</li>
+                <li className="text-xs text-[#6b6560]">{WEB_CONTENT.footer.tradeRegisterText}</li>
                 <li>
                   <a
                     href="mailto:info@skinstudio.cz"
