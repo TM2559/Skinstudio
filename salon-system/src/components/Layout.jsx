@@ -197,6 +197,12 @@ export default function Layout({ children, setView }) {
                   {WEB_CONTENT.footer.phone}
                 </a>
               </p>
+              <p className="flex items-center gap-2 md:justify-end">
+                IČO {WEB_CONTENT.footer.ico}
+              </p>
+              <p className="flex items-center gap-2 md:justify-end text-xs text-gray-400">
+                {WEB_CONTENT.footer.tradeRegisterText}
+              </p>
             </address>
           </div>
         </div>
