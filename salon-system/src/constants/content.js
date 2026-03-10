@@ -96,6 +96,18 @@ export const WEB_CONTENT = {
     ico: '03120368',
     tradeRegisterText: 'Osoba zapsaná v živnostenském rejstříku.',
     copyright: '© 2024 Skin Studio Lucie Metelková. Všechna práva vyhrazena.',
+    /** Odkaz v patičce na stránku Zpracování osobních údajů */
+    privacyLinkLabel: 'Zpracování osobních údajů',
+  },
+
+  /** Stránka Zpracování osobních údajů (GDPR) – nadpisy pro accordion */
+  privacy: {
+    pageTitle: 'Zpracování osobních údajů',
+    section1Title: '1. Kdo jsme (Správce údajů)',
+    section2Title: '2. Jaké údaje sbíráme a proč (Účel a právní základ)',
+    section3Title: '3. Komu údaje předáváme (Zpracovatelé)',
+    section4Title: '4. Jak dlouho data uchováváme',
+    section5Title: '5. Jaká jsou vaše práva',
   },
 
   /** Contact section (e.g. on landing / #kontakt) */

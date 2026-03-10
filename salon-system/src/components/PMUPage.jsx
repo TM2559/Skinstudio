@@ -421,9 +421,17 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
         </div>
         <div className="border-t border-white/5">
           <div className="container mx-auto px-6 py-4 flex flex-row flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-[#A1A1AA]/60">
-              {WEB_CONTENT.footer.copyright}
-            </p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <p className="text-xs text-[#A1A1AA]/60">
+                {WEB_CONTENT.footer.copyright}
+              </p>
+              <Link
+                to="/zpracovani-osobnich-udaju"
+                className="text-xs text-[#A1A1AA]/60 hover:text-[#C48F83] transition-colors"
+              >
+                {WEB_CONTENT.footer.privacyLinkLabel}
+              </Link>
+            </div>
             <DeveloperSignature theme="dark" />
           </div>
         </div>

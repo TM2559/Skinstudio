@@ -276,6 +276,10 @@ export default function LandingPage({ services = [] }) {
 
           <p className="text-center text-sm text-stone-400 mt-16 pt-8 border-t" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
             © 2024 Skin Studio Lucie Metelková
+            {' · '}
+            <Link to="/zpracovani-osobnich-udaju" className="hover:text-stone-600 transition-colors">
+              {WEB_CONTENT.footer.privacyLinkLabel}
+            </Link>
           </p>
         </div>
       </footer>

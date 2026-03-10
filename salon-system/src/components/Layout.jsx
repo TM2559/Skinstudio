@@ -211,9 +211,17 @@ export default function Layout({ children, setView }) {
         {/* Bottom bar */}
         <div className="border-t border-gray-700/60">
           <div className="container mx-auto px-6 py-4 flex flex-row flex-wrap items-center justify-between gap-2">
-            <p className="text-xs">
-              {WEB_CONTENT.footer.copyright}
-            </p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <p className="text-xs">
+                {WEB_CONTENT.footer.copyright}
+              </p>
+              <Link
+                to="/zpracovani-osobnich-udaju"
+                className="text-xs text-gray-400 hover:text-[#8C5E35] transition-colors"
+              >
+                {WEB_CONTENT.footer.privacyLinkLabel}
+              </Link>
+            </div>
             <DeveloperSignature theme="dark" />
           </div>
         </div>
