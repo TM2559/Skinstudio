@@ -36,6 +36,8 @@ export default function ReservationApp({
   reservations,
   addons = [],
   serviceAddonLinks = [],
+  voucherTemplates = [],
+  voucherOrders = [],
   widgetOnly = false,
   mode = 'light',
 }) {
@@ -291,6 +293,8 @@ export default function ReservationApp({
               reservations={reservations}
               addons={addons}
               serviceAddonLinks={serviceAddonLinks}
+              voucherTemplates={voucherTemplates}
+              voucherOrders={voucherOrders}
               onLogout={() => {
                 setView('customer');
                 setAdminPassword('');
