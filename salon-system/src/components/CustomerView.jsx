@@ -10,6 +10,7 @@ import ServiceSelector from './booking/ServiceSelector';
 import DateStrip from './booking/DateStrip';
 import TimeGrid from './booking/TimeGrid';
 import BookingSummaryForm, { calculateReservationTotal } from './booking/BookingSummaryForm';
+import PrivacySlideOver from './PrivacySlideOver';
 
 const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBookingSuccess, initialServiceId, theme = 'light' }) => {
   const navigate = useNavigate();
@@ -38,6 +39,7 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
   const [isSending, setIsSending] = useState(false);
   const [selectedUpsells, setSelectedUpsells] = useState([]);
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
 
   const effectiveSchedule = useMemo(() => {
     if (selectedService && isPmuService(selectedService) && schedulePmu && Object.keys(schedulePmu).length > 0) {
@@ -219,6 +221,12 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
         setFormData={setFormData}
         isSending={isSending}
         onSubmit={handleSubmit}
+        onOpenPrivacyModal={() => setPrivacyModalOpen(true)}
+      />
+      <PrivacySlideOver
+        open={privacyModalOpen}
+        onClose={() => setPrivacyModalOpen(false)}
+        isDark={isDark}
       />
     </div>
   );
