@@ -114,3 +114,10 @@ export const getAdminWebAuthnLoginOptions = isVitestNoKey
 export const verifyAdminWebAuthnLogin = isVitestNoKey
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'verifyAdminWebAuthnLogin');
+
+export const callCreateVoucherOrder = isVitestNoKey
+  ? () => Promise.resolve({ data: { orderId: 'test-id', total_price: 0 } })
+  : httpsCallable(functions, 'createVoucherOrder');
+export const callUpdateVoucherOrderStatus = isVitestNoKey
+  ? () => Promise.resolve({ data: { success: true, smsSent: false } })
+  : httpsCallable(functions, 'updateVoucherOrderStatus');

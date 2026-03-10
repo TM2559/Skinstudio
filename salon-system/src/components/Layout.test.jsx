@@ -50,4 +50,17 @@ describe('Layout', () => {
     fireEvent.click(link);
     expect(setView).toHaveBeenCalledWith('customer');
   });
+
+  it('hides footer and Instagram on voucher checkout route /darkove-poukazy', () => {
+    mockUseLocation.mockReturnValueOnce({ pathname: '/darkove-poukazy' });
+    const { container } = render(<Layout setView={vi.fn()}><span>Content</span></Layout>);
+    expect(container.querySelector('footer#kontakt')).not.toBeInTheDocument();
+    expect(container.querySelector('main')).toBeInTheDocument();
+  });
+
+  it('hides footer and Instagram on voucher success route /poukaz/success', () => {
+    mockUseLocation.mockReturnValueOnce({ pathname: '/poukaz/success' });
+    const { container } = render(<Layout setView={vi.fn()}><span>Content</span></Layout>);
+    expect(container.querySelector('footer#kontakt')).not.toBeInTheDocument();
+  });
 });

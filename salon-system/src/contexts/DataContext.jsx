@@ -27,6 +27,8 @@ export function DataProvider({ children }) {
   const [services, setServices] = useState([]);
   const [addons, setAddons] = useState([]);
   const [serviceAddonLinks, setServiceAddonLinks] = useState([]);
+  const [voucherTemplates, setVoucherTemplates] = useState([]);
+  const [voucherOrders, setVoucherOrders] = useState([]);
 
   useEffect(() => {
     const init = async () => {
@@ -59,6 +61,8 @@ export function DataProvider({ children }) {
       onSnapshot(query(getCollectionPath(COLLECTIONS.SERVICES)), (s) => setServices([...mapDocs(s)].sort((a, b) => (a.order || 0) - (b.order || 0))), onError('services')),
       onSnapshot(query(getCollectionPath(COLLECTIONS.ADDONS)), (s) => setAddons(mapDocs(s)), onError('addons')),
       onSnapshot(query(getCollectionPath(COLLECTIONS.SERVICE_ADDON_LINKS)), (s) => setServiceAddonLinks(mapDocs(s)), onError('service_addon_links')),
+      onSnapshot(query(getCollectionPath(COLLECTIONS.VOUCHER_TEMPLATES)), (s) => setVoucherTemplates([...mapDocs(s)].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))), onError('voucher_templates')),
+      onSnapshot(query(getCollectionPath(COLLECTIONS.VOUCHER_ORDERS)), (s) => setVoucherOrders([...mapDocs(s)].sort((a, b) => (b.created_at?.toMillis?.() ?? 0) - (a.created_at?.toMillis?.() ?? 0))), onError('voucher_orders')),
     ];
     return () => unsubs.forEach((u) => u());
   }, [user]);
@@ -103,10 +107,12 @@ export function DataProvider({ children }) {
     services,
     addons,
     serviceAddonLinks,
+    voucherTemplates,
+    voucherOrders,
     servicesStandardOnly,
     servicesWithAddons,
     servicesStandardWithAddons,
-  }), [loading, reservations, schedule, schedulePmu, services, addons, serviceAddonLinks, servicesStandardOnly, servicesWithAddons, servicesStandardWithAddons]);
+  }), [loading, reservations, schedule, schedulePmu, services, addons, serviceAddonLinks, voucherTemplates, voucherOrders, servicesStandardOnly, servicesWithAddons, servicesStandardWithAddons]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

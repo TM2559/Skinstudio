@@ -54,6 +54,26 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /voucher_templates/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /artifacts/{appId}/public/data/voucher_templates/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /voucher_orders/{docId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /artifacts/{appId}/public/data/voucher_orders/{docId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

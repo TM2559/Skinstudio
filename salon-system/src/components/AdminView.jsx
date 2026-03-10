@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package, Image as ImageIcon, Scissors, ScanFace } from 'lucide-react';
+import { Calendar, Clock, LogOut, PlusCircle, Archive, Instagram, Package, Image as ImageIcon, Scissors, ScanFace, Gift, ShoppingBag } from 'lucide-react';
 import { addDoc, deleteDoc, updateDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { startRegistration } from '@simplewebauthn/browser';
 import { platformAuthenticatorIsAvailable } from '@simplewebauthn/browser';
 import { Utils } from '../utils/helpers';
 import {
+  auth,
   getCollectionPath,
   getDocPath,
   getAdminWebAuthnRegistrationOptions,
@@ -21,11 +22,13 @@ import AdminServicesTab from './admin/AdminServicesTab';
 import AdminAddonsTab from './admin/AdminAddonsTab';
 import AdminInstagramTab from './admin/AdminInstagramTab';
 import AdminPhotosTab from './admin/AdminPhotosTab';
+import AdminVouchersTab from './admin/AdminVouchersTab';
+import AdminOrdersTab from './admin/AdminOrdersTab';
 import ManualBookingModal from './admin/ManualBookingModal';
 import RemindersModal from './admin/RemindersModal';
 import OrderDetailModal from './admin/OrderDetailModal';
 
-const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons = [], serviceAddonLinks = [], onLogout }) => {
+const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons = [], serviceAddonLinks = [], voucherTemplates = [], voucherOrders = [], onLogout }) => {
   const toast = useToastContext();
   const [activeTab, setActiveTab] = useState('bookings');
   const [searchTerm, setSearchTerm] = useState('');
@@ -197,6 +200,64 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
 
   const handleDeleteService = async (id) => {
     if (confirm('Smazat tuto proceduru?')) await deleteDoc(getDocPath(COLLECTIONS.SERVICES, id));
+  };
+
+  const handleSaveVoucher = async (payload, editingId) => {
+    const col = getCollectionPath(COLLECTIONS.VOUCHER_TEMPLATES);
+    const data = {
+      type: payload.type,
+      service_id: payload.service_id || null,
+      category: payload.category || (payload.type === 'value' ? 'value' : 'cosmetics'),
+      name: payload.name,
+      description: payload.description || '',
+      price: payload.price,
+      is_active: payload.is_active !== false,
+      sort_order: editingId ? undefined : voucherTemplates.length,
+    };
+    try {
+      // Obnovit token, aby obsahoval custom claim admin: true (nastavený po přihlášení)
+      await auth.currentUser?.getIdToken(true);
+      if (editingId) {
+        const updateData = { ...data };
+        delete updateData.sort_order;
+        await updateDoc(getDocPath(COLLECTIONS.VOUCHER_TEMPLATES, editingId), updateData);
+        toast.success('Poukaz byl uložen.');
+      } else {
+        await addDoc(col, data);
+        toast.success('Poukaz byl vytvořen.');
+      }
+    } catch (err) {
+      console.error('Save voucher failed:', err);
+      const msg = err?.message || '';
+      if (msg.includes('permission-denied') || msg.includes('Missing or insufficient permissions')) {
+        toast.error('Nemáte oprávnění ukládat poukazy. Zkuste se znovu přihlásit do adminu.');
+      } else {
+        toast.error('Poukaz se nepodařilo uložit. Zkuste to znovu.');
+      }
+      throw err;
+    }
+  };
+
+  const handleDeleteVoucher = async (id) => {
+    if (!confirm('Smazat tento dárkový poukaz?')) return;
+    try {
+      await auth.currentUser?.getIdToken(true);
+      await deleteDoc(getDocPath(COLLECTIONS.VOUCHER_TEMPLATES, id));
+      toast.success('Poukaz byl smazán.');
+    } catch (err) {
+      console.error('Delete voucher failed:', err);
+      toast.error('Poukaz se nepodařilo smazat. Zkuste to znovu.');
+    }
+  };
+
+  const handleToggleVoucherActive = async (id, isActive) => {
+    try {
+      await auth.currentUser?.getIdToken(true);
+      await updateDoc(getDocPath(COLLECTIONS.VOUCHER_TEMPLATES, id), { is_active: isActive });
+    } catch (err) {
+      console.error('Toggle voucher active:', err);
+      toast.error('Změna stavu se nepovedla.');
+    }
   };
 
   // PMU_DURATIONS imported from constants/config
@@ -494,6 +555,24 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           >
             <ImageIcon size={16} /> Fotografie
           </button>
+          <button
+            onClick={() => {
+              setActiveTab('vouchers');
+              setSearchTerm('');
+            }}
+            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'vouchers' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+          >
+            <Gift size={16} /> Dárkové poukazy
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('orders');
+              setSearchTerm('');
+            }}
+            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'orders' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+          >
+            <ShoppingBag size={16} /> Objednávky
+          </button>
         </div>
       </div>
 
@@ -555,6 +634,21 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
             addons={addons}
             editingAddonLinks={editingAddonLinks}
             setEditingAddonLinks={setEditingAddonLinks}
+          />
+        )}
+        {activeTab === 'vouchers' && (
+          <AdminVouchersTab
+            voucherTemplates={voucherTemplates}
+            services={services}
+            onSave={handleSaveVoucher}
+            onDelete={handleDeleteVoucher}
+            onToggleActive={handleToggleVoucherActive}
+          />
+        )}
+        {activeTab === 'orders' && (
+          <AdminOrdersTab
+            voucherOrders={voucherOrders}
+            voucherTemplates={voucherTemplates}
           />
         )}
       </div>

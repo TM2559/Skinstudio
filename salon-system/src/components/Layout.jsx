@@ -12,9 +12,12 @@ const getNav = () => {
 };
 const NAV = getNav();
 
+const VOUCHER_ROUTES = ['/darkove-poukazy', '/poukaz/success'];
+
 export default function Layout({ children, setView }) {
   const location = useLocation();
   const isHome = location.pathname === '/';
+  const isVoucherCheckout = VOUCHER_ROUTES.includes(location.pathname);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const scrollTo = (hash) => {
@@ -161,8 +164,9 @@ export default function Layout({ children, setView }) {
 
       <main className="flex-1">{children}</main>
 
-      <InstagramShowcase />
+      {!isVoucherCheckout && <InstagramShowcase />}
 
+      {!isVoucherCheckout && (
       <footer id="kontakt" className="mt-auto bg-[#1c1c1c] font-sans font-light text-gray-200">
         <div className="container mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Column 1: Brand & Info */}
@@ -226,6 +230,7 @@ export default function Layout({ children, setView }) {
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 }

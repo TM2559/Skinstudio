@@ -1,9 +1,10 @@
 import { onCall, HttpsError, onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { defineString } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { buildVoucherReadySms, buildVoucherOrderConfirmationSms } from './smsTemplates.js';
 
 initializeApp();
 const db = getFirestore();
@@ -308,6 +309,180 @@ export const verifyAdminPassword = onCall(
     }
 
     return { verified: true };
+  }
+);
+
+/** Czech phone: +420 and 9 digits (optional spaces). */
+function normalizeCzechPhone(phone) {
+  if (!phone || typeof phone !== 'string') return null;
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 9 && /^[67]/.test(digits)) return `+420${digits}`;
+  if (digits.length === 12 && digits.startsWith('420')) return `+${digits}`;
+  if (digits.length >= 9) return `+420${digits.slice(-9)}`;
+  return null;
+}
+
+/**
+ * Callable: createVoucherOrder
+ * Creates a pending voucher order (cash on pickup). Re-calculates total_price server-side.
+ */
+export const createVoucherOrder = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const data = request.data || {};
+    const {
+      voucherId,
+      packaging,
+      pickupDateType,
+      customPickupDate,
+      contactPhone,
+      contactEmail,
+    } = data;
+
+    if (!request.auth?.uid) {
+      throw new HttpsError('unauthenticated', 'Pro objednání je nutné být přihlášen.');
+    }
+
+    if (!voucherId || typeof voucherId !== 'string') {
+      throw new HttpsError('invalid-argument', 'Neplatný výběr poukazu.');
+    }
+    if (!['envelope', 'box'].includes(packaging)) {
+      throw new HttpsError('invalid-argument', 'Neplatný typ balení.');
+    }
+    const phone = normalizeCzechPhone(contactPhone);
+    if (!phone) {
+      throw new HttpsError('invalid-argument', 'Zadejte platné české telefonní číslo (+420 a 9 číslic).');
+    }
+    const email = (contactEmail && typeof contactEmail === 'string') ? contactEmail.trim() : '';
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new HttpsError('invalid-argument', 'Zadejte platný e-mail.');
+    }
+
+    let targetPickupDate;
+    if (pickupDateType === 'tomorrow') {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      targetPickupDate = d.toISOString().slice(0, 10);
+    } else if (pickupDateType === 'later' && customPickupDate && typeof customPickupDate === 'string') {
+      const minLater = new Date();
+      minLater.setDate(minLater.getDate() + 2);
+      const minStr = minLater.toISOString().slice(0, 10);
+      if (customPickupDate < minStr) {
+        throw new HttpsError('invalid-argument', 'Datum vyzvednutí musí být nejdříve pozítří.');
+      }
+      targetPickupDate = customPickupDate.slice(0, 10);
+    } else {
+      throw new HttpsError('invalid-argument', 'Vyberte datum vyzvednutí.');
+    }
+
+    const voucherSnap = await db.collection('voucher_templates').doc(voucherId).get();
+    if (!voucherSnap.exists) {
+      throw new HttpsError('not-found', 'Vybraný poukaz nebyl nalezen.');
+    }
+    const voucherData = voucherSnap.data();
+    const voucherPrice = typeof voucherData.price === 'number' ? voucherData.price : parseInt(voucherData.price, 10) || 0;
+    const totalPrice = voucherPrice + (packaging === 'box' ? 100 : 0);
+
+    const orderData = {
+      voucher_id: voucherId,
+      packaging,
+      target_pickup_date: targetPickupDate,
+      contact_phone: phone,
+      contact_email: email,
+      total_price: totalPrice,
+      status: 'new',
+      created_at: FieldValue.serverTimestamp(),
+    };
+
+    const ref = await db.collection('voucher_orders').add(orderData);
+
+    // Initial order confirmation SMS (fire-and-forget; do not block response)
+    const number = toE164(phone);
+    if (number) {
+      const appId = applicationId.value();
+      const appToken = applicationToken.value();
+      if (appId && appToken) {
+        const rawText = buildVoucherOrderConfirmationSms(totalPrice);
+        const text = removeDiacritics(rawText);
+        const sid = senderId.value();
+        const sidVal = senderIdValue.value();
+        sendOneSms(appId, appToken, number, text, false, sid || undefined, sidVal || undefined)
+          .then(({ ok, data: resData }) => {
+            if (!ok) console.warn('createVoucherOrder confirmation SMS BulkGate:', resData);
+          })
+          .catch((err) => {
+            console.error('createVoucherOrder confirmation SMS failed:', err);
+          });
+      }
+    }
+
+    return { orderId: ref.id, total_price: totalPrice };
+  }
+);
+
+const VOUCHER_ORDER_STATUSES = ['new', 'ready', 'completed', 'cancelled'];
+
+/**
+ * Callable: updateVoucherOrderStatus
+ * Body: { orderId: string, status: 'new' | 'ready' | 'completed' | 'cancelled' }
+ * Při přechodu new -> ready odešle SMS přes BulkGate (poukaz připraven k vyzvednutí).
+ */
+export const updateVoucherOrderStatus = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    if (!request.auth?.uid) {
+      throw new HttpsError('unauthenticated', 'Pro změnu stavu je nutné být přihlášen.');
+    }
+
+    const { orderId, status } = request.data || {};
+    if (!orderId || typeof orderId !== 'string') {
+      throw new HttpsError('invalid-argument', 'Chybí nebo neplatné orderId.');
+    }
+    if (!VOUCHER_ORDER_STATUSES.includes(status)) {
+      throw new HttpsError('invalid-argument', `Neplatný stav. Povolené: ${VOUCHER_ORDER_STATUSES.join(', ')}.`);
+    }
+
+    const ref = db.collection('voucher_orders').doc(orderId);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      throw new HttpsError('not-found', 'Objednávka nebyla nalezena.');
+    }
+
+    const data = snap.data();
+    const previousStatus = data.status || 'new';
+
+    await ref.update({ status });
+
+    let smsSent = false;
+    const wasPendingOrNew = previousStatus === 'new' || previousStatus === 'pending';
+    if (wasPendingOrNew && status === 'ready') {
+      const appId = applicationId.value();
+      const appToken = applicationToken.value();
+      const phone = data.contact_phone;
+      const totalPrice = data.total_price;
+
+      if (appId && appToken && phone) {
+        const number = toE164(phone);
+        if (number) {
+          const rawText = buildVoucherReadySms(totalPrice);
+          const text = removeDiacritics(rawText);
+          const sid = senderId.value();
+          const sidVal = senderIdValue.value();
+          try {
+            const { ok, data: resData } = await sendOneSms(appId, appToken, number, text, false, sid || undefined, sidVal || undefined);
+            if (ok) {
+              smsSent = true;
+            } else {
+              console.warn('updateVoucherOrderStatus BulkGate:', resData);
+            }
+          } catch (err) {
+            console.error('updateVoucherOrderStatus SMS:', err);
+          }
+        }
+      }
+    }
+
+    return { success: true, smsSent };
   }
 );
 

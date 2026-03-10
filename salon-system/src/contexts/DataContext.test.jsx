@@ -36,6 +36,7 @@ vi.mock('../constants/config', () => ({
     SERVICES: 'services',
     ADDONS: 'addons',
     SERVICE_ADDON_LINKS: 'service_addon_links',
+    VOUCHER_TEMPLATES: 'voucher_templates',
   },
 }));
 
@@ -60,6 +61,7 @@ describe('DataContext', () => {
     expect(result.current.reservations).toEqual([]);
     expect(result.current.services).toEqual([]);
     expect(result.current.addons).toEqual([]);
+    expect(result.current.voucherTemplates).toEqual([]);
     expect(result.current.schedule).toEqual({});
   });
 

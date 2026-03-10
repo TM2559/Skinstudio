@@ -44,4 +44,19 @@ export const COLLECTIONS = {
   SCHEDULE_PMU: 'schedule_pmu',
   GALLERY: 'gallery',
   TRANSFORMATIONS: 'transformations',
+  VOUCHER_TEMPLATES: 'voucher_templates',
+  VOUCHER_ORDERS: 'voucher_orders',
+};
+
+/** Voucher template type: fixed amount or tied to a service */
+export const VOUCHER_TYPES = {
+  VALUE: 'value',
+  SERVICE: 'service',
+};
+
+/** Display category for voucher grouping (value / cosmetics / pmu) */
+export const VOUCHER_CATEGORIES = {
+  VALUE: 'value',
+  COSMETICS: 'cosmetics',
+  PMU: 'pmu',
 };
