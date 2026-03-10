@@ -4,6 +4,7 @@ import { Menu, X, MapPin, Mail, Phone } from 'lucide-react';
 import { INSTAGRAM_URL } from '../firebaseConfig';
 import InstagramShowcase from './InstagramShowcase';
 import { TaglineWithHeart } from './FooterTagline';
+import DeveloperSignature from './DeveloperSignature';
 import { WEB_CONTENT } from '../constants/content';
 
 const getNav = () => {
@@ -209,10 +210,11 @@ export default function Layout({ children, setView }) {
 
         {/* Bottom bar */}
         <div className="border-t border-gray-700/60">
-          <div className="container mx-auto px-6 py-4">
-            <p className="text-xs text-center">
+          <div className="container mx-auto px-6 py-4 flex flex-row flex-wrap items-center justify-between gap-2">
+            <p className="text-xs">
               {WEB_CONTENT.footer.copyright}
             </p>
+            <DeveloperSignature theme="dark" />
           </div>
         </div>
       </footer>

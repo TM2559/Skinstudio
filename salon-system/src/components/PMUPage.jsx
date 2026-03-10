@@ -9,6 +9,7 @@ import ComparisonSlider from './ComparisonSlider';
 import EditorialGallery from './EditorialGallery';
 import ReservationApp from './ReservationApp';
 import { TaglineWithHeart } from './FooterTagline';
+import DeveloperSignature from './DeveloperSignature';
 import ServiceSchema from './ServiceSchema';
 import BreadcrumbSchema from './BreadcrumbSchema';
 import useSEO from '../hooks/useSEO';
@@ -419,10 +420,11 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
           </div>
         </div>
         <div className="border-t border-white/5">
-          <div className="container mx-auto px-6 py-4">
-            <p className="text-xs text-center text-[#A1A1AA]/60">
+          <div className="container mx-auto px-6 py-4 flex flex-row flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-[#A1A1AA]/60">
               {WEB_CONTENT.footer.copyright}
             </p>
+            <DeveloperSignature theme="dark" />
           </div>
         </div>
       </footer>

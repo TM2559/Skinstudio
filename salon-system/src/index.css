@@ -270,4 +270,14 @@
     @apply font-sans font-light text-white/70;
     line-height: 1.65;
   }
+
+  /* Developer signature "0x9ff" – idle low-contrast, hover = #99ffff + neon glow */
+  .signature-0x9ff {
+    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  }
+  .signature-0x9ff:hover {
+    text-shadow:
+      0 0 8px rgba(153, 255, 255, 0.6),
+      0 0 16px rgba(153, 255, 255, 0.2);
+  }
 }
