@@ -641,12 +641,7 @@ export const sendDailyReminders = onSchedule(
             to: res.email,
             reply_to: 'rezervace@skinstudio.cz',
             subject: `Připomínka rezervace – ${dateDisplay}`,
-            html: emailHtml(`
-              <p>Dobrý den, <strong>${res.name}</strong>,</p>
-              <p>připomínáme Vám zítřejší rezervaci:</p>
-              ${reservationTable([['Datum', dateDisplay], ['Čas', res.time], ['Služba', res.serviceName]])}
-              <p>Těšíme se na Vás!</p>
-            `),
+            html: reminderEmailHtml(res.name, res.serviceName, dateDisplay, res.time),
           });
           if (!error) {
             await db.doc(`reservations/${res.id}`).update({ reminderSent: true });
@@ -666,19 +661,64 @@ export const sendDailyReminders = onSchedule(
 
 // --- Resend email callable funkce (rezervace) ---
 
-function emailHtml(body) {
-  return `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#333">
-    <h2 style="color:#b08d7a">Skin Studio</h2>
-    ${body}
-    <p style="color:#888;font-size:12px;margin-top:24px">V případě dotazů nás kontaktujte na <a href="mailto:rezervace@skinstudio.cz">rezervace@skinstudio.cz</a>.</p>
-  </div>`;
+const EMAIL_BASE_STYLE = `
+  body { margin: 0; padding: 0; min-width: 100%; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #333333; background-color: #f9f9f9; }
+  a { color: #d4a5a5; text-decoration: none; }
+  @media only screen and (max-width: 600px) { .email-container { width: 100% !important; } }
+`;
+
+const EMAIL_HEADER = `
+  <tr>
+    <td style="padding: 0; background-color: #000000; text-align: center;">
+      <img src="https://raw.githubusercontent.com/TM2559/Skinstudio/main/salon-system/public/skinstudio_titulka.png" alt="Skin Studio" style="display: block; width: 100%; max-height: 250px; object-fit: cover; border: 0;">
+    </td>
+  </tr>
+`;
+
+function emailWrapper(content) {
+  return `<!DOCTYPE html>
+<html>
+<head><style>${EMAIL_BASE_STYLE}</style></head>
+<body style="background-color: #f4f4f4; margin: 0; padding: 20px;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" class="email-container" style="background-color: #ffffff; width: 600px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin: 0 auto;">
+    ${EMAIL_HEADER}
+    <tr><td style="padding: 40px 30px;">${content}</td></tr>
+  </table>
+</body>
+</html>`;
 }
 
-function reservationTable(rows) {
-  const trs = rows.map(([label, value]) =>
-    `<tr><td style="padding:8px 12px;background:#f9f5f2;font-weight:bold">${label}</td><td style="padding:8px 12px">${value}</td></tr>`
-  ).join('');
-  return `<table style="border-collapse:collapse;width:100%;margin:16px 0">${trs}</table>`;
+function detailsTable(serviceName, date, time) {
+  return `
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fff0f0; border-radius: 6px; margin-bottom: 30px;">
+      <tr><td style="padding: 20px;">
+        <table border="0" cellpadding="5" cellspacing="0" width="100%">
+          <tr>
+            <td width="30%" style="font-weight: bold; color: #8a5a5a; text-transform: uppercase; font-size: 12px;">Služba</td>
+            <td style="font-size: 16px;">${serviceName}</td>
+          </tr>
+          <tr>
+            <td width="30%" style="font-weight: bold; color: #8a5a5a; text-transform: uppercase; font-size: 12px;">Datum</td>
+            <td style="font-size: 16px;">${date}</td>
+          </tr>
+          <tr>
+            <td width="30%" style="font-weight: bold; color: #8a5a5a; text-transform: uppercase; font-size: 12px;">Čas</td>
+            <td style="font-size: 16px;">${time}</td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>`;
+}
+
+function reminderEmailHtml(name, serviceName, date, time) {
+  return emailWrapper(`
+    <h1 style="color: #2c2c2c; font-size: 24px; margin-bottom: 20px; text-align: center; font-weight: 300; letter-spacing: 1px;">Připomenutí REZERVACE</h1>
+    <p style="margin-bottom: 20px;">Dobrý den, <strong>${name}</strong>,</p>
+    <p style="margin-bottom: 30px; color: #555;">Dovoluji si Vám připomenout, že se blíží termín Vaší rezervace.</p>
+    ${detailsTable(serviceName, date, time)}
+    <p style="margin-bottom: 10px;">Pokud potřebujete termín změnit, prosím kontaktujte mě co nejdříve.</p>
+    <p>Těším se na vaši návštěvu!</p>
+  `);
 }
 
 async function sendViaResend(payload) {
@@ -705,11 +745,13 @@ export const sendBookingConfirmationEmail = onCall(
       to: email,
       reply_to: 'rezervace@skinstudio.cz',
       subject: `Potvrzení rezervace – ${serviceName}`,
-      html: emailHtml(`
-        <p>Dobrý den, <strong>${name}</strong>,</p>
-        <p>Vaše rezervace byla úspěšně potvrzena.</p>
-        ${reservationTable([['Služba', serviceName], ['Datum', date], ['Čas', time]])}
-        <p>Těšíme se na Vás!</p>
+      html: emailWrapper(`
+        <h1 style="color: #2c2c2c; font-size: 24px; margin-bottom: 20px; text-align: center; font-weight: 300; letter-spacing: 1px;">POTVRZENÍ REZERVACE</h1>
+        <p style="margin-bottom: 20px;">Dobrý den, <strong>${name}</strong>,</p>
+        <p style="margin-bottom: 30px; color: #555;">Děkuji za Vaši rezervaci. Vámi vybraný termín je pro vás závazně blokován.</p>
+        ${detailsTable(serviceName, date, time)}
+        <p style="margin-bottom: 10px;">Pokud potřebujete termín změnit, prosím kontaktujte mě co nejdříve.</p>
+        <p>Těším se na vaši návštěvu!</p>
       `),
     });
     return { sent };
@@ -721,15 +763,30 @@ export const sendAdminNotificationEmail = onCall(
   { region: 'europe-west1' },
   async (request) => {
     const { name, email, phone, date, time, serviceName, calendarLink } = request.data || {};
-    const calendarRow = calendarLink ? [['Přidat do kalendáře', `<a href="${calendarLink}">Google Calendar</a>`]] : [];
+    const calendarHtml = calendarLink
+      ? `<tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;padding:5px;">Kalendář</td><td style="font-size:16px;padding:5px;"><a href="${calendarLink}" style="color:#d4a5a5;">Google Calendar</a></td></tr>`
+      : '';
     const sent = await sendViaResend({
       from: 'Skin Studio <rezervace@skinstudio.cz>',
       to: 'rezervace@skinstudio.cz',
       reply_to: email || 'rezervace@skinstudio.cz',
       subject: `Nová rezervace – ${name} (${date} ${time})`,
-      html: emailHtml(`
-        <p><strong>Nová rezervace</strong></p>
-        ${reservationTable([['Jméno', name], ['Služba', serviceName], ['Datum', date], ['Čas', time], ['Telefon', phone || '–'], ['E-mail', email || '–'], ...calendarRow])}
+      html: emailWrapper(`
+        <h1 style="color: #2c2c2c; font-size: 24px; margin-bottom: 20px; text-align: center; font-weight: 300; letter-spacing: 1px;">NOVÁ REZERVACE</h1>
+        <p style="margin-bottom: 30px; color: #555;">Přišla nová rezervace přes web.</p>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fff0f0; border-radius: 6px; margin-bottom: 30px;">
+          <tr><td style="padding: 20px;">
+            <table border="0" cellpadding="5" cellspacing="0" width="100%">
+              <tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Jméno</td><td style="font-size:16px;">${name}</td></tr>
+              <tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Služba</td><td style="font-size:16px;">${serviceName}</td></tr>
+              <tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Datum</td><td style="font-size:16px;">${date}</td></tr>
+              <tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Čas</td><td style="font-size:16px;">${time}</td></tr>
+              <tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Telefon</td><td style="font-size:16px;">${phone || '–'}</td></tr>
+              <tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">E-mail</td><td style="font-size:16px;">${email || '–'}</td></tr>
+              ${calendarHtml}
+            </table>
+          </td></tr>
+        </table>
       `),
     });
     return { sent };
@@ -747,12 +804,7 @@ export const sendReminderEmailCallable = onCall(
       to: email,
       reply_to: 'rezervace@skinstudio.cz',
       subject: `Připomínka rezervace – ${date}`,
-      html: emailHtml(`
-        <p>Dobrý den, <strong>${name}</strong>,</p>
-        <p>připomínáme Vám zítřejší rezervaci:</p>
-        ${reservationTable([['Datum', date], ['Čas', time], ['Služba', serviceName]])}
-        <p>Těšíme se na Vás!</p>
-      `),
+      html: reminderEmailHtml(name, serviceName, date, time),
     });
     return { sent };
   }
