@@ -793,6 +793,39 @@ export const sendAdminNotificationEmail = onCall(
   }
 );
 
+/** Callable: sendAdminVoucherOrderEmail – nová objednávka poukazu adminovi. */
+export const sendAdminVoucherOrderEmail = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { voucherName, packaging, totalPrice, contactPhone, contactEmail, pickupDate, orderId } = request.data || {};
+    const packagingLabel = packaging === 'box' ? 'Krabička (+100 Kč)' : 'Obálka';
+    const sent = await sendViaResend({
+      from: 'Skin Studio <rezervace@skinstudio.cz>',
+      to: 'rezervace@skinstudio.cz',
+      reply_to: contactEmail || 'rezervace@skinstudio.cz',
+      subject: `Nová objednávka poukazu – ${voucherName}`,
+      html: emailWrapper(`
+        <h1 style="color: #2c2c2c; font-size: 24px; margin-bottom: 20px; text-align: center; font-weight: 300; letter-spacing: 1px;">NOVÁ OBJEDNÁVKA POUKAZU</h1>
+        <p style="margin-bottom: 30px; color: #555;">Přišla nová objednávka dárkového poukazu přes web.</p>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fff0f0; border-radius: 6px; margin-bottom: 30px;">
+          <tr><td style="padding: 20px;">
+            <table border="0" cellpadding="5" cellspacing="0" width="100%">
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Poukaz</td><td style="font-size:16px;">${voucherName}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Balení</td><td style="font-size:16px;">${packagingLabel}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Celková cena</td><td style="font-size:16px;font-weight:bold;">${totalPrice} Kč</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Vyzvednutí</td><td style="font-size:16px;">${pickupDate}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Telefon</td><td style="font-size:16px;">${contactPhone || '–'}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">E-mail</td><td style="font-size:16px;">${contactEmail || '–'}</td></tr>
+              ${orderId ? `<tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">ID objednávky</td><td style="font-size:13px;color:#888;">${orderId}</td></tr>` : ''}
+            </table>
+          </td></tr>
+        </table>
+      `),
+    });
+    return { sent };
+  }
+);
+
 /** Callable: sendReminderEmailCallable – manuální připomínka zákazníkovi. */
 export const sendReminderEmailCallable = onCall(
   { region: 'europe-west1' },

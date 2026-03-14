@@ -118,3 +118,7 @@ export const callSendAdminNotificationEmail = isVitestNoKey
 export const callSendReminderEmail = isVitestNoKey
   ? () => Promise.resolve({ data: { sent: true } })
   : httpsCallable(functions, 'sendReminderEmailCallable');
+
+export const callSendAdminVoucherOrderEmail = isVitestNoKey
+  ? () => Promise.resolve({ data: { sent: true } })
+  : httpsCallable(functions, 'sendAdminVoucherOrderEmail');
