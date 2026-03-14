@@ -30,13 +30,6 @@ const firebaseConfig = isCanvas
       appId: getEnv('VITE_FIREBASE_APP_ID'),
     };
 
-export const EMAILJS_CONFIG = {
-  SERVICE_ID: getEnv('VITE_EMAILJS_SERVICE_ID'),
-  CONFIRM_TEMPLATE: getEnv('VITE_EMAILJS_CONFIRM_TEMPLATE_ID'),
-  REMINDER_TEMPLATE: getEnv('VITE_EMAILJS_REMINDER_TEMPLATE_ID'),
-  PUBLIC_KEY: getEnv('VITE_EMAILJS_PUBLIC_KEY')
-};
-
 // Instagram – celá URL nebo jen username (např. skinstudio.uhb)
 const instagramUrl = getEnv('VITE_INSTAGRAM_URL');
 const instagramUsername = getEnv('VITE_INSTAGRAM_USERNAME');
@@ -114,3 +107,14 @@ export const getAdminWebAuthnLoginOptions = isVitestNoKey
 export const verifyAdminWebAuthnLogin = isVitestNoKey
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'verifyAdminWebAuthnLogin');
+
+// Resend email callables
+export const callSendBookingConfirmationEmail = isVitestNoKey
+  ? () => Promise.resolve({ data: { sent: true } })
+  : httpsCallable(functions, 'sendBookingConfirmationEmail');
+export const callSendAdminNotificationEmail = isVitestNoKey
+  ? () => Promise.resolve({ data: { sent: true } })
+  : httpsCallable(functions, 'sendAdminNotificationEmail');
+export const callSendReminderEmail = isVitestNoKey
+  ? () => Promise.resolve({ data: { sent: true } })
+  : httpsCallable(functions, 'sendReminderEmailCallable');

@@ -607,11 +607,8 @@ export const sendDailyReminders = onSchedule(
     const sidVal = senderIdValue.value();
     const hasSms = Boolean(appId && appToken);
 
-    /** EmailJS pouze z process.env (volitelné), aby deploy v non-interactive nevyžadoval tyto proměnné. */
-    const emailServiceId = process.env.EMAILJS_SERVICE_ID || '';
-    const emailTemplateId = process.env.EMAILJS_REMINDER_TEMPLATE_ID || '';
-    const emailPublicKey = process.env.EMAILJS_PUBLIC_KEY || '';
-    const hasEmail = Boolean(emailServiceId && emailTemplateId && emailPublicKey);
+    const resendApiKey = process.env.RESEND_API_KEY || '';
+    const hasEmail = Boolean(resendApiKey);
 
     let smsSent = 0;
     let emailSent = 0;
@@ -637,26 +634,25 @@ export const sendDailyReminders = onSchedule(
 
       if (hasEmail && res.email) {
         try {
-          const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              service_id: emailServiceId,
-              template_id: emailTemplateId,
-              user_id: emailPublicKey,
-              template_params: {
-                name: res.name,
-                to_email: res.email,
-                date: dateDisplay,
-                time: res.time,
-                service: res.serviceName,
-                reply_to: 'rezervace@skinstudio.cz',
-              },
-            }),
+          const { Resend } = await import('resend');
+          const resend = new Resend(resendApiKey);
+          const { error } = await resend.emails.send({
+            from: 'Skin Studio <rezervace@skinstudio.cz>',
+            to: res.email,
+            reply_to: 'rezervace@skinstudio.cz',
+            subject: `Připomínka rezervace – ${dateDisplay}`,
+            html: emailHtml(`
+              <p>Dobrý den, <strong>${res.name}</strong>,</p>
+              <p>připomínáme Vám zítřejší rezervaci:</p>
+              ${reservationTable([['Datum', dateDisplay], ['Čas', res.time], ['Služba', res.serviceName]])}
+              <p>Těšíme se na Vás!</p>
+            `),
           });
-          if (emailRes.ok) {
+          if (!error) {
             await db.doc(`reservations/${res.id}`).update({ reminderSent: true });
             emailSent++;
+          } else {
+            console.error('sendDailyReminders Resend error', res.id, error);
           }
         } catch (err) {
           console.error('sendDailyReminders email', res.id, err);
@@ -665,5 +661,99 @@ export const sendDailyReminders = onSchedule(
     }
 
     console.log(`sendDailyReminders: ${tomorrowKey} – odesláno ${smsSent} SMS, ${emailSent} e-mailů.`);
+  }
+);
+
+// --- Resend email callable funkce (rezervace) ---
+
+function emailHtml(body) {
+  return `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#333">
+    <h2 style="color:#b08d7a">Skin Studio</h2>
+    ${body}
+    <p style="color:#888;font-size:12px;margin-top:24px">V případě dotazů nás kontaktujte na <a href="mailto:rezervace@skinstudio.cz">rezervace@skinstudio.cz</a>.</p>
+  </div>`;
+}
+
+function reservationTable(rows) {
+  const trs = rows.map(([label, value]) =>
+    `<tr><td style="padding:8px 12px;background:#f9f5f2;font-weight:bold">${label}</td><td style="padding:8px 12px">${value}</td></tr>`
+  ).join('');
+  return `<table style="border-collapse:collapse;width:100%;margin:16px 0">${trs}</table>`;
+}
+
+async function sendViaResend(payload) {
+  const apiKey = process.env.RESEND_API_KEY || '';
+  if (!apiKey) {
+    console.warn('sendViaResend: RESEND_API_KEY chybí.');
+    return false;
+  }
+  const { Resend } = await import('resend');
+  const resend = new Resend(apiKey);
+  const { error } = await resend.emails.send(payload);
+  if (error) { console.error('Resend error:', error); return false; }
+  return true;
+}
+
+/** Callable: sendBookingConfirmationEmail – potvrzení zákazníkovi. */
+export const sendBookingConfirmationEmail = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { name, email, date, time, serviceName } = request.data || {};
+    if (!email) throw new HttpsError('invalid-argument', 'Chybí e-mail.');
+    const sent = await sendViaResend({
+      from: 'Skin Studio <rezervace@skinstudio.cz>',
+      to: email,
+      reply_to: 'rezervace@skinstudio.cz',
+      subject: `Potvrzení rezervace – ${serviceName}`,
+      html: emailHtml(`
+        <p>Dobrý den, <strong>${name}</strong>,</p>
+        <p>Vaše rezervace byla úspěšně potvrzena.</p>
+        ${reservationTable([['Služba', serviceName], ['Datum', date], ['Čas', time]])}
+        <p>Těšíme se na Vás!</p>
+      `),
+    });
+    return { sent };
+  }
+);
+
+/** Callable: sendAdminNotificationEmail – nová rezervace adminovi. */
+export const sendAdminNotificationEmail = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { name, email, phone, date, time, serviceName, calendarLink } = request.data || {};
+    const calendarRow = calendarLink ? [['Přidat do kalendáře', `<a href="${calendarLink}">Google Calendar</a>`]] : [];
+    const sent = await sendViaResend({
+      from: 'Skin Studio <rezervace@skinstudio.cz>',
+      to: 'rezervace@skinstudio.cz',
+      reply_to: email || 'rezervace@skinstudio.cz',
+      subject: `Nová rezervace – ${name} (${date} ${time})`,
+      html: emailHtml(`
+        <p><strong>Nová rezervace</strong></p>
+        ${reservationTable([['Jméno', name], ['Služba', serviceName], ['Datum', date], ['Čas', time], ['Telefon', phone || '–'], ['E-mail', email || '–'], ...calendarRow])}
+      `),
+    });
+    return { sent };
+  }
+);
+
+/** Callable: sendReminderEmailCallable – manuální připomínka zákazníkovi. */
+export const sendReminderEmailCallable = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { name, email, date, time, serviceName } = request.data || {};
+    if (!email) throw new HttpsError('invalid-argument', 'Chybí e-mail.');
+    const sent = await sendViaResend({
+      from: 'Skin Studio <rezervace@skinstudio.cz>',
+      to: email,
+      reply_to: 'rezervace@skinstudio.cz',
+      subject: `Připomínka rezervace – ${date}`,
+      html: emailHtml(`
+        <p>Dobrý den, <strong>${name}</strong>,</p>
+        <p>připomínáme Vám zítřejší rezervaci:</p>
+        ${reservationTable([['Datum', date], ['Čas', time], ['Služba', serviceName]])}
+        <p>Těšíme se na Vás!</p>
+      `),
+    });
+    return { sent };
   }
 );
