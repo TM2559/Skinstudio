@@ -563,6 +563,24 @@ export const verifyAdminWebAuthnLogin = onCall(
   }
 );
 
+/**
+ * Zachované pro kompatibilitu s nasazenými funkcemi (CI non-interactive deploy).
+ * Původní implementace dárkových poukazů byla odstraněna; funkce vrací odpověď, aby deploy nepadal.
+ */
+export const createVoucherOrder = onCall(
+  { region: 'europe-west1' },
+  async () => {
+    throw new HttpsError('unimplemented', 'Funkce dárkových poukazů je dočasně nedostupná.');
+  }
+);
+
+export const updateVoucherOrderStatus = onCall(
+  { region: 'europe-west1' },
+  async () => {
+    throw new HttpsError('unimplemented', 'Funkce dárkových poukazů je dočasně nedostupná.');
+  }
+);
+
 /** Vrátí klíč data ve formátu DD-MM-YYYY pro zítřek (lokální čas). */
 function getTomorrowDateKey() {
   const t = new Date();

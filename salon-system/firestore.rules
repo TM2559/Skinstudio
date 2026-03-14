@@ -48,6 +48,22 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    match /gallery_items/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /transformation_items/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /artifacts/{appId}/public/data/gallery_items/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /artifacts/{appId}/public/data/transformation_items/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
 
     match /config/{docId} {
       allow read: if isAdmin();

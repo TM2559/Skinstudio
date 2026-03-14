@@ -16,10 +16,11 @@ describe('Public content path (galerie a proměny nesmí z webu zmizet)', () => 
     expect(TRANSFORMATIONS_COLLECTION).toBe('transformation_items');
   });
 
-  it('firebaseConfig definuje getPublicContentCollectionPath s kořenovou cestou collection(db, colName)', () => {
+  it('firebaseConfig definuje getPublicContentCollectionPath a getPublicContentCollectionPathsForRead', () => {
     const configSrc = readFileSync(join(srcRoot, 'firebaseConfig.js'), 'utf-8');
     expect(configSrc).toContain('getPublicContentCollectionPath');
     expect(configSrc).toContain('getPublicContentDocPath');
+    expect(configSrc).toContain('getPublicContentCollectionPathsForRead');
     expect(configSrc).toContain('collection(db, colName)');
   });
 
@@ -34,7 +35,9 @@ describe('Public content path (galerie a proměny nesmí z webu zmizet)', () => 
     ];
     for (const file of files) {
       const src = readFileSync(file, 'utf-8');
-      expect(src, `Soubor ${file} musí používat getPublicContentCollectionPath`).toContain('getPublicContentCollectionPath');
+      const usesPublicContent =
+        src.includes('getPublicContentCollectionPath') || src.includes('getPublicContentCollectionPathsForRead');
+      expect(usesPublicContent, `Soubor ${file} musí používat getPublicContentCollectionPath nebo getPublicContentCollectionPathsForRead`).toBe(true);
       const forbidden = new RegExp(
         'getCollectionPath\\s*\\(\\s*(GALLERY_COLLECTION|TRANSFORMATIONS_COLLECTION|[\'"]gallery_items[\'"]|[\'"]transformation_items[\'"])'
       );

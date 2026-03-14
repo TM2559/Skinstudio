@@ -1,11 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { addDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { Upload, Trash2, Image as ImageIcon } from 'lucide-react';
-import { storage, getPublicContentCollectionPath, getPublicContentDocPath, getPublicContentCollectionPathString } from '../../firebaseConfig';
+import { storage, getPublicContentCollectionPath, getPublicContentCollectionPathString, getPublicContentCollectionPathsForRead, getPublicContentDocPathBySourceIndex } from '../../firebaseConfig';
 import { COSMETICS_CATEGORY, PMU_CATEGORY, GALLERY_COLLECTION, STORAGE_GALLERY_PREFIX } from '../../constants/cosmetics';
 import { slugify } from '../../utils/helpers';
 import CategoryToggle from './CategoryToggle';
+
+function mergeGalleryDocs(docsByPath) {
+  const seen = new Set();
+  const out = [];
+  docsByPath.forEach((docs, pathIndex) => {
+    for (const item of docs) {
+      const key = item.imageUrl?.trim() || item.id;
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        out.push({ ...item, _sourcePathIndex: pathIndex });
+      }
+    }
+  });
+  return out.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+}
 
 // Client-side image optimization before upload to Storage (same logic as Proměny).
 async function createOptimizedImageFile(file, maxSize = 1600, quality = 0.85) {
@@ -72,26 +87,35 @@ export default function AdminGallerySubTab() {
   const [caption, setCaption] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
 
-  const colRef = getPublicContentCollectionPath(GALLERY_COLLECTION);
+  const colRefs = getPublicContentCollectionPathsForRead(GALLERY_COLLECTION);
   const [itemsCosmetics, setItemsCosmetics] = useState([]);
   const [itemsPmu, setItemsPmu] = useState([]);
+  const docsByPathRef = useRef(colRefs.map(() => []));
 
   useEffect(() => {
-    const unsub = onSnapshot(
-      colRef,
-      (snap) => {
-        const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setItemsCosmetics(all.filter((item) => (item.category || COSMETICS_CATEGORY) === COSMETICS_CATEGORY));
-        setItemsPmu(all.filter((item) => item.category === PMU_CATEGORY));
-        setLoading(false);
-      },
-      (err) => {
-        console.error(err);
-        setError('Nepodařilo se načíst galerii.');
-        setLoading(false);
-      }
+    if (!colRefs.length) {
+      setLoading(false);
+      return;
+    }
+    const unsubs = colRefs.map((colRef, idx) =>
+      onSnapshot(
+        colRef,
+        (snap) => {
+          docsByPathRef.current[idx] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          const all = mergeGalleryDocs(docsByPathRef.current);
+          setItemsCosmetics(all.filter((item) => (item.category || COSMETICS_CATEGORY) === COSMETICS_CATEGORY));
+          setItemsPmu(all.filter((item) => item.category === PMU_CATEGORY));
+          setLoading(false);
+        },
+        (err) => {
+          console.error(err);
+          const hasAny = docsByPathRef.current.some((arr) => arr.length > 0);
+          if (!hasAny) setError('Nepodařilo se načíst galerii.');
+          setLoading(false);
+        }
+      )
     );
-    return () => unsub();
+    return () => unsubs.forEach((u) => u());
   }, []);
 
   const items = React.useMemo(() => {
@@ -142,10 +166,11 @@ export default function AdminGallerySubTab() {
     }
   };
 
-  const handleRemove = async (id) => {
+  const handleRemove = async (item) => {
     if (!confirm('Obrázek odebrat z galerie?')) return;
+    const docRef = getPublicContentDocPathBySourceIndex(GALLERY_COLLECTION, item.id, item._sourcePathIndex ?? 0);
     try {
-      await deleteDoc(getPublicContentDocPath(GALLERY_COLLECTION, id));
+      await deleteDoc(docRef);
     } catch (e) {
       console.error(e);
       setError('Nepodařilo se smazat.');
@@ -241,7 +266,7 @@ export default function AdminGallerySubTab() {
             </span>
             <button
               type="button"
-              onClick={() => handleRemove(item.id)}
+              onClick={() => handleRemove(item)}
               className="absolute top-2 right-2 p-2 rounded-full bg-red-500/90 text-white opacity-0 group-hover:opacity-100 transition-opacity"
               aria-label="Odebrat"
             >

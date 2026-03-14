@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, Phone, Mail, MapPin } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
-import { getPublicContentCollectionPath } from '../firebaseConfig';
+import { getPublicContentCollectionPathsForRead } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
 import { WEB_CONTENT } from '../constants/content';
 import ComparisonSlider from './ComparisonSlider';
@@ -33,14 +33,26 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
   );
 
   useEffect(() => {
-    const colT = getPublicContentCollectionPath(TRANSFORMATIONS_COLLECTION);
-    const qT = query(colT, where('category', '==', PMU_CATEGORY));
-    const unsub = onSnapshot(qT, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-      setSliders(list);
+    const colRefs = getPublicContentCollectionPathsForRead(TRANSFORMATIONS_COLLECTION);
+    if (!colRefs.length) return;
+    const docsByPathRef = { current: colRefs.map(() => []) };
+    const unsubs = colRefs.map((colT, idx) => {
+      const qT = query(colT, where('category', '==', PMU_CATEGORY));
+      return onSnapshot(qT, (snap) => {
+        docsByPathRef.current[idx] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const merged = docsByPathRef.current.flat();
+        const seen = new Set();
+        const list = merged.filter((item) => {
+          const key = [item.imageBeforeUrl, item.imageAfterUrl].filter(Boolean).join('|') || item.id;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+        setSliders(list);
+      });
     });
-    return () => unsub();
+    return () => unsubs.forEach((u) => u());
   }, []);
 
   const displaySliders =

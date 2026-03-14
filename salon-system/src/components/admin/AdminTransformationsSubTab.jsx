@@ -1,11 +1,26 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { addDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { Upload, Trash2, ImageIcon } from 'lucide-react';
-import { storage, getPublicContentCollectionPath, getPublicContentDocPath, getPublicContentCollectionPathString } from '../../firebaseConfig';
+import { storage, getPublicContentCollectionPath, getPublicContentCollectionPathString, getPublicContentCollectionPathsForRead, getPublicContentDocPathBySourceIndex } from '../../firebaseConfig';
 import { COSMETICS_CATEGORY, PMU_CATEGORY, TRANSFORMATIONS_COLLECTION, STORAGE_TRANSFORMATIONS_PREFIX } from '../../constants/cosmetics';
 import { slugify } from '../../utils/helpers';
 import CategoryToggle from './CategoryToggle';
+
+function mergeTransformationDocs(docsByPath) {
+  const seen = new Set();
+  const out = [];
+  docsByPath.forEach((docs, pathIndex) => {
+    for (const item of docs) {
+      const key = [item.imageBeforeUrl, item.imageAfterUrl, item.createdAt].filter(Boolean).join('|') || item.id;
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        out.push({ ...item, _sourcePathIndex: pathIndex });
+      }
+    }
+  });
+  return out.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+}
 
 // Client-side image optimization before upload to Storage.
 // Keeps quality high, but limits max dimension so loading is much faster.
@@ -78,23 +93,33 @@ export default function AdminTransformationsSubTab() {
   const [itemsPmu, setItemsPmu] = useState([]);
 
   const colRef = getPublicContentCollectionPath(TRANSFORMATIONS_COLLECTION);
+  const colRefs = getPublicContentCollectionPathsForRead(TRANSFORMATIONS_COLLECTION);
+  const docsByPathRef = useRef(colRefs.map(() => []));
 
   useEffect(() => {
-    const unsub = onSnapshot(
-      colRef,
-      (snap) => {
-        const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setItemsCosmetics(all.filter((item) => (item.category || COSMETICS_CATEGORY) === COSMETICS_CATEGORY));
-        setItemsPmu(all.filter((item) => item.category === PMU_CATEGORY));
-        setLoading(false);
-      },
-      (err) => {
-        console.error(err);
-        setError('Nepodařilo se načíst proměny.');
-        setLoading(false);
-      }
+    if (!colRefs.length) {
+      setLoading(false);
+      return;
+    }
+    const unsubs = colRefs.map((colRef, idx) =>
+      onSnapshot(
+        colRef,
+        (snap) => {
+          docsByPathRef.current[idx] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          const all = mergeTransformationDocs(docsByPathRef.current);
+          setItemsCosmetics(all.filter((item) => (item.category || COSMETICS_CATEGORY) === COSMETICS_CATEGORY));
+          setItemsPmu(all.filter((item) => item.category === PMU_CATEGORY));
+          setLoading(false);
+        },
+        (err) => {
+          console.error(err);
+          const hasAny = docsByPathRef.current.some((arr) => arr.length > 0);
+          if (!hasAny) setError('Nepodařilo se načíst proměny.');
+          setLoading(false);
+        }
+      )
     );
-    return () => unsub();
+    return () => unsubs.forEach((u) => u());
   }, []);
 
   const items = useMemo(() => {
@@ -157,10 +182,11 @@ export default function AdminTransformationsSubTab() {
     }
   };
 
-  const handleRemove = async (id) => {
+  const handleRemove = async (item) => {
     if (!confirm('Tuto proměnu (před/po) odebrat?')) return;
+    const docRef = getPublicContentDocPathBySourceIndex(TRANSFORMATIONS_COLLECTION, item.id, item._sourcePathIndex ?? 0);
     try {
-      await deleteDoc(getPublicContentDocPath(TRANSFORMATIONS_COLLECTION, id));
+      await deleteDoc(docRef);
     } catch (e) {
       console.error(e);
       setError('Nepodařilo se smazat.');
@@ -296,7 +322,7 @@ export default function AdminTransformationsSubTab() {
             <div className="flex items-center shrink-0">
               <button
                 type="button"
-                onClick={() => handleRemove(item.id)}
+                onClick={() => handleRemove(item)}
                 className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200"
                 aria-label="Odebrat"
               >

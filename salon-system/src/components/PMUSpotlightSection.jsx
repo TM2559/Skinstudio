@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { query, where, onSnapshot } from 'firebase/firestore';
 import { motion, useInView } from 'framer-motion';
-import { getPublicContentCollectionPath } from '../firebaseConfig';
+import { getPublicContentCollectionPathsForRead } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
 import { WEB_CONTENT } from '../constants/content';
 
@@ -10,15 +10,20 @@ import { WEB_CONTENT } from '../constants/content';
 function useSpotlightPmuImage() {
   const [imageUrl, setImageUrl] = useState(null);
   useEffect(() => {
-    const col = getPublicContentCollectionPath(TRANSFORMATIONS_COLLECTION);
-    const q = query(col, where('category', '==', PMU_CATEGORY));
-    const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-      const best = list.find((item) => item.imageAfterUrl?.trim()) || list.find((item) => item.imageBeforeUrl?.trim());
-      setImageUrl(best?.imageAfterUrl?.trim() || best?.imageBeforeUrl?.trim() || null);
+    const colRefs = getPublicContentCollectionPathsForRead(TRANSFORMATIONS_COLLECTION);
+    if (!colRefs.length) return;
+    const docsByPathRef = { current: colRefs.map(() => []) };
+    const unsubs = colRefs.map((col, idx) => {
+      const q = query(col, where('category', '==', PMU_CATEGORY));
+      return onSnapshot(q, (snap) => {
+        docsByPathRef.current[idx] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const list = docsByPathRef.current.flat();
+        list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+        const best = list.find((item) => item.imageAfterUrl?.trim()) || list.find((item) => item.imageBeforeUrl?.trim());
+        setImageUrl(best?.imageAfterUrl?.trim() || best?.imageBeforeUrl?.trim() || null);
+      });
     });
-    return () => unsub();
+    return () => unsubs.forEach((u) => u());
   }, []);
   return imageUrl;
 }
