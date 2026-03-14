@@ -74,6 +74,8 @@ if (isVitestNoKey) {
 export { auth, db, storage };
 
 // Helpery pro cesty
+// Důležité: V Canvasu se data ukládají pod artifacts/<appId>/public/data/<colName>,
+// lokálně přímo do <colName>.
 export const getCollectionPath = (colName) =>
   isVitestNoKey
     ? {}
@@ -81,12 +83,31 @@ export const getCollectionPath = (colName) =>
       ? collection(db, 'artifacts', appId, 'public', 'data', colName)
       : collection(db, colName);
 
+/** Cesta ke kolekci jako řetězec (pro zobrazení v UI / diagnostiku). */
+export const getCollectionPathString = (colName) =>
+  isVitestNoKey ? '' : isCanvas ? `artifacts/${appId}/public/data/${colName}` : colName;
+
 export const getDocPath = (colName, docId) =>
   isVitestNoKey
     ? {}
     : isCanvas
       ? doc(db, 'artifacts', appId, 'public', 'data', colName, docId)
       : doc(db, colName, docId);
+
+/**
+ * Galerie a proměny (fotky na webu) – vždy kořenové kolekce.
+ * Nesmí záviset na Canvas vs. lokál, aby obsah na webu nikdy nezmizel.
+ * Používejte pouze pro: gallery_items, transformation_items.
+ */
+export const getPublicContentCollectionPath = (colName) =>
+  isVitestNoKey ? {} : collection(db, colName);
+
+export const getPublicContentDocPath = (colName, docId) =>
+  isVitestNoKey ? {} : doc(db, colName, docId);
+
+/** Cesta k veřejnému obsahu (vždy jen název kolekce). */
+export const getPublicContentCollectionPathString = (colName) =>
+  isVitestNoKey ? '' : colName;
 
 export const callSendConfirmationSms = isVitestNoKey
   ? () => Promise.resolve({ data: {} })

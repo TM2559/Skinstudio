@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { addDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { Upload, Trash2, ImageIcon } from 'lucide-react';
-import { storage, getCollectionPath, getDocPath } from '../../firebaseConfig';
+import { storage, getPublicContentCollectionPath, getPublicContentDocPath, getPublicContentCollectionPathString } from '../../firebaseConfig';
 import { COSMETICS_CATEGORY, PMU_CATEGORY, TRANSFORMATIONS_COLLECTION, STORAGE_TRANSFORMATIONS_PREFIX } from '../../constants/cosmetics';
 import { slugify } from '../../utils/helpers';
 import CategoryToggle from './CategoryToggle';
@@ -77,7 +77,7 @@ export default function AdminTransformationsSubTab() {
   const [itemsCosmetics, setItemsCosmetics] = useState([]);
   const [itemsPmu, setItemsPmu] = useState([]);
 
-  const colRef = getCollectionPath(TRANSFORMATIONS_COLLECTION);
+  const colRef = getPublicContentCollectionPath(TRANSFORMATIONS_COLLECTION);
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -160,7 +160,7 @@ export default function AdminTransformationsSubTab() {
   const handleRemove = async (id) => {
     if (!confirm('Tuto proměnu (před/po) odebrat?')) return;
     try {
-      await deleteDoc(getDocPath(TRANSFORMATIONS_COLLECTION, id));
+      await deleteDoc(getPublicContentDocPath(TRANSFORMATIONS_COLLECTION, id));
     } catch (e) {
       console.error(e);
       setError('Nepodařilo se smazat.');
@@ -311,6 +311,10 @@ export default function AdminTransformationsSubTab() {
         <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-dashed border-stone-200 text-stone-400">
           <ImageIcon size={40} className="mb-2" />
           <p className="text-sm">Zatím žádné před/po proměny. Vyberte oba obrázky a vyplňte název.</p>
+          <p className="mt-3 text-xs text-stone-400 max-w-md text-center">
+            Proměny se vždy ukládají do kořenové kolekce (nezávisle na prostředí). Ve Firebase Console → Firestore hledejte:{' '}
+            <code className="bg-stone-200 px-1 rounded break-all">{getPublicContentCollectionPathString(TRANSFORMATIONS_COLLECTION) || TRANSFORMATIONS_COLLECTION}</code>
+          </p>
         </div>
       )}
     </div>

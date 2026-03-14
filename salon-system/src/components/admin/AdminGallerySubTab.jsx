@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { addDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { Upload, Trash2, Image as ImageIcon } from 'lucide-react';
-import { storage, getCollectionPath, getDocPath } from '../../firebaseConfig';
+import { storage, getPublicContentCollectionPath, getPublicContentDocPath, getPublicContentCollectionPathString } from '../../firebaseConfig';
 import { COSMETICS_CATEGORY, PMU_CATEGORY, GALLERY_COLLECTION, STORAGE_GALLERY_PREFIX } from '../../constants/cosmetics';
 import { slugify } from '../../utils/helpers';
 import CategoryToggle from './CategoryToggle';
@@ -72,7 +72,7 @@ export default function AdminGallerySubTab() {
   const [caption, setCaption] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
 
-  const colRef = getCollectionPath(GALLERY_COLLECTION);
+  const colRef = getPublicContentCollectionPath(GALLERY_COLLECTION);
   const [itemsCosmetics, setItemsCosmetics] = useState([]);
   const [itemsPmu, setItemsPmu] = useState([]);
 
@@ -145,7 +145,7 @@ export default function AdminGallerySubTab() {
   const handleRemove = async (id) => {
     if (!confirm('Obrázek odebrat z galerie?')) return;
     try {
-      await deleteDoc(getDocPath(GALLERY_COLLECTION, id));
+      await deleteDoc(getPublicContentDocPath(GALLERY_COLLECTION, id));
     } catch (e) {
       console.error(e);
       setError('Nepodařilo se smazat.');
@@ -255,6 +255,10 @@ export default function AdminGallerySubTab() {
         <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-dashed border-stone-200 text-stone-400">
           <ImageIcon size={40} className="mb-2" />
           <p className="text-sm">Zatím žádné fotografie. Nahrajte první obrázek výše.</p>
+          <p className="mt-3 text-xs text-stone-400 max-w-md text-center">
+            Galerie se vždy ukládá do kořenové kolekce (nezávisle na prostředí). Ve Firebase Console → Firestore hledejte:{' '}
+            <code className="bg-stone-200 px-1 rounded break-all">{getPublicContentCollectionPathString(GALLERY_COLLECTION) || GALLERY_COLLECTION}</code>
+          </p>
         </div>
       )}
     </div>

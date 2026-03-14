@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { query, where, onSnapshot } from 'firebase/firestore';
-import { getCollectionPath } from '../firebaseConfig';
+import { getPublicContentCollectionPath } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
 import { WEB_CONTENT } from '../constants/content';
 import { filterCosmeticsServices } from '../utils/helpers';
@@ -45,7 +45,7 @@ export default function CosmeticsPage({ services = [] }) {
   }, []);
 
   useEffect(() => {
-    const colT = getCollectionPath(TRANSFORMATIONS_COLLECTION);
+    const colT = getPublicContentCollectionPath(TRANSFORMATIONS_COLLECTION);
     const qT = query(colT, where('category', '==', COSMETICS_CATEGORY));
     const unsubT = onSnapshot(qT, (snap) => {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, Phone, Mail, MapPin } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
-import { getCollectionPath } from '../firebaseConfig';
+import { getPublicContentCollectionPath } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
 import { WEB_CONTENT } from '../constants/content';
 import ComparisonSlider from './ComparisonSlider';
@@ -33,7 +33,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
   );
 
   useEffect(() => {
-    const colT = getCollectionPath(TRANSFORMATIONS_COLLECTION);
+    const colT = getPublicContentCollectionPath(TRANSFORMATIONS_COLLECTION);
     const qT = query(colT, where('category', '==', PMU_CATEGORY));
     const unsub = onSnapshot(qT, (snap) => {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
