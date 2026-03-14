@@ -396,6 +396,33 @@ export const createVoucherOrder = onCall(
 
     const ref = await db.collection('voucher_orders').add(orderData);
 
+    // Admin email notification (fire-and-forget)
+    const [py, pm, pd] = targetPickupDate.split('-');
+    const pickupDateFormatted = `${parseInt(pd, 10)}. ${parseInt(pm, 10)}. ${py}`;
+    sendViaResend({
+      from: 'Skin Studio <rezervace@skinstudio.cz>',
+      to: 'rezervace@skinstudio.cz',
+      reply_to: email,
+      subject: `Nová objednávka poukazu – ${voucherData.name || voucherId}`,
+      html: emailWrapper(`
+        <h1 style="color: #2c2c2c; font-size: 24px; margin-bottom: 20px; text-align: center; font-weight: 300; letter-spacing: 1px;">NOVÁ OBJEDNÁVKA POUKAZU</h1>
+        <p style="margin-bottom: 30px; color: #555;">Přišla nová objednávka dárkového poukazu přes web.</p>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fff0f0; border-radius: 6px; margin-bottom: 30px;">
+          <tr><td style="padding: 20px;">
+            <table border="0" cellpadding="5" cellspacing="0" width="100%">
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Poukaz</td><td style="font-size:16px;">${voucherData.name || voucherId}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Balení</td><td style="font-size:16px;">${packaging === 'box' ? 'Krabička (+100 Kč)' : 'Obálka'}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Celková cena</td><td style="font-size:16px;font-weight:bold;">${totalPrice} Kč</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Vyzvednutí</td><td style="font-size:16px;">${pickupDateFormatted}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Telefon</td><td style="font-size:16px;">${phone}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">E-mail</td><td style="font-size:16px;">${email}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">ID objednávky</td><td style="font-size:13px;color:#888;">${ref.id}</td></tr>
+            </table>
+          </td></tr>
+        </table>
+      `),
+    }).catch((err) => console.error('createVoucherOrder admin email failed:', err));
+
     // Initial order confirmation SMS (fire-and-forget; do not block response)
     const number = toE164(phone);
     if (number) {
@@ -430,59 +457,65 @@ const VOUCHER_ORDER_STATUSES = ['new', 'ready', 'completed', 'cancelled'];
 export const updateVoucherOrderStatus = onCall(
   { region: 'europe-west1' },
   async (request) => {
-    if (!request.auth?.uid) {
-      throw new HttpsError('unauthenticated', 'Pro změnu stavu je nutné být přihlášen.');
-    }
+    try {
+      if (!request.auth?.uid) {
+        throw new HttpsError('unauthenticated', 'Pro změnu stavu je nutné být přihlášen.');
+      }
 
-    const { orderId, status } = request.data || {};
-    if (!orderId || typeof orderId !== 'string') {
-      throw new HttpsError('invalid-argument', 'Chybí nebo neplatné orderId.');
-    }
-    if (!VOUCHER_ORDER_STATUSES.includes(status)) {
-      throw new HttpsError('invalid-argument', `Neplatný stav. Povolené: ${VOUCHER_ORDER_STATUSES.join(', ')}.`);
-    }
+      const { orderId, status } = request.data || {};
+      if (!orderId || typeof orderId !== 'string') {
+        throw new HttpsError('invalid-argument', 'Chybí nebo neplatné orderId.');
+      }
+      if (!VOUCHER_ORDER_STATUSES.includes(status)) {
+        throw new HttpsError('invalid-argument', `Neplatný stav. Povolené: ${VOUCHER_ORDER_STATUSES.join(', ')}.`);
+      }
 
-    const ref = db.collection('voucher_orders').doc(orderId);
-    const snap = await ref.get();
-    if (!snap.exists) {
-      throw new HttpsError('not-found', 'Objednávka nebyla nalezena.');
-    }
+      const ref = db.collection('voucher_orders').doc(orderId);
+      const snap = await ref.get();
+      if (!snap.exists) {
+        throw new HttpsError('not-found', 'Objednávka nebyla nalezena.');
+      }
 
-    const data = snap.data();
-    const previousStatus = data.status || 'new';
+      const data = snap.data();
+      const previousStatus = data.status || 'new';
 
-    await ref.update({ status });
+      await ref.update({ status });
 
-    let smsSent = false;
-    const wasPendingOrNew = previousStatus === 'new' || previousStatus === 'pending';
-    if (wasPendingOrNew && status === 'ready') {
-      const appId = applicationId.value();
-      const appToken = applicationToken.value();
-      const phone = data.contact_phone;
-      const totalPrice = data.total_price;
+      let smsSent = false;
+      const wasPendingOrNew = previousStatus === 'new' || previousStatus === 'pending';
+      if (wasPendingOrNew && status === 'ready') {
+        const appId = applicationId.value();
+        const appToken = applicationToken.value();
+        const phone = data.contact_phone;
+        const totalPrice = data.total_price;
 
-      if (appId && appToken && phone) {
-        const number = toE164(phone);
-        if (number) {
-          const rawText = buildVoucherReadySms(totalPrice);
-          const text = removeDiacritics(rawText);
-          const sid = senderId.value();
-          const sidVal = senderIdValue.value();
-          try {
-            const { ok, data: resData } = await sendOneSms(appId, appToken, number, text, false, sid || undefined, sidVal || undefined);
-            if (ok) {
-              smsSent = true;
-            } else {
-              console.warn('updateVoucherOrderStatus BulkGate:', resData);
+        if (appId && appToken && phone) {
+          const number = toE164(phone);
+          if (number) {
+            const rawText = buildVoucherReadySms(totalPrice);
+            const text = removeDiacritics(rawText);
+            const sid = senderId.value();
+            const sidVal = senderIdValue.value();
+            try {
+              const { ok, data: resData } = await sendOneSms(appId, appToken, number, text, false, sid || undefined, sidVal || undefined);
+              if (ok) {
+                smsSent = true;
+              } else {
+                console.warn('updateVoucherOrderStatus BulkGate:', resData);
+              }
+            } catch (err) {
+              console.error('updateVoucherOrderStatus SMS:', err);
             }
-          } catch (err) {
-            console.error('updateVoucherOrderStatus SMS:', err);
           }
         }
       }
-    }
 
-    return { success: true, smsSent };
+      return { success: true, smsSent };
+    } catch (err) {
+      if (err instanceof HttpsError) throw err;
+      console.error('updateVoucherOrderStatus error:', err);
+      throw new HttpsError('internal', err?.message || 'Změna stavu selhala.');
+    }
   }
 );
 
@@ -755,8 +788,8 @@ function formatDateDisplay(dateKey) {
 
 /**
  * Naplánovaná funkce: každý den v 16:00 (Praha) odešle připomínky na zítřek.
- * SMS přes BulkGate (rezervace s telefonem), e-mail přes EmailJS (rezervace s e-mailem).
- * Vyžaduje: BULKGATE_* pro SMS; EMAILJS_* volitelně pro e-mail.
+ * SMS přes BulkGate (rezervace s telefonem), e-mail přes Resend (rezervace s e-mailem).
+ * Vyžaduje: BULKGATE_* pro SMS; RESEND_API_KEY volitelně pro e-mail.
  */
 export const sendDailyReminders = onSchedule(
   {
@@ -782,11 +815,8 @@ export const sendDailyReminders = onSchedule(
     const sidVal = senderIdValue.value();
     const hasSms = Boolean(appId && appToken);
 
-    /** EmailJS pouze z process.env (volitelné), aby deploy v non-interactive nevyžadoval tyto proměnné. */
-    const emailServiceId = process.env.EMAILJS_SERVICE_ID || '';
-    const emailTemplateId = process.env.EMAILJS_REMINDER_TEMPLATE_ID || '';
-    const emailPublicKey = process.env.EMAILJS_PUBLIC_KEY || '';
-    const hasEmail = Boolean(emailServiceId && emailTemplateId && emailPublicKey);
+    const resendApiKey = process.env.RESEND_API_KEY || '';
+    const hasEmail = Boolean(resendApiKey);
 
     let smsSent = 0;
     let emailSent = 0;
@@ -812,26 +842,33 @@ export const sendDailyReminders = onSchedule(
 
       if (hasEmail && res.email) {
         try {
-          const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              service_id: emailServiceId,
-              template_id: emailTemplateId,
-              user_id: emailPublicKey,
-              template_params: {
-                name: res.name,
-                to_email: res.email,
-                date: dateDisplay,
-                time: res.time,
-                service: res.serviceName,
-                reply_to: 'rezervace@skinstudio.cz',
-              },
-            }),
+          const { Resend } = await import('resend');
+          const resend = new Resend(resendApiKey);
+          const { error } = await resend.emails.send({
+            from: 'Skin Studio <rezervace@skinstudio.cz>',
+            to: res.email,
+            reply_to: 'rezervace@skinstudio.cz',
+            subject: `Připomínka rezervace – ${dateDisplay}`,
+            html: `
+              <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#333">
+                <h2 style="color:#b08d7a">Skin Studio</h2>
+                <p>Dobrý den, <strong>${res.name}</strong>,</p>
+                <p>připomínáme Vám zítřejší rezervaci:</p>
+                <table style="border-collapse:collapse;width:100%;margin:16px 0">
+                  <tr><td style="padding:8px 12px;background:#f9f5f2;font-weight:bold">Datum</td><td style="padding:8px 12px">${dateDisplay}</td></tr>
+                  <tr><td style="padding:8px 12px;background:#f9f5f2;font-weight:bold">Čas</td><td style="padding:8px 12px">${res.time}</td></tr>
+                  <tr><td style="padding:8px 12px;background:#f9f5f2;font-weight:bold">Služba</td><td style="padding:8px 12px">${res.serviceName}</td></tr>
+                </table>
+                <p>Těšíme se na Vás!</p>
+                <p style="color:#888;font-size:12px">V případě dotazů nás kontaktujte na <a href="mailto:rezervace@skinstudio.cz">rezervace@skinstudio.cz</a>.</p>
+              </div>
+            `,
           });
-          if (emailRes.ok) {
+          if (!error) {
             await db.doc(`reservations/${res.id}`).update({ reminderSent: true });
             emailSent++;
+          } else {
+            console.error('sendDailyReminders email Resend error', res.id, error);
           }
         } catch (err) {
           console.error('sendDailyReminders email', res.id, err);
@@ -840,5 +877,189 @@ export const sendDailyReminders = onSchedule(
     }
 
     console.log(`sendDailyReminders: ${tomorrowKey} – odesláno ${smsSent} SMS, ${emailSent} e-mailů.`);
+  }
+);
+
+// --- Resend email callable funkce (rezervace) ---
+
+const EMAIL_BASE_STYLE = `
+  body { margin: 0; padding: 0; min-width: 100%; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #333333; background-color: #f9f9f9; }
+  a { color: #d4a5a5; text-decoration: none; }
+  @media only screen and (max-width: 600px) { .email-container { width: 100% !important; } }
+`;
+
+const EMAIL_HEADER = `
+  <tr>
+    <td style="padding: 0; background-color: #000000; text-align: center;">
+      <img src="https://raw.githubusercontent.com/TM2559/Skinstudio/main/salon-system/public/skinstudio_titulka.png" alt="Skin Studio" style="display: block; width: 100%; max-height: 250px; object-fit: cover; border: 0;">
+    </td>
+  </tr>
+`;
+
+function emailWrapper(content) {
+  return `<!DOCTYPE html>
+<html>
+<head><style>${EMAIL_BASE_STYLE}</style></head>
+<body style="background-color: #f4f4f4; margin: 0; padding: 20px;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" class="email-container" style="background-color: #ffffff; width: 600px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin: 0 auto;">
+    ${EMAIL_HEADER}
+    <tr><td style="padding: 40px 30px;">${content}</td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+function detailsTable(serviceName, date, time) {
+  return `
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fff0f0; border-radius: 6px; margin-bottom: 30px;">
+      <tr><td style="padding: 20px;">
+        <table border="0" cellpadding="5" cellspacing="0" width="100%">
+          <tr>
+            <td width="30%" style="font-weight: bold; color: #8a5a5a; text-transform: uppercase; font-size: 12px;">Služba</td>
+            <td style="font-size: 16px;">${serviceName}</td>
+          </tr>
+          <tr>
+            <td width="30%" style="font-weight: bold; color: #8a5a5a; text-transform: uppercase; font-size: 12px;">Datum</td>
+            <td style="font-size: 16px;">${date}</td>
+          </tr>
+          <tr>
+            <td width="30%" style="font-weight: bold; color: #8a5a5a; text-transform: uppercase; font-size: 12px;">Čas</td>
+            <td style="font-size: 16px;">${time}</td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>`;
+}
+
+function reminderEmailHtml(name, serviceName, date, time) {
+  return emailWrapper(`
+    <h1 style="color: #2c2c2c; font-size: 24px; margin-bottom: 20px; text-align: center; font-weight: 300; letter-spacing: 1px;">Připomenutí REZERVACE</h1>
+    <p style="margin-bottom: 20px;">Dobrý den, <strong>${name}</strong>,</p>
+    <p style="margin-bottom: 30px; color: #555;">Dovoluji si Vám připomenout, že se blíží termín Vaší rezervace.</p>
+    ${detailsTable(serviceName, date, time)}
+    <p style="margin-bottom: 10px;">Pokud potřebujete termín změnit, prosím kontaktujte mě co nejdříve.</p>
+    <p>Těším se na vaši návštěvu!</p>
+  `);
+}
+
+async function sendViaResend(payload) {
+  const apiKey = process.env.RESEND_API_KEY || '';
+  if (!apiKey) {
+    console.warn('sendViaResend: RESEND_API_KEY chybí.');
+    return false;
+  }
+  const { Resend } = await import('resend');
+  const resend = new Resend(apiKey);
+  const { error } = await resend.emails.send(payload);
+  if (error) { console.error('Resend error:', error); return false; }
+  return true;
+}
+
+/** Callable: sendBookingConfirmationEmail – potvrzení zákazníkovi. */
+export const sendBookingConfirmationEmail = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { name, email, date, time, serviceName } = request.data || {};
+    if (!email) throw new HttpsError('invalid-argument', 'Chybí e-mail.');
+    const sent = await sendViaResend({
+      from: 'Skin Studio <rezervace@skinstudio.cz>',
+      to: email,
+      reply_to: 'rezervace@skinstudio.cz',
+      subject: `Potvrzení rezervace – ${serviceName}`,
+      html: emailWrapper(`
+        <h1 style="color: #2c2c2c; font-size: 24px; margin-bottom: 20px; text-align: center; font-weight: 300; letter-spacing: 1px;">POTVRZENÍ REZERVACE</h1>
+        <p style="margin-bottom: 20px;">Dobrý den, <strong>${name}</strong>,</p>
+        <p style="margin-bottom: 30px; color: #555;">Děkuji za Vaši rezervaci. Vámi vybraný termín je pro vás závazně blokován.</p>
+        ${detailsTable(serviceName, date, time)}
+        <p style="margin-bottom: 10px;">Pokud potřebujete termín změnit, prosím kontaktujte mě co nejdříve.</p>
+        <p>Těším se na vaši návštěvu!</p>
+      `),
+    });
+    return { sent };
+  }
+);
+
+/** Callable: sendAdminNotificationEmail – nová rezervace adminovi. */
+export const sendAdminNotificationEmail = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { name, email, phone, date, time, serviceName, calendarLink } = request.data || {};
+    const calendarHtml = calendarLink
+      ? `<tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;padding:5px;">Kalendář</td><td style="font-size:16px;padding:5px;"><a href="${calendarLink}" style="color:#d4a5a5;">Google Calendar</a></td></tr>`
+      : '';
+    const sent = await sendViaResend({
+      from: 'Skin Studio <rezervace@skinstudio.cz>',
+      to: 'rezervace@skinstudio.cz',
+      reply_to: email || 'rezervace@skinstudio.cz',
+      subject: `Nová rezervace – ${name} (${date} ${time})`,
+      html: emailWrapper(`
+        <h1 style="color: #2c2c2c; font-size: 24px; margin-bottom: 20px; text-align: center; font-weight: 300; letter-spacing: 1px;">NOVÁ REZERVACE</h1>
+        <p style="margin-bottom: 30px; color: #555;">Přišla nová rezervace přes web.</p>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fff0f0; border-radius: 6px; margin-bottom: 30px;">
+          <tr><td style="padding: 20px;">
+            <table border="0" cellpadding="5" cellspacing="0" width="100%">
+              <tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Jméno</td><td style="font-size:16px;">${name}</td></tr>
+              <tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Služba</td><td style="font-size:16px;">${serviceName}</td></tr>
+              <tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Datum</td><td style="font-size:16px;">${date}</td></tr>
+              <tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Čas</td><td style="font-size:16px;">${time}</td></tr>
+              <tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Telefon</td><td style="font-size:16px;">${phone || '–'}</td></tr>
+              <tr><td width="30%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">E-mail</td><td style="font-size:16px;">${email || '–'}</td></tr>
+              ${calendarHtml}
+            </table>
+          </td></tr>
+        </table>
+      `),
+    });
+    return { sent };
+  }
+);
+
+/** Callable: sendAdminVoucherOrderEmail – nová objednávka poukazu adminovi. */
+export const sendAdminVoucherOrderEmail = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { voucherName, packaging, totalPrice, contactPhone, contactEmail, pickupDate, orderId } = request.data || {};
+    const packagingLabel = packaging === 'box' ? 'Krabička (+100 Kč)' : 'Obálka';
+    const sent = await sendViaResend({
+      from: 'Skin Studio <rezervace@skinstudio.cz>',
+      to: 'rezervace@skinstudio.cz',
+      reply_to: contactEmail || 'rezervace@skinstudio.cz',
+      subject: `Nová objednávka poukazu – ${voucherName}`,
+      html: emailWrapper(`
+        <h1 style="color: #2c2c2c; font-size: 24px; margin-bottom: 20px; text-align: center; font-weight: 300; letter-spacing: 1px;">NOVÁ OBJEDNÁVKA POUKAZU</h1>
+        <p style="margin-bottom: 30px; color: #555;">Přišla nová objednávka dárkového poukazu přes web.</p>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fff0f0; border-radius: 6px; margin-bottom: 30px;">
+          <tr><td style="padding: 20px;">
+            <table border="0" cellpadding="5" cellspacing="0" width="100%">
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Poukaz</td><td style="font-size:16px;">${voucherName}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Balení</td><td style="font-size:16px;">${packagingLabel}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Celková cena</td><td style="font-size:16px;font-weight:bold;">${totalPrice} Kč</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Vyzvednutí</td><td style="font-size:16px;">${pickupDate}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">Telefon</td><td style="font-size:16px;">${contactPhone || '–'}</td></tr>
+              <tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">E-mail</td><td style="font-size:16px;">${contactEmail || '–'}</td></tr>
+              ${orderId ? `<tr><td width="35%" style="font-weight:bold;color:#8a5a5a;text-transform:uppercase;font-size:12px;">ID objednávky</td><td style="font-size:13px;color:#888;">${orderId}</td></tr>` : ''}
+            </table>
+          </td></tr>
+        </table>
+      `),
+    });
+    return { sent };
+  }
+);
+
+/** Callable: sendReminderEmailCallable – manuální připomínka zákazníkovi. */
+export const sendReminderEmailCallable = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { name, email, date, time, serviceName } = request.data || {};
+    if (!email) throw new HttpsError('invalid-argument', 'Chybí e-mail.');
+    const sent = await sendViaResend({
+      from: 'Skin Studio <rezervace@skinstudio.cz>',
+      to: email,
+      reply_to: 'rezervace@skinstudio.cz',
+      subject: `Připomínka rezervace – ${date}`,
+      html: reminderEmailHtml(name, serviceName, date, time),
+    });
+    return { sent };
   }
 );

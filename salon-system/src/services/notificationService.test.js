@@ -2,24 +2,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockCallSendConfirmationSms = vi.fn(() => Promise.resolve());
 const mockCallSendReminderSms = vi.fn(() => Promise.resolve({ data: { sent: 2 } }));
+const mockCallSendBookingConfirmationEmail = vi.fn(() => Promise.resolve({ data: { sent: true } }));
+const mockCallSendAdminNotificationEmail = vi.fn(() => Promise.resolve({ data: { sent: true } }));
+const mockCallSendReminderEmail = vi.fn(() => Promise.resolve({ data: { sent: true } }));
 
 vi.mock('../firebaseConfig', () => ({
   callSendConfirmationSms: (...args) => mockCallSendConfirmationSms(...args),
   callSendReminderSms: (...args) => mockCallSendReminderSms(...args),
-  EMAILJS_CONFIG: { PUBLIC_KEY: 'k', SERVICE_ID: 's', CONFIRM_TEMPLATE: 'c', ADMIN_TEMPLATE: 'a', REMINDER_TEMPLATE: 'r' },
+  callSendBookingConfirmationEmail: (...args) => mockCallSendBookingConfirmationEmail(...args),
+  callSendAdminNotificationEmail: (...args) => mockCallSendAdminNotificationEmail(...args),
+  callSendReminderEmail: (...args) => mockCallSendReminderEmail(...args),
 }));
-vi.mock('../constants/config', () => ({
-  CONTACT: { EMAIL_PUBLIC: 'info@t.cz', EMAIL_RESERVATIONS: 'rez@t.cz' },
-}));
-
-global.fetch = vi.fn(() => Promise.resolve({ ok: true }));
 
 import { sendBookingConfirmations, sendReminders } from './notificationService';
 
 describe('notificationService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn(() => Promise.resolve({ ok: true }));
   });
 
   describe('sendBookingConfirmations', () => {
@@ -45,7 +44,8 @@ describe('notificationService', () => {
       const results = await sendBookingConfirmations(baseParams);
       expect(results.email).toBe(true);
       expect(results.adminEmail).toBe(true);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(mockCallSendBookingConfirmationEmail).toHaveBeenCalledTimes(1);
+      expect(mockCallSendAdminNotificationEmail).toHaveBeenCalledTimes(1);
     });
 
     it('skips emails when email is empty', async () => {
@@ -59,6 +59,7 @@ describe('notificationService', () => {
       const results = await sendBookingConfirmations(baseParams);
       expect(results.sms).toBe(false);
       expect(results.email).toBe(true);
+      expect(results.adminEmail).toBe(true);
     });
   });
 
