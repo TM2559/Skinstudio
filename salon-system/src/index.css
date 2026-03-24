@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Skin Studio – paleta z titulky: teplý krém, zlatý akcent, uhlově černá */
 :root {
