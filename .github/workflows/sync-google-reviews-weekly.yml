@@ -1,0 +1,44 @@
+name: Sync Google Reviews Weekly
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: salon-system
+        run: npm ci
+
+      - name: Sync reviews from Google Places API
+        working-directory: salon-system
+        run: npm run sync:google-reviews
+        env:
+          VITE_GOOGLE_PLACES_API_KEY: ${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}
+          VITE_GOOGLE_PLACE_ID: ${{ secrets.VITE_GOOGLE_PLACE_ID }}
+
+      - name: Commit updated reviews
+        run: |
+          if git diff --quiet -- salon-system/src/constants/googleReviews.js; then
+            echo "No review changes detected."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add salon-system/src/constants/googleReviews.js
+          git commit -m "chore: weekly sync Google reviews"
+          git push origin dev

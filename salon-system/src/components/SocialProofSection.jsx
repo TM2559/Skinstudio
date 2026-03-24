@@ -1,30 +1,7 @@
 import React from 'react';
 import { Star, ExternalLink, Heart } from 'lucide-react';
 import { GOOGLE_REVIEW_URL as CONFIG_REVIEW_URL } from '../firebaseConfig';
-
-const MOCK_REVIEWS = [
-  {
-    id: 1,
-    name: 'Martina K.',
-    roleOrDate: 'Klientka, leden 2025',
-    rating: 5,
-    text: 'Skvělá péče o pleť, profesionální přístup a příjemné prostředí. Lucie mi pomohla s problematickou pletí a výsledek předčil očekávání. Určitě doporučuji.',
-  },
-  {
-    id: 2,
-    name: 'Jana V.',
-    roleOrDate: 'Pravidelná zákaznice',
-    rating: 5,
-    text: 'Nejlepší kosmetika v okolí. Individuální přístup, čistota na prvním místě a vždy odcházím odpočatá a spokojená. Děkuji za každé ošetření.',
-  },
-  {
-    id: 3,
-    name: 'Petra S.',
-    roleOrDate: 'První návštěva, únor 2025',
-    rating: 5,
-    text: 'Perfektní laminace obočí a milé přijetí. Studio je útulné, Lucie je velmi vstřícná a odborně mi vše vysvětlila. Už mám objednaný další termín.',
-  },
-];
+import { GOOGLE_REVIEWS } from '../constants/googleReviews';
 
 function ReviewCard({ name, roleOrDate, rating, text }) {
   return (
@@ -143,31 +120,36 @@ function ActionCard({ qrImageSrc = '/Skinstudio_ggl_qr.png', googleReviewUrl = S
 export default function SocialProofSection({
   qrImageSrc = '/Skinstudio_ggl_qr.png',
   googleReviewUrl,
-  reviews = MOCK_REVIEWS,
+  reviews,
   sectionTitle = 'Recenze klientek ze Skin Studia',
 }) {
   const reviewUrl = googleReviewUrl && googleReviewUrl.trim() ? googleReviewUrl.trim() : SKIN_STUDIO_GOOGLE_REVIEW_URL;
+  const visibleReviews = Array.isArray(reviews) && reviews.length > 0
+    ? reviews
+    : GOOGLE_REVIEWS;
+  const hasRealReviews = visibleReviews.length > 0;
+
   return (
     <section className="bg-gray-50 py-12 md:py-16">
       <div className="max-w-6xl mx-auto px-4">
         <h2 className="font-display font-bold text-2xl md:text-3xl text-gray-900 mb-8 text-center">
           {sectionTitle}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6 md:gap-8 items-stretch">
-          {/* Left: review cards — stretch to match row height */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 min-w-0 auto-rows-fr h-full min-h-0">
-            {reviews.map((r) => (
-              <ReviewCard
-                key={r.id}
-                name={r.name}
-                roleOrDate={r.roleOrDate}
-                rating={r.rating}
-                text={r.text}
-              />
-            ))}
-          </div>
-          {/* Right: action card (fixed width on desktop); equal height, content centered */}
-          <div className="w-full md:w-[320px] md:shrink-0 h-full min-h-0 flex">
+        <div className={`grid grid-cols-1 ${hasRealReviews ? 'md:grid-cols-[1fr_320px]' : 'md:grid-cols-[320px] md:justify-center'} gap-6 md:gap-8 items-stretch`}>
+          {hasRealReviews && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 min-w-0 auto-rows-fr h-full min-h-0">
+              {visibleReviews.map((r) => (
+                <ReviewCard
+                  key={r.id}
+                  name={r.name}
+                  roleOrDate={r.roleOrDate}
+                  rating={r.rating}
+                  text={r.text}
+                />
+              ))}
+            </div>
+          )}
+          <div className={`w-full md:w-[320px] md:shrink-0 h-full min-h-0 flex ${hasRealReviews ? '' : 'md:mx-auto'}`}>
             <ActionCard qrImageSrc={qrImageSrc} googleReviewUrl={reviewUrl} />
           </div>
         </div>
