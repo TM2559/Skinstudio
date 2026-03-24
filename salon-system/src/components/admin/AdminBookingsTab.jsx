@@ -1,8 +1,10 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { Search, Send } from 'lucide-react';
 import { Utils } from '../../utils/helpers';
 import ReservationList from './ReservationList';
 import WeeklyDateStrip from './WeeklyDateStrip';
+
+const ADMIN_BOOKINGS_DATE_INPUT_ID = 'admin-bookings-date-picker';
 
 const AdminBookingsTab = ({
   adminDateInput,
@@ -17,8 +19,6 @@ const AdminBookingsTab = ({
   reservations = [],
   isGlobalSearchMode,
 }) => {
-  const dateInputRef = useRef(null);
-
   return (
   <div className="max-w-2xl mx-auto space-y-6">
     <div className="flex flex-col gap-3">
@@ -26,14 +26,14 @@ const AdminBookingsTab = ({
         adminDateInput={adminDateInput}
         setAdminDateInput={setAdminDateInput}
         reservations={reservations}
-        onOpenDatePicker={() => dateInputRef.current?.showPicker?.()}
+        dateInputId={ADMIN_BOOKINGS_DATE_INPUT_ID}
       />
       <input
-        ref={dateInputRef}
+        id={ADMIN_BOOKINGS_DATE_INPUT_ID}
         type="date"
         value={adminDateInput}
         onChange={(e) => setAdminDateInput(e.target.value)}
-        className="sr-only absolute opacity-0 pointer-events-none w-0 h-0"
+        className="sr-only"
         aria-hidden
       />
     </div>
