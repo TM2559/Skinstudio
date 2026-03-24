@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Skin Studio – paleta z titulky: teplý krém, zlatý akcent, uhlově černá */
 :root {
@@ -8,10 +6,16 @@
   --skin-cream-dark: #ebe7de;
   --skin-gold: #c5aa80;
   --skin-gold-dark: #a3803d;
+  --skin-gold-from: #dec89a;
+  --skin-gold-to: #b08d55;
   --skin-charcoal: #2f2f2f;
   --skin-beige-muted: #d3cfc6;
   --skin-white: #fdfcfa;
   --pmu-color: #E6B8A2;
+  --skin-rose-from: #d4a89a;
+  --skin-rose-via: #c48f83;
+  --skin-rose-to: #b0786d;
+  --skin-rose-light: rgba(212, 168, 154, 0.3);
 }
 
 @layer base {
@@ -228,45 +232,52 @@
     display: none !important;
   }
 
-  /* 1. CHAMPAGNE GOLD BUTTON (For Light Sections) – tokens from tailwind theme */
+  /* 1. CHAMPAGNE GOLD BUTTON (For Light Sections) */
   .btn-gold {
-    @apply inline-block rounded-full px-8 py-3
-           font-sans font-semibold text-xs uppercase tracking-widest text-white
-           bg-gradient-to-b from-skin-gold-from to-skin-gold-to
-           border-t border-white/25
-           shadow-skin-gold
-           transition-all duration-300;
+    @apply inline-block rounded-full px-8 py-3 font-sans font-semibold text-xs uppercase tracking-widest text-white border-t border-white/25 transition-all duration-300;
+    background-image: linear-gradient(to bottom, var(--skin-gold-from), var(--skin-gold-to));
+    box-shadow: 0 4px 20px rgba(197, 165, 114, 0.3);
   }
   .btn-gold:hover {
-    @apply shadow-skin-gold-hover -translate-y-0.5;
+    box-shadow: 0 6px 25px rgba(197, 165, 114, 0.5);
+    transform: translateY(-2px);
   }
 
-  /* 2. ROSE GOLD SATIN BUTTON (For Dark PMU Section) – tokens from tailwind theme */
+  /* 2. ROSE GOLD SATIN BUTTON (For Dark PMU Section) */
   .btn-rose {
-    @apply inline-block rounded-full px-8 py-3
-           font-sans font-semibold text-xs uppercase tracking-widest text-white
-           bg-gradient-to-b from-skin-rose-from via-skin-rose-via to-skin-rose-to
-           border border-skin-rose-light/20
-           shadow-skin-rose
-           transition-all duration-300;
+    @apply inline-block rounded-full px-8 py-3 font-sans font-semibold text-xs uppercase tracking-widest text-white transition-all duration-300;
+    background-image: linear-gradient(to bottom, var(--skin-rose-from), var(--skin-rose-via), var(--skin-rose-to));
+    border: 1px solid var(--skin-rose-light);
+    box-shadow: 0 4px 20px rgba(196, 143, 131, 0.35);
   }
   .btn-rose:hover {
-    @apply shadow-skin-rose-hover -translate-y-0.5;
+    box-shadow: 0 6px 25px rgba(196, 143, 131, 0.5);
+    transform: translateY(-2px);
   }
 
-  /* 3. Editorial headline – serif, tight tracking, responsive sizes */
+  /* 3. Editorial headline – Playfair Display, responsive sizes */
   .headline-editorial {
-    @apply font-serif tracking-tight
-           text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
+    font-family: 'Playfair Display', Georgia, serif;
+    @apply tracking-tight text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
   }
 
-  /* 4. Body text – sans, light weight; pair with modifier for context */
+  /* 4. Body text */
   .body-text {
-    @apply font-sans font-light text-skin-text;
+    @apply font-sans font-light text-[var(--skin-charcoal)];
     line-height: 1.65;
   }
   .body-text-on-dark {
-    @apply font-sans font-light text-skin-base/70;
+    @apply font-sans font-light text-white/70;
     line-height: 1.65;
+  }
+
+  /* Developer signature "0x9ff" – idle low-contrast, hover = #99ffff + neon glow */
+  .signature-0x9ff {
+    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  }
+  .signature-0x9ff:hover {
+    text-shadow:
+      0 0 8px rgba(153, 255, 255, 0.6),
+      0 0 16px rgba(153, 255, 255, 0.2);
   }
 }

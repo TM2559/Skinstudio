@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { Utils } from '../../utils/helpers';
+import { BookingLegalText } from './BookingLegalText';
 
 function calculateReservationTotal(service, upsells) {
   const base = service?.isStartingPrice ? 0 : (service?.price ?? 0);
@@ -23,6 +24,7 @@ export default function BookingSummaryForm({
   setFormData,
   isSending,
   onSubmit,
+  onOpenPrivacyModal,
 }) {
   return (
     <div className={`p-8 rounded-2xl border shadow-lg h-fit md:sticky md:top-4 ${isDark ? 'bg-stone-950 border-stone-800' : 'border-stone-100 bg-white'}`}>
@@ -91,6 +93,9 @@ export default function BookingSummaryForm({
             'Potvrdit termín'
           )}
         </button>
+        {onOpenPrivacyModal && (
+          <BookingLegalText onOpenPrivacyModal={onOpenPrivacyModal} isDark={isDark} />
+        )}
       </form>
     </div>
   );

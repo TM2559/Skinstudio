@@ -10,6 +10,7 @@ const ReservationApp = lazy(() => import('./components/ReservationApp'));
 const CosmeticsPage = lazy(() => import('./components/CosmeticsPage'));
 const PMUPage = lazy(() => import('./components/PMUPage'));
 const ThankYouPage = lazy(() => import('./components/ThankYouPage'));
+const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
 
 function PageLoader() {
   return (
@@ -66,6 +67,14 @@ export default function App() {
           }
         />
         <Route path="/dekujeme" element={<ThankYouPage />} />
+        <Route
+          path="/zpracovani-osobnich-udaju"
+          element={
+            <Layout setView={adminAuth.setView}>
+              <PrivacyPage />
+            </Layout>
+          }
+        />
         <Route path="/cenik" element={<Navigate to="/#cenik" replace />} />
         <Route
           path="/rezervace"

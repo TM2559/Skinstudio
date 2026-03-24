@@ -4,6 +4,7 @@ import { Menu, X, MapPin, Mail, Phone } from 'lucide-react';
 import { INSTAGRAM_URL } from '../firebaseConfig';
 import InstagramShowcase from './InstagramShowcase';
 import { TaglineWithHeart } from './FooterTagline';
+import DeveloperSignature from './DeveloperSignature';
 import { WEB_CONTENT } from '../constants/content';
 
 const getNav = () => {
@@ -197,16 +198,31 @@ export default function Layout({ children, setView }) {
                   {WEB_CONTENT.footer.phone}
                 </a>
               </p>
+              <p className="flex items-center gap-2 md:justify-end">
+                IČO {WEB_CONTENT.footer.ico}
+              </p>
+              <p className="flex items-center gap-2 md:justify-end text-xs text-gray-400">
+                {WEB_CONTENT.footer.tradeRegisterText}
+              </p>
             </address>
           </div>
         </div>
 
         {/* Bottom bar */}
         <div className="border-t border-gray-700/60">
-          <div className="container mx-auto px-6 py-4">
-            <p className="text-xs text-center">
-              {WEB_CONTENT.footer.copyright}
-            </p>
+          <div className="container mx-auto px-6 py-4 flex flex-row flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <p className="text-xs">
+                {WEB_CONTENT.footer.copyright}
+              </p>
+              <Link
+                to="/zpracovani-osobnich-udaju"
+                className="text-xs text-gray-400 hover:text-[#8C5E35] transition-colors"
+              >
+                {WEB_CONTENT.footer.privacyLinkLabel}
+              </Link>
+            </div>
+            <DeveloperSignature theme="dark" />
           </div>
         </div>
       </footer>

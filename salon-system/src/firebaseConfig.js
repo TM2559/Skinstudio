@@ -47,8 +47,8 @@ export const INSTAGRAM_POST_URLS = (getEnv('VITE_INSTAGRAM_POST_URLS') || '').sp
 // Google Recenze – stejná URL jako v QR kódu (fallback = Skin Studio place ID)
 export const GOOGLE_REVIEW_URL = getEnv('VITE_GOOGLE_REVIEW_URL') || 'https://g.page/r/CWkt9xHMgMjqEAE/review';
 
-// Pokud jsme v Canvasu, použijeme injektované ID, jinak defaultní nebo prázdné
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+// Pokud jsme v Canvasu, použijeme injektované ID; lokálně lze přečíst i z artifacts přes VITE_FIREBASE_ARTIFACTS_APP_ID
+const appId = typeof __app_id !== 'undefined' ? __app_id : getEnv('VITE_FIREBASE_ARTIFACTS_APP_ID') || 'default-app-id';
 
 // Inicializace (v testech bez API klíče použít mocky, aby CI nepadalo na auth/invalid-api-key)
 let app;
@@ -74,6 +74,8 @@ if (isVitestNoKey) {
 export { auth, db, storage };
 
 // Helpery pro cesty
+// Důležité: V Canvasu se data ukládají pod artifacts/<appId>/public/data/<colName>,
+// lokálně přímo do <colName>.
 export const getCollectionPath = (colName) =>
   isVitestNoKey
     ? {}
@@ -81,12 +83,50 @@ export const getCollectionPath = (colName) =>
       ? collection(db, 'artifacts', appId, 'public', 'data', colName)
       : collection(db, colName);
 
+/** Cesta ke kolekci jako řetězec (pro zobrazení v UI / diagnostiku). */
+export const getCollectionPathString = (colName) =>
+  isVitestNoKey ? '' : isCanvas ? `artifacts/${appId}/public/data/${colName}` : colName;
+
 export const getDocPath = (colName, docId) =>
   isVitestNoKey
     ? {}
     : isCanvas
       ? doc(db, 'artifacts', appId, 'public', 'data', colName, docId)
       : doc(db, colName, docId);
+
+/**
+ * Galerie a proměny (fotky na webu) – zápis vždy do kořene.
+ * Používejte pouze pro: gallery_items, transformation_items.
+ */
+export const getPublicContentCollectionPath = (colName) =>
+  isVitestNoKey ? {} : collection(db, colName);
+
+export const getPublicContentDocPath = (colName, docId) =>
+  isVitestNoKey ? {} : doc(db, colName, docId);
+
+/** Cesta k veřejnému obsahu (vždy jen název kolekce). */
+export const getPublicContentCollectionPathString = (colName) =>
+  isVitestNoKey ? '' : colName;
+
+/**
+ * Pro ČTENÍ galerie a proměn: vrací pole cest (kořen + artifacts),
+ * aby se zobrazila i data uložená v Canvasu pod artifacts. Zápis zůstává jen do kořene.
+ * Na lokále se zkouší i artifacts (appId z VITE_FIREBASE_ARTIFACTS_APP_ID nebo default-app-id).
+ */
+export const getPublicContentCollectionPathsForRead = (colName) => {
+  if (isVitestNoKey) return [];
+  const root = collection(db, colName);
+  const artifactsPath = collection(db, 'artifacts', appId, 'public', 'data', colName);
+  return [root, artifactsPath];
+};
+
+/** Dokument pro mazání podle zdroje (0 = kořen, 1 = artifacts). */
+export const getPublicContentDocPathBySourceIndex = (colName, docId, sourcePathIndex) => {
+  if (isVitestNoKey) return {};
+  return sourcePathIndex === 0
+    ? doc(db, colName, docId)
+    : doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
+};
 
 export const callSendConfirmationSms = isVitestNoKey
   ? () => Promise.resolve({ data: {} })

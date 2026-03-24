@@ -2,13 +2,14 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, Phone, Mail, MapPin } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
-import { getCollectionPath } from '../firebaseConfig';
+import { getPublicContentCollectionPathsForRead } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
 import { WEB_CONTENT } from '../constants/content';
 import ComparisonSlider from './ComparisonSlider';
 import EditorialGallery from './EditorialGallery';
 import ReservationApp from './ReservationApp';
 import { TaglineWithHeart } from './FooterTagline';
+import DeveloperSignature from './DeveloperSignature';
 import ServiceSchema from './ServiceSchema';
 import BreadcrumbSchema from './BreadcrumbSchema';
 import useSEO from '../hooks/useSEO';
@@ -32,14 +33,26 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
   );
 
   useEffect(() => {
-    const colT = getCollectionPath(TRANSFORMATIONS_COLLECTION);
-    const qT = query(colT, where('category', '==', PMU_CATEGORY));
-    const unsub = onSnapshot(qT, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-      setSliders(list);
+    const colRefs = getPublicContentCollectionPathsForRead(TRANSFORMATIONS_COLLECTION);
+    if (!colRefs.length) return;
+    const docsByPathRef = { current: colRefs.map(() => []) };
+    const unsubs = colRefs.map((colT, idx) => {
+      const qT = query(colT, where('category', '==', PMU_CATEGORY));
+      return onSnapshot(qT, (snap) => {
+        docsByPathRef.current[idx] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const merged = docsByPathRef.current.flat();
+        const seen = new Set();
+        const list = merged.filter((item) => {
+          const key = [item.imageBeforeUrl, item.imageAfterUrl].filter(Boolean).join('|') || item.id;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+        setSliders(list);
+      });
     });
-    return () => unsub();
+    return () => unsubs.forEach((u) => u());
   }, []);
 
   const displaySliders =
@@ -409,14 +422,29 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                   {WEB_CONTENT.footer.phone}
                 </a>
               </p>
+              <p className="flex items-center gap-2 md:justify-end">
+                IČO {WEB_CONTENT.footer.ico}
+              </p>
+              <p className="flex items-center gap-2 md:justify-end text-xs text-[#A1A1AA]/70">
+                {WEB_CONTENT.footer.tradeRegisterText}
+              </p>
             </address>
           </div>
         </div>
         <div className="border-t border-white/5">
-          <div className="container mx-auto px-6 py-4">
-            <p className="text-xs text-center text-[#A1A1AA]/60">
-              {WEB_CONTENT.footer.copyright}
-            </p>
+          <div className="container mx-auto px-6 py-4 flex flex-row flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <p className="text-xs text-[#A1A1AA]/60">
+                {WEB_CONTENT.footer.copyright}
+              </p>
+              <Link
+                to="/zpracovani-osobnich-udaju"
+                className="text-xs text-[#A1A1AA]/60 hover:text-[#C48F83] transition-colors"
+              >
+                {WEB_CONTENT.footer.privacyLinkLabel}
+              </Link>
+            </div>
+            <DeveloperSignature theme="dark" />
           </div>
         </div>
       </footer>

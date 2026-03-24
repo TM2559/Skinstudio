@@ -84,7 +84,7 @@ export const WEB_CONTENT = {
 
   footer: {
     brandHeading: 'SKIN STUDIO',
-    ownerName: 'Lucie Metelková',
+    ownerName: 'Mgr. Lucie Metelková',
     /** Word to replace with Red Outline Heart icon (e.g. "srdci" → icon) */
     heartReplacementWord: 'srdci',
     tagline: 'Prémiová péče o pleť a permanentní make-up v srdci Uherského Brodu.',
@@ -93,7 +93,21 @@ export const WEB_CONTENT = {
     locationWithTown: 'Masarykovo náměstí 72 (Budova ČSOB – 1. patro), Uherský Brod',
     email: 'lucie@skinstudio.cz',
     phone: '+420 724 875 558',
+    ico: '03120368',
+    tradeRegisterText: 'Osoba zapsaná v živnostenském rejstříku.',
     copyright: '© 2024 Skin Studio Lucie Metelková. Všechna práva vyhrazena.',
+    /** Odkaz v patičce na stránku Zpracování osobních údajů */
+    privacyLinkLabel: 'Zpracování osobních údajů',
+  },
+
+  /** Stránka Zpracování osobních údajů (GDPR) – nadpisy pro accordion */
+  privacy: {
+    pageTitle: 'Zpracování osobních údajů',
+    section1Title: '1. Kdo jsme (Správce údajů)',
+    section2Title: '2. Jaké údaje sbíráme a proč (Účel a právní základ)',
+    section3Title: '3. Komu údaje předáváme (Zpracovatelé)',
+    section4Title: '4. Jak dlouho data uchováváme',
+    section5Title: '5. Jaká jsou vaše práva',
   },
 
   /** Contact section (e.g. on landing / #kontakt) */
@@ -158,7 +172,7 @@ export const WEB_CONTENT = {
     },
     footer: {
       brandHeading: 'Skin Studio',
-      ownerName: 'Lucie Metelková',
+      ownerName: 'Mgr. Lucie Metelková',
       heartReplacementWord: 'srdci',
       tagline: 'Prémiová péče o pleť a permanentní make-up v srdci Uherského Brodu.',
       navHeading: 'Navigace',

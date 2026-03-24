@@ -35,4 +35,12 @@ export const SEO = {
     ogTitle: 'Rezervace termínu | Skin Studio',
     ogDescription: 'Rezervujte si kosmetické ošetření nebo permanentní make-up v Skin Studiu Uherský Brod.',
   },
+
+  privacy: {
+    title: 'Zpracování osobních údajů | Skin Studio Uherský Brod',
+    description:
+      'Informace o zpracování osobních údajů v Skin Studiu – správce údajů, účel zpracování, vaše práva dle GDPR.',
+    ogTitle: 'Zpracování osobních údajů | Skin Studio',
+    ogDescription: 'Ochrana osobních údajů a práva subjektů údajů – Skin Studio Lucie Metelková.',
+  },
 };

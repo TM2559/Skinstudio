@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import { writeFileSync } from 'fs'
 import { join } from 'path'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 const BASE = 'https://www.skinstudio.cz'
@@ -44,6 +45,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    tailwindcss(),
     sitemapPlugin(),
     VitePWA({
       registerType: 'autoUpdate',

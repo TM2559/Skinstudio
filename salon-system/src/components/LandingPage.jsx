@@ -226,6 +226,8 @@ export default function LandingPage({ services = [] }) {
                     +420 724 875 558
                   </a>
                 </li>
+                <li className="text-[var(--skin-charcoal)]">IČO {WEB_CONTENT.footer.ico}</li>
+                <li className="text-xs text-[#6b6560]">{WEB_CONTENT.footer.tradeRegisterText}</li>
                 <li>
                   <a
                     href="mailto:info@skinstudio.cz"
@@ -274,6 +276,10 @@ export default function LandingPage({ services = [] }) {
 
           <p className="text-center text-sm text-stone-400 mt-16 pt-8 border-t" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
             © 2024 Skin Studio Lucie Metelková
+            {' · '}
+            <Link to="/zpracovani-osobnich-udaju" className="hover:text-stone-600 transition-colors">
+              {WEB_CONTENT.footer.privacyLinkLabel}
+            </Link>
           </p>
         </div>
       </footer>
