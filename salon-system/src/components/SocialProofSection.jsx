@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Star, ExternalLink, Heart } from 'lucide-react';
 import { GOOGLE_REVIEW_URL as CONFIG_REVIEW_URL } from '../firebaseConfig';
 import { GOOGLE_REVIEWS } from '../constants/googleReviews';
 
 function ReviewCard({ name, roleOrDate, rating, text }) {
+  const [expanded, setExpanded] = useState(false);
+  const shouldShowToggle = typeof text === 'string' && text.length > 220;
+
   return (
     <article className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition-all h-full flex flex-col">
       <div className="flex items-center gap-2 mb-3">
@@ -17,7 +20,21 @@ function ReviewCard({ name, roleOrDate, rating, text }) {
           />
         ))}
       </div>
-      <p className="text-gray-600 text-sm line-clamp-3 mb-4 flex-grow">{text}</p>
+      <p className={`text-gray-600 text-sm ${expanded ? '' : 'line-clamp-3'} mb-3 flex-grow`}>
+        {text}
+      </p>
+
+      {shouldShowToggle && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-1 text-sm underline decoration-gray-400 underline-offset-4 text-slate-500 hover:text-black transition-colors self-start"
+          aria-expanded={expanded}
+        >
+          {expanded ? 'Zobrazit méně' : 'Zobrazit více'}
+        </button>
+      )}
+
       <div>
         <p className="font-semibold text-gray-900">{name}</p>
         <p className="text-sm text-gray-500">{roleOrDate}</p>
