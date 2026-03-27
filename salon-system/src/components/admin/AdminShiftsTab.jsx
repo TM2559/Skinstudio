@@ -26,13 +26,14 @@ const getPeriodsForDay = (schedule, dateKey) => {
 const getDayType = (schedule, schedulePmu, dateKey) => {
   const hasK = getPeriodsForDay(schedule, dateKey).length > 0;
   const hasP = getPeriodsForDay(schedulePmu, dateKey).length > 0;
+  if (hasK && hasP) return 'both';
   if (hasK) return 'kosmetika';
   if (hasP) return 'pmu';
   return 'closed';
 };
 
-const TYPE_LABELS = { kosmetika: 'Kosmetika', pmu: 'PMU', closed: 'Zavřeno' };
-const TYPE_LABELS_UPPER = { kosmetika: 'KOSMETIKA', pmu: 'PMU', closed: 'ZAVŘENO' };
+const TYPE_LABELS = { kosmetika: 'Kosmetika', pmu: 'PMU', both: 'Kosmetika + PMU', closed: 'Zavřeno' };
+const TYPE_LABELS_UPPER = { kosmetika: 'KOSMETIKA', pmu: 'PMU', both: 'KOSMETIKA + PMU', closed: 'ZAVŘENO' };
 
 const isValidTimeRange = (start, end) => {
   if (!start || !end) return false;
@@ -71,9 +72,10 @@ const AdminShiftsTab = ({
   const [editingDateKey, setEditingDateKey] = useState(null);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [editType, setEditType] = useState('kosmetika');
-  const [editPeriods, setEditPeriods] = useState([]);
-  const [editWorkStart, setEditWorkStart] = useState('09:00');
-  const [editWorkEnd, setEditWorkEnd] = useState('17:00');
+  const [editKosmetikaPeriods, setEditKosmetikaPeriods] = useState([]);
+  const [editPmuPeriods, setEditPmuPeriods] = useState([]);
+  const [draftStartByType, setDraftStartByType] = useState({ kosmetika: '09:00', pmu: '09:00' });
+  const [draftEndByType, setDraftEndByType] = useState({ kosmetika: '17:00', pmu: '17:00' });
   const [timeError, setTimeError] = useState('');
 
   useEffect(() => {
@@ -95,14 +97,13 @@ const AdminShiftsTab = ({
       const type = getDayType(schedule, schedulePmu, dateKey);
       const periodsK = getPeriodsForDay(schedule, dateKey);
       const periodsP = getPeriodsForDay(schedulePmu, dateKey);
-      const dayPeriods = type === 'pmu' ? periodsP : periodsK;
       return {
         dateKey,
-        displayShort: Utils.formatDateWithDayShort(dateKey),
         dayShort: Utils.getDayOfWeekShort(dateKey),
         dateOnly: dateKey ? `${dateKey.split('-')[0]}/${dateKey.split('-')[1]}` : '',
         type,
-        periods: dayPeriods,
+        periodsK,
+        periodsP,
       };
     });
   }, [monthDays, schedule, schedulePmu]);
@@ -130,12 +131,12 @@ const AdminShiftsTab = ({
     const type = getDayType(schedule, schedulePmu, dateKey);
     const periodsK = getPeriodsForDay(schedule, dateKey);
     const periodsP = getPeriodsForDay(schedulePmu, dateKey);
-    const currentPeriods = type === 'pmu' ? periodsP : type === 'kosmetika' ? periodsK : [];
     setEditingDateKey(dateKey);
-    setEditType(type);
-    setEditPeriods(currentPeriods.length ? currentPeriods.map((p) => ({ ...p })) : []);
-    setEditWorkStart('09:00');
-    setEditWorkEnd('17:00');
+    setEditType(type === 'pmu' ? 'pmu' : 'kosmetika');
+    setEditKosmetikaPeriods(periodsK.map((p) => ({ ...p })));
+    setEditPmuPeriods(periodsP.map((p) => ({ ...p })));
+    setDraftStartByType({ kosmetika: '09:00', pmu: '09:00' });
+    setDraftEndByType({ kosmetika: '17:00', pmu: '17:00' });
     setTimeError('');
   };
 
@@ -145,42 +146,55 @@ const AdminShiftsTab = ({
     closeTimeoutRef.current = setTimeout(() => setEditingDateKey(null), 300);
   };
 
-  const addEditPeriod = () => {
+  const addEditPeriod = (type) => {
+    const start = draftStartByType[type];
+    const end = draftEndByType[type];
     setTimeError('');
-    if (!isValidTimeRange(editWorkStart, editWorkEnd)) {
+    if (!isValidTimeRange(start, end)) {
       setTimeError('Konec musí být po začátku');
       return;
     }
-    setEditPeriods((prev) =>
-      [...prev, { start: editWorkStart, end: editWorkEnd }].sort(
+    const setter = type === 'pmu' ? setEditPmuPeriods : setEditKosmetikaPeriods;
+    setter((prev) =>
+      [...prev, { start, end }].sort(
         (a, b) => Utils.timeToMinutes(a.start) - Utils.timeToMinutes(b.start)
       )
     );
   };
 
-  const removeEditPeriod = (idx) => {
-    setEditPeriods((prev) => prev.filter((_, i) => i !== idx));
+  const removeEditPeriod = (type, idx) => {
+    const setter = type === 'pmu' ? setEditPmuPeriods : setEditKosmetikaPeriods;
+    setter((prev) => prev.filter((_, i) => i !== idx));
     setTimeError('');
   };
 
-  const updateEditPeriod = (idx, field, value) => {
-    setEditPeriods((prev) => {
+  const updateEditPeriod = (type, idx, field, value) => {
+    const setter = type === 'pmu' ? setEditPmuPeriods : setEditKosmetikaPeriods;
+    setter((prev) => {
       const next = prev.map((p, i) => (i === idx ? { ...p, [field]: value } : p));
       return next;
     });
     setTimeError('');
   };
 
+  const clearDay = () => {
+    setEditKosmetikaPeriods([]);
+    setEditPmuPeriods([]);
+    setTimeError('');
+  };
+
   const saveEdit = async () => {
     if (!editingDateKey || !onSaveDay) return;
-    if (editType !== 'closed' && editPeriods.some((p) => !isValidTimeRange(p.start, p.end))) {
+    const allPeriods = [...editKosmetikaPeriods, ...editPmuPeriods];
+    if (allPeriods.some((p) => !isValidTimeRange(p.start, p.end))) {
       setTimeError('Každý blok musí mít konec po začátku');
       return;
     }
     setTimeError('');
-    const typeToSave = editType;
-    const periodsToSave = typeToSave === 'closed' ? [] : editPeriods.filter((p) => isValidTimeRange(p.start, p.end));
-    await onSaveDay(editingDateKey, typeToSave, periodsToSave);
+    await onSaveDay(editingDateKey, {
+      kosmetika: editKosmetikaPeriods.filter((p) => isValidTimeRange(p.start, p.end)),
+      pmu: editPmuPeriods.filter((p) => isValidTimeRange(p.start, p.end)),
+    });
     closeDrawer();
   };
 
@@ -247,7 +261,7 @@ const AdminShiftsTab = ({
             <p className="text-sm text-stone-500 font-normal italic px-6 pb-6">Žádné dny v měsíci.</p>
           ) : (
             <ul className="px-6 pb-6">
-              {monthShifts.map(({ dateKey, dayShort, dateOnly, type, periods: dayPeriods }) => (
+              {monthShifts.map(({ dateKey, dayShort, dateOnly, type, periodsK, periodsP }) => (
                 <li key={dateKey} className="border-b last:border-b-0" style={{ borderColor: '#f0f0f0' }}>
                   <button
                     type="button"
@@ -266,9 +280,11 @@ const AdminShiftsTab = ({
                       {TYPE_LABELS_UPPER[type]}
                     </span>
                     <div className="flex items-center gap-2 shrink-0 basis-full sm:basis-auto sm:flex-initial order-3 sm:order-none">
-                      {dayPeriods.length > 0 ? (
+                      {periodsK.length > 0 || periodsP.length > 0 ? (
                         <span className="text-sm text-stone-600 font-normal">
-                          {dayPeriods.map((p) => `${p.start} — ${p.end}`).join(', ')}
+                          {periodsK.length > 0 && `Kosmetika: ${periodsK.map((p) => `${p.start} — ${p.end}`).join(', ')}`}
+                          {periodsK.length > 0 && periodsP.length > 0 && ' | '}
+                          {periodsP.length > 0 && `PMU: ${periodsP.map((p) => `${p.start} — ${p.end}`).join(', ')}`}
                         </span>
                       ) : (
                         <span className="text-sm text-stone-400 font-normal italic">—</span>
@@ -316,65 +332,64 @@ const AdminShiftsTab = ({
                   Upravit: {editingDateKey ? Utils.formatDateWithDayLong(editingDateKey) : ''}
                 </h2>
 
-                {/* Přepínač: Kosmetika / PMU / Zavřeno */}
-                <fieldset className="mb-6">
-                  <legend className="sr-only">Typ dne</legend>
-                  <div className="flex rounded-lg border border-stone-200 p-0.5 bg-stone-50/50">
-                    {(['kosmetika', 'pmu', 'closed']).map((t) => (
-                      <label
-                        key={t}
-                        className={`flex-1 py-2.5 px-4 text-center text-sm font-semibold rounded-md cursor-pointer transition-colors min-h-[44px] md:min-h-0 flex items-center justify-center ${
-                          editType === t
-                            ? 'bg-white text-stone-800 shadow-sm border border-stone-200'
-                            : 'text-stone-600 hover:text-stone-800'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="dayType"
-                          value={t}
-                          checked={editType === t}
-                          onChange={() => setEditType(t)}
-                          className="sr-only"
-                        />
-                        {TYPE_LABELS[t]}
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
+                <div className="space-y-6">
+                  <fieldset>
+                    <legend className="sr-only">Typ služby</legend>
+                    <div className="flex rounded-lg border border-stone-200 p-0.5 bg-stone-50/50">
+                      {(['kosmetika', 'pmu']).map((type) => (
+                        <label
+                          key={type}
+                          className={`flex-1 py-2.5 px-4 text-center text-sm font-semibold rounded-md cursor-pointer transition-colors min-h-[44px] md:min-h-0 flex items-center justify-center ${
+                            editType === type
+                              ? 'bg-white text-stone-800 shadow-sm border border-stone-200'
+                              : 'text-stone-600 hover:text-stone-800'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="dayType"
+                            value={type}
+                            checked={editType === type}
+                            onChange={() => setEditType(type)}
+                            className="sr-only"
+                          />
+                          {TYPE_LABELS[type]}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
 
-                {editType !== 'closed' && (
                   <div className="space-y-4">
                     <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                      Časové bloky
+                      Časové bloky - {TYPE_LABELS[editType]}
                     </p>
-                    {editPeriods.length === 0 ? (
+                    {(editType === 'pmu' ? editPmuPeriods : editKosmetikaPeriods).length === 0 ? (
                       <p className="text-sm text-stone-500 font-normal italic">Žádné bloky. Přidejte níže.</p>
                     ) : (
                       <ul className="space-y-4">
-                        {editPeriods.map((p, idx) => (
+                        {(editType === 'pmu' ? editPmuPeriods : editKosmetikaPeriods).map((p, idx) => (
                           <li
-                            key={idx}
+                            key={`${editType}-${idx}`}
                             className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3 p-4 bg-stone-50 rounded-lg border border-stone-100"
                           >
                             <div className="flex flex-col md:flex-row md:items-center gap-2 md:flex-1 md:min-w-0">
                               <input
                                 type="time"
                                 value={p.start}
-                                onChange={(e) => updateEditPeriod(idx, 'start', e.target.value)}
+                                onChange={(e) => updateEditPeriod(editType, idx, 'start', e.target.value)}
                                 className="flex-1 min-h-[44px] min-w-0 p-3 border border-stone-200 rounded-lg text-base font-normal text-stone-800 bg-white touch-manipulation"
                               />
                               <span className="hidden md:inline text-stone-400 font-normal">—</span>
                               <input
                                 type="time"
                                 value={p.end}
-                                onChange={(e) => updateEditPeriod(idx, 'end', e.target.value)}
+                                onChange={(e) => updateEditPeriod(editType, idx, 'end', e.target.value)}
                                 className="flex-1 min-h-[44px] min-w-0 p-3 border border-stone-200 rounded-lg text-base font-normal text-stone-800 bg-white touch-manipulation"
                               />
                             </div>
                             <button
                               type="button"
-                              onClick={() => removeEditPeriod(idx)}
+                              onClick={() => removeEditPeriod(editType, idx)}
                               className="p-2.5 md:p-2 self-start md:self-center text-stone-400 hover:text-red-500 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center md:min-h-0 md:min-w-0 touch-manipulation"
                               title="Odebrat blok"
                               aria-label="Odebrat blok"
@@ -389,34 +404,47 @@ const AdminShiftsTab = ({
                       <div className="flex flex-col md:flex-row md:items-center gap-2 md:flex-1 md:min-w-0">
                         <input
                           type="time"
-                          value={editWorkStart}
-                          onChange={(e) => { setEditWorkStart(e.target.value); setTimeError(''); }}
+                          value={draftStartByType[editType]}
+                          onChange={(e) => {
+                            setDraftStartByType((prev) => ({ ...prev, [editType]: e.target.value }));
+                            setTimeError('');
+                          }}
                           className="min-h-[44px] min-w-0 p-3 border border-stone-200 rounded-lg text-base font-normal text-stone-800 bg-white touch-manipulation"
                         />
                         <span className="hidden md:inline text-stone-400 font-normal">—</span>
                         <input
                           type="time"
-                          value={editWorkEnd}
-                          onChange={(e) => { setEditWorkEnd(e.target.value); setTimeError(''); }}
+                          value={draftEndByType[editType]}
+                          onChange={(e) => {
+                            setDraftEndByType((prev) => ({ ...prev, [editType]: e.target.value }));
+                            setTimeError('');
+                          }}
                           className="min-h-[44px] min-w-0 p-3 border border-stone-200 rounded-lg text-base font-normal text-stone-800 bg-white touch-manipulation"
                         />
                       </div>
                       <button
                         type="button"
-                        onClick={addEditPeriod}
+                        onClick={() => addEditPeriod(editType)}
                         className="w-full md:w-auto py-3 px-4 rounded-lg text-sm font-semibold text-stone-700 border border-stone-200 bg-white hover:bg-stone-50 transition-colors min-h-[44px] touch-manipulation"
                       >
                         <Plus size={16} className="inline mr-1.5 align-middle" />
                         Přidat blok
                       </button>
                     </div>
-                    {timeError && (
-                      <p className="text-sm text-red-600 font-normal" role="alert">
-                        {timeError}
-                      </p>
-                    )}
                   </div>
-                )}
+                  <button
+                    type="button"
+                    onClick={clearDay}
+                    className="w-full py-3 px-4 rounded-lg text-sm font-semibold text-stone-600 border border-stone-200 bg-stone-50 hover:bg-stone-100 transition-colors min-h-[44px] touch-manipulation"
+                  >
+                    Označit den jako zavřeno
+                  </button>
+                  {timeError && (
+                    <p className="text-sm text-red-600 font-normal" role="alert">
+                      {timeError}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

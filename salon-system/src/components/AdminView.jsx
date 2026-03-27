@@ -134,26 +134,18 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     return { dailyReservations: daily, historyReservations: history, isGlobalSearchMode: isGlobal };
   }, [reservations, searchTerm, adminDateInput, todayComparable]);
 
-  const handleSaveDay = async (dateKey, type, periodsToSave) => {
+  const handleSaveDay = async (dateKey, payload) => {
     const scheduleRef = getDocPath(COLLECTIONS.SCHEDULE, dateKey);
     const schedulePmuRef = getDocPath(COLLECTIONS.SCHEDULE_PMU, dateKey);
-    if (type === 'closed') {
-      await Promise.all([deleteDoc(scheduleRef).catch(() => {}), deleteDoc(schedulePmuRef).catch(() => {})]);
-    } else if (type === 'kosmetika') {
-      if (periodsToSave.length > 0) {
-        await setDoc(scheduleRef, { periods: periodsToSave });
-      } else {
-        await deleteDoc(scheduleRef).catch(() => {});
-      }
-      await deleteDoc(schedulePmuRef).catch(() => {});
-    } else if (type === 'pmu') {
-      if (periodsToSave.length > 0) {
-        await setDoc(schedulePmuRef, { periods: periodsToSave });
-      } else {
-        await deleteDoc(schedulePmuRef).catch(() => {});
-      }
-      await deleteDoc(scheduleRef).catch(() => {});
-    }
+    const kosmetikaPeriods = Array.isArray(payload?.kosmetika) ? payload.kosmetika : [];
+    const pmuPeriods = Array.isArray(payload?.pmu) ? payload.pmu : [];
+    const saveStandard = kosmetikaPeriods.length > 0
+      ? setDoc(scheduleRef, { periods: kosmetikaPeriods })
+      : deleteDoc(scheduleRef).catch(() => {});
+    const savePmu = pmuPeriods.length > 0
+      ? setDoc(schedulePmuRef, { periods: pmuPeriods })
+      : deleteDoc(schedulePmuRef).catch(() => {});
+    await Promise.all([saveStandard, savePmu]);
   };
 
   const saveServiceAddonLinks = async (mainServiceId) => {
