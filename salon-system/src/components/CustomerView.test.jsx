@@ -1,6 +1,6 @@
 /**
  * Testy komponenty CustomerView – rezervační formulář pro zákazníka.
- * Testuje: výběr služby, termínu a času, formulář, odeslání rezervace (s mockem Firebase/EmailJS).
+ * Testuje: výběr služby, termínu a času, formulář, odeslání rezervace (s mockem Firebase).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
@@ -13,7 +13,10 @@ const mockAddDoc = vi.fn(() => Promise.resolve({ id: 'mock-id' }));
 vi.mock('firebase/firestore', () => ({ addDoc: (...args) => mockAddDoc(...args) }));
 vi.mock('../firebaseConfig', () => ({
   getCollectionPath: vi.fn(() => ({ _path: 'reservations' })),
-  EMAILJS_CONFIG: { PUBLIC_KEY: '', SERVICE_ID: '', CONFIRM_TEMPLATE: '', ADMIN_TEMPLATE: '' },
+  useResendEmails: () => true,
+  auth: { currentUser: { uid: 'test-uid' } },
+  callSendConfirmationSms: vi.fn(() => Promise.resolve({ data: {} })),
+  callSendBookingEmails: vi.fn(() => Promise.resolve({ data: { clientOk: true, adminOk: true } })),
 }));
 
 const defaultServices = [

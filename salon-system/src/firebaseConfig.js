@@ -3,7 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, collection, doc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { connectFunctionsEmulator, getFunctions, httpsCallable } from "firebase/functions";
 
 // Bezpečný přístup k ENV
 const getEnv = (key) => {
@@ -30,11 +30,22 @@ const firebaseConfig = isCanvas
       appId: getEnv('VITE_FIREBASE_APP_ID'),
     };
 
+/**
+ * `true` / `1` = e-maily přes Resend (Cloud Functions). Jinak = EmailJS z prohlížeče (legacy).
+ * Dokud není Resend vyladěný, nech prázdné nebo `false` a drž `VITE_EMAILJS_*`.
+ */
+export function useResendEmails() {
+  const v = getEnv('VITE_USE_RESEND_EMAILS');
+  return v === 'true' || v === '1';
+}
+
+/** EmailJS (volitelné – když useResendEmails() je false) */
 export const EMAILJS_CONFIG = {
   SERVICE_ID: getEnv('VITE_EMAILJS_SERVICE_ID'),
   CONFIRM_TEMPLATE: getEnv('VITE_EMAILJS_CONFIRM_TEMPLATE_ID'),
   REMINDER_TEMPLATE: getEnv('VITE_EMAILJS_REMINDER_TEMPLATE_ID'),
-  PUBLIC_KEY: getEnv('VITE_EMAILJS_PUBLIC_KEY')
+  ADMIN_TEMPLATE: getEnv('VITE_EMAILJS_ADMIN_TEMPLATE_ID'),
+  PUBLIC_KEY: getEnv('VITE_EMAILJS_PUBLIC_KEY'),
 };
 
 // Instagram – celá URL nebo jen username (např. skinstudio.uhb)
@@ -55,7 +66,13 @@ let app;
 let auth;
 let db;
 let storage;
+/** Callable: SMS, e-maily – při `VITE_USE_EMULATORS` → lokální emulátor (test Resend). */
 let functions;
+/**
+ * Callable: ověření admin hesla + WebAuthn (Face ID) – vždy produkční Cloud Functions.
+ * Emulátor by WebAuthn rozbil (jiný runtime / chybějící credential v DB oproti produkci).
+ */
+let functionsProd;
 
 if (isVitestNoKey) {
   app = {};
@@ -63,12 +80,25 @@ if (isVitestNoKey) {
   db = {};
   storage = {};
   functions = {};
+  functionsProd = {};
 } else {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
   functions = getFunctions(app, 'europe-west1');
+  const appProdCallables = initializeApp(firebaseConfig, 'skin-callables-prod');
+  functionsProd = getFunctions(appProdCallables, 'europe-west1');
+  /** Lokální test Resend: `VITE_USE_EMULATORS=true` + `firebase emulators:start --only functions` (port 5001). */
+  if (
+    import.meta.env.DEV &&
+    getEnv('VITE_USE_EMULATORS') === 'true' &&
+    typeof import.meta.env.VITEST === 'undefined'
+  ) {
+    const host = getEnv('VITE_FUNCTIONS_EMULATOR_HOST') || '127.0.0.1';
+    const port = Number(getEnv('VITE_FUNCTIONS_EMULATOR_PORT') || '5001');
+    connectFunctionsEmulator(functions, host, port);
+  }
 }
 
 export { auth, db, storage };
@@ -136,21 +166,29 @@ export const callSendReminderSms = isVitestNoKey
   ? () => Promise.resolve({ data: { sent: 0, errors: [] } })
   : httpsCallable(functions, 'sendReminderSms');
 
-// Admin password verification (server-side)
+export const callSendBookingEmails = isVitestNoKey
+  ? () => Promise.resolve({ data: { clientOk: true, adminOk: true } })
+  : httpsCallable(functions, 'sendBookingEmails');
+
+export const callSendReminderEmails = isVitestNoKey
+  ? () => Promise.resolve({ data: { sent: 0, errors: [] } })
+  : httpsCallable(functions, 'sendReminderEmails');
+
+// Admin password verification (server-side) – produkční funkce (viz functionsProd)
 export const callVerifyAdminPassword = isVitestNoKey
   ? () => Promise.resolve({ data: { verified: true } })
-  : httpsCallable(functions, 'verifyAdminPassword');
+  : httpsCallable(functionsProd, 'verifyAdminPassword');
 
-// Admin WebAuthn (Face ID / Touch ID)
+// Admin WebAuthn (Face ID / Touch ID) – produkční funkce
 export const getAdminWebAuthnRegistrationOptions = isVitestNoKey
   ? () => Promise.resolve({ data: {} })
-  : httpsCallable(functions, 'getAdminWebAuthnRegistrationOptions');
+  : httpsCallable(functionsProd, 'getAdminWebAuthnRegistrationOptions');
 export const verifyAdminWebAuthnRegistration = isVitestNoKey
   ? () => Promise.resolve({ data: {} })
-  : httpsCallable(functions, 'verifyAdminWebAuthnRegistration');
+  : httpsCallable(functionsProd, 'verifyAdminWebAuthnRegistration');
 export const getAdminWebAuthnLoginOptions = isVitestNoKey
   ? () => Promise.resolve({ data: {} })
-  : httpsCallable(functions, 'getAdminWebAuthnLoginOptions');
+  : httpsCallable(functionsProd, 'getAdminWebAuthnLoginOptions');
 export const verifyAdminWebAuthnLogin = isVitestNoKey
   ? () => Promise.resolve({ data: {} })
-  : httpsCallable(functions, 'verifyAdminWebAuthnLogin');
+  : httpsCallable(functionsProd, 'verifyAdminWebAuthnLogin');

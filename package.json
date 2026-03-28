@@ -1,0 +1,11 @@
+{
+  "name": "reservations",
+  "private": true,
+  "description": "Skin Studio – spouštěj npm skripty odsud nebo ze složky salon-system/",
+  "scripts": {
+    "dev": "npm run dev --prefix salon-system",
+    "build": "npm run build --prefix salon-system",
+    "test": "npm run test --prefix salon-system",
+    "preview": "npm run preview --prefix salon-system"
+  }
+}

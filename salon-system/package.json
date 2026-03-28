@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "functions:build": "npm run build --prefix functions",
+    "functions:emulator": "npm run functions:build && firebase emulators:start --only functions",
     "build": "npm run test && vite build",
     "test": "vitest",
     "lint": "eslint .",

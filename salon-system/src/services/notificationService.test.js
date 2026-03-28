@@ -2,30 +2,40 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockCallSendConfirmationSms = vi.fn(() => Promise.resolve());
 const mockCallSendReminderSms = vi.fn(() => Promise.resolve({ data: { sent: 2 } }));
+const mockCallSendBookingEmails = vi.fn(() =>
+  Promise.resolve({ data: { clientOk: true, adminOk: true } })
+);
+const mockCallSendReminderEmails = vi.fn(() =>
+  Promise.resolve({ data: { sent: 2, errors: [] } })
+);
 
 vi.mock('../firebaseConfig', () => ({
+  useResendEmails: () => true,
   callSendConfirmationSms: (...args) => mockCallSendConfirmationSms(...args),
   callSendReminderSms: (...args) => mockCallSendReminderSms(...args),
-  EMAILJS_CONFIG: { PUBLIC_KEY: 'k', SERVICE_ID: 's', CONFIRM_TEMPLATE: 'c', ADMIN_TEMPLATE: 'a', REMINDER_TEMPLATE: 'r' },
+  callSendBookingEmails: (...args) => mockCallSendBookingEmails(...args),
+  callSendReminderEmails: (...args) => mockCallSendReminderEmails(...args),
 }));
 vi.mock('../constants/config', () => ({
   CONTACT: { EMAIL_PUBLIC: 'info@t.cz', EMAIL_RESERVATIONS: 'rez@t.cz' },
 }));
-
-global.fetch = vi.fn(() => Promise.resolve({ ok: true }));
 
 import { sendBookingConfirmations, sendReminders } from './notificationService';
 
 describe('notificationService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn(() => Promise.resolve({ ok: true }));
   });
 
   describe('sendBookingConfirmations', () => {
     const baseParams = {
-      name: 'Jan', phone: '723456789', email: 'jan@t.cz',
-      date: '01-03-2026', time: '10:00', serviceName: 'Masáž', duration: 60,
+      name: 'Jan',
+      phone: '723456789',
+      email: 'jan@t.cz',
+      date: '01-03-2026',
+      time: '10:00',
+      serviceName: 'Masáž',
+      duration: 60,
       calendarLink: 'https://cal.google.com/test',
     };
 
@@ -45,13 +55,14 @@ describe('notificationService', () => {
       const results = await sendBookingConfirmations(baseParams);
       expect(results.email).toBe(true);
       expect(results.adminEmail).toBe(true);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(mockCallSendBookingEmails).toHaveBeenCalledTimes(1);
     });
 
     it('skips emails when email is empty', async () => {
       const results = await sendBookingConfirmations({ ...baseParams, email: '' });
       expect(results.email).toBe(false);
       expect(results.adminEmail).toBe(false);
+      expect(mockCallSendBookingEmails).not.toHaveBeenCalled();
     });
 
     it('catches SMS errors without throwing', async () => {
@@ -77,8 +88,10 @@ describe('notificationService', () => {
       expect(result.smsSent).toBe(2);
     });
 
-    it('sends email reminders for reservations with email', async () => {
+    it('sends email reminders in one batch for reservations with email', async () => {
       const result = await sendReminders(reservations);
+      expect(mockCallSendReminderEmails).toHaveBeenCalledTimes(1);
+      expect(mockCallSendReminderEmails.mock.calls[0][0].reservations).toHaveLength(2);
       expect(result.emailSent).toBe(2);
     });
 

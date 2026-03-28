@@ -1,100 +1,93 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const mockCallSendBookingEmails = vi.fn(() =>
+  Promise.resolve({ data: { clientOk: true, adminOk: true } })
+);
+const mockCallSendReminderEmails = vi.fn(() =>
+  Promise.resolve({ data: { sent: 2, errors: [] } })
+);
+
 vi.mock('../firebaseConfig', () => ({
-  EMAILJS_CONFIG: {
-    PUBLIC_KEY: 'test-key',
-    SERVICE_ID: 'test-service',
-    CONFIRM_TEMPLATE: 'tpl-confirm',
-    ADMIN_TEMPLATE: 'tpl-admin',
-    REMINDER_TEMPLATE: 'tpl-reminder',
-  },
-}));
-vi.mock('../constants/config', () => ({
-  CONTACT: {
-    EMAIL_PUBLIC: 'info@test.cz',
-    EMAIL_RESERVATIONS: 'rez@test.cz',
-  },
+  useResendEmails: () => true,
+  EMAILJS_CONFIG: {},
+  callSendBookingEmails: (...args) => mockCallSendBookingEmails(...args),
+  callSendReminderEmails: (...args) => mockCallSendReminderEmails(...args),
 }));
 
-import {
-  sendBookingConfirmationEmail,
-  sendAdminNotificationEmail,
-  sendReminderEmail,
-} from './emailService';
+import { sendBookingConfirmationAndAdminEmails, sendReminderEmailsBatch } from './emailService';
 
 describe('emailService', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
+    mockCallSendBookingEmails.mockImplementation(() =>
+      Promise.resolve({ data: { clientOk: true, adminOk: true } })
+    );
+    mockCallSendReminderEmails.mockImplementation(() =>
+      Promise.resolve({ data: { sent: 2, errors: [] } })
+    );
   });
 
-  it('sends booking confirmation email via fetch', async () => {
-    global.fetch = vi.fn(() => Promise.resolve({ ok: true }));
-
-    const result = await sendBookingConfirmationEmail({
-      name: 'Jan', email: 'jan@test.cz', date: '01.03.2026', time: '10:00', serviceName: 'Masáž',
+  it('sends booking emails via callable', async () => {
+    const result = await sendBookingConfirmationAndAdminEmails({
+      name: 'Jan',
+      email: 'jan@test.cz',
+      phone: '123',
+      date: '01.03.2026',
+      time: '10:00',
+      serviceName: 'Masáž',
+      calendarLink: 'https://cal.google.com/test',
     });
 
-    expect(result).toBe(true);
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    const [url, opts] = global.fetch.mock.calls[0];
-    expect(url).toBe('https://api.emailjs.com/api/v1.0/email/send');
-    const body = JSON.parse(opts.body);
-    expect(body.service_id).toBe('test-service');
-    expect(body.template_id).toBe('tpl-confirm');
-    expect(body.user_id).toBe('test-key');
-    expect(body.template_params.name).toBe('Jan');
-    expect(body.template_params.to_email).toBe('jan@test.cz');
-    expect(body.template_params.reply_to).toBe('info@test.cz');
+    expect(result.clientOk).toBe(true);
+    expect(result.adminOk).toBe(true);
+    expect(mockCallSendBookingEmails).toHaveBeenCalledTimes(1);
+    expect(mockCallSendBookingEmails.mock.calls[0][0]).toMatchObject({
+      name: 'Jan',
+      email: 'jan@test.cz',
+      date: '01.03.2026',
+      time: '10:00',
+      serviceName: 'Masáž',
+      calendarLink: 'https://cal.google.com/test',
+    });
   });
 
-  it('returns false when fetch fails', async () => {
-    global.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
-    const result = await sendBookingConfirmationEmail({
-      name: 'Jan', email: 'jan@test.cz', date: '01.03.2026', time: '10:00', serviceName: 'Masáž',
+  it('returns false when callable throws', async () => {
+    mockCallSendBookingEmails.mockRejectedValueOnce(new Error('fail'));
+    const result = await sendBookingConfirmationAndAdminEmails({
+      name: 'Jan',
+      email: 'jan@test.cz',
+      phone: '',
+      date: '01.03.2026',
+      time: '10:00',
+      serviceName: 'X',
+      calendarLink: '',
     });
-    expect(result).toBe(false);
+    expect(result.clientOk).toBe(false);
+    expect(result.adminOk).toBe(false);
   });
 
-  it('returns false when response is not ok', async () => {
-    global.fetch = vi.fn(() => Promise.resolve({ ok: false }));
-    const result = await sendBookingConfirmationEmail({
-      name: 'Jan', email: 'jan@test.cz', date: '01.03.2026', time: '10:00', serviceName: 'Masáž',
+  it('sends reminder batch via callable', async () => {
+    mockCallSendReminderEmails.mockResolvedValueOnce({ data: { sent: 1, errors: [] } });
+    const res = await sendReminderEmailsBatch([
+      { name: 'A', email: 'a@test.cz', date: '01-03-2026', time: '10:00', serviceName: 'X' },
+    ]);
+    expect(res.sent).toBe(1);
+    expect(mockCallSendReminderEmails).toHaveBeenCalledWith({
+      reservations: [
+        expect.objectContaining({
+          name: 'A',
+          email: 'a@test.cz',
+          date: '01-03-2026',
+          time: '10:00',
+          serviceName: 'X',
+        }),
+      ],
     });
-    expect(result).toBe(false);
   });
 
-  it('sends admin notification email with correct template', async () => {
-    global.fetch = vi.fn(() => Promise.resolve({ ok: true }));
-    const result = await sendAdminNotificationEmail({
-      name: 'Jan', email: 'jan@test.cz', phone: '123456', date: '01.03.2026', time: '10:00',
-      serviceName: 'Masáž', calendarLink: 'https://cal.google.com/test',
-    });
-    expect(result).toBe(true);
-    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
-    expect(body.template_id).toBe('tpl-admin');
-    expect(body.template_params.to_email).toBe('info@test.cz');
-    expect(body.template_params.calendar_link).toBe('https://cal.google.com/test');
-  });
-
-  it('sends reminder email with correct template', async () => {
-    global.fetch = vi.fn(() => Promise.resolve({ ok: true }));
-    const result = await sendReminderEmail({
-      name: 'Jan', email: 'jan@test.cz', date: '01.03.2026', time: '10:00', serviceName: 'Masáž',
-    });
-    expect(result).toBe(true);
-    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
-    expect(body.template_id).toBe('tpl-reminder');
-    expect(body.template_params.reply_to).toBe('rez@test.cz');
-  });
-
-  it('returns false when ADMIN_TEMPLATE is missing', async () => {
-    const mod = await import('../firebaseConfig');
-    const origTemplate = mod.EMAILJS_CONFIG.ADMIN_TEMPLATE;
-    mod.EMAILJS_CONFIG.ADMIN_TEMPLATE = '';
-    const result = await sendAdminNotificationEmail({
-      name: 'Jan', email: 'jan@test.cz', phone: '123', date: '01.03', time: '10:00', serviceName: 'X',
-    });
-    expect(result).toBe(false);
-    mod.EMAILJS_CONFIG.ADMIN_TEMPLATE = origTemplate;
+  it('returns sent 0 for empty batch', async () => {
+    const res = await sendReminderEmailsBatch([]);
+    expect(res.sent).toBe(0);
+    expect(mockCallSendReminderEmails).not.toHaveBeenCalled();
   });
 });

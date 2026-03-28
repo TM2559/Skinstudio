@@ -1,15 +1,17 @@
 import React from 'react';
-import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
+import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 
 const ICON_MAP = {
   success: CheckCircle,
   error: AlertCircle,
+  warning: AlertTriangle,
   info: Info,
 };
 
 const STYLE_MAP = {
   success: 'bg-green-50 border-green-200 text-green-800',
   error: 'bg-red-50 border-red-200 text-red-800',
+  warning: 'bg-amber-50 border-amber-200 text-amber-900',
   info: 'bg-stone-50 border-stone-200 text-stone-800',
 };
 

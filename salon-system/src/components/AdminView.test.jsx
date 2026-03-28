@@ -20,7 +20,11 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('../firebaseConfig', () => ({
   getCollectionPath: vi.fn((...path) => ({ _path: path.join('/') })),
   getDocPath: vi.fn((...path) => ({ _path: path.join('/') })),
-  EMAILJS_CONFIG: { PUBLIC_KEY: '', SERVICE_ID: '', REMINDER_TEMPLATE: '', ADMIN_TEMPLATE: '' },
+  useResendEmails: () => true,
+  callSendConfirmationSms: vi.fn(() => Promise.resolve({ data: {} })),
+  callSendReminderSms: vi.fn(() => Promise.resolve({ data: { sent: 0, errors: [] } })),
+  callSendBookingEmails: vi.fn(() => Promise.resolve({ data: { clientOk: true, adminOk: true } })),
+  callSendReminderEmails: vi.fn(() => Promise.resolve({ data: { sent: 0, errors: [] } })),
 }));
 
 const defaultServices = [

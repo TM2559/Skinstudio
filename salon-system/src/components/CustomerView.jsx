@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signInAnonymously } from 'firebase/auth';
 import { addDoc } from "firebase/firestore";
 import { Utils, isPmuService, filterCosmeticsServices } from '../utils/helpers';
-import { getCollectionPath } from '../firebaseConfig';
+import { auth, getCollectionPath, useResendEmails } from '../firebaseConfig';
 import { BOOKING, CONTACT, COLLECTIONS } from '../constants/config';
 import { sendBookingConfirmations } from '../services/notificationService';
 import { useToastContext } from '../contexts/ToastContext';
@@ -11,6 +12,29 @@ import DateStrip from './booking/DateStrip';
 import TimeGrid from './booking/TimeGrid';
 import BookingSummaryForm, { calculateReservationTotal } from './booking/BookingSummaryForm';
 import PrivacySlideOver from './PrivacySlideOver';
+
+/** FirebaseError / DOMException → srozumitelná čeština (aby nezůstala jen obecná hláška). */
+function bookingErrorToastMessage(err) {
+  const raw = err?.code ?? err?.name ?? '';
+  const code = String(raw).replace(/^(firestore|auth|functions)\//, '');
+  switch (code) {
+    case 'permission-denied':
+      return 'Rezervaci nelze uložit (oprávnění). Obnovte stránku; pokud to trvá, kontaktujte salon.';
+    case 'unauthenticated':
+      return 'Relace vypršela. Obnovte stránku (F5) a zkuste rezervaci znovu.';
+    case 'unavailable':
+    case 'deadline-exceeded':
+    case 'aborted':
+    case 'network-request-failed':
+      return 'Spojení se serverem selhalo. Zkontrolujte internet a zkuste to znovu.';
+    case 'resource-exhausted':
+      return 'Služba je dočasně přetížená. Zkuste to za chvíli.';
+    case 'failed-precondition':
+      return 'Rezervaci teď nelze uložit (podmínky dat). Zkuste jiný termín nebo volejte salon.';
+    default:
+      return null;
+  }
+}
 
 const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBookingSuccess, initialServiceId, theme = 'light' }) => {
   const navigate = useNavigate();
@@ -103,10 +127,32 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
     setIsSending(true);
 
     try {
+      if (!activeDateStr) {
+        toast.error('Chybí vybraný termín (datum). Vyberte prosím den a čas.');
+        return;
+      }
+
       const calendarLink = Utils.createGoogleCalendarLink(
         activeDateStr, selectedTime, parseInt(selectedService.duration),
         `REZERVACE: ${selectedService.name} (${formData.name})`, `Klient: ${formData.name}, Tel: ${formData.phone}`
       );
+
+      // Firestore rules vyžadují přihlášeného uživatele (anonymní účet z DataContextu).
+      if (!auth.currentUser) {
+        try {
+          await signInAnonymously(auth);
+        } catch (authErr) {
+          console.error(authErr);
+          toast.error(
+            'Nepodařilo se navázat přihlášení potřebné pro uložení rezervace. Zkuste obnovit stránku (F5) nebo zkontrolovat připojení k internetu.'
+          );
+          return;
+        }
+      }
+      if (!auth.currentUser) {
+        toast.error('Účet ještě není připraven. Chvilku počkejte nebo obnovte stránku.');
+        return;
+      }
 
       await addDoc(getCollectionPath(COLLECTIONS.RESERVATIONS), {
         date: activeDateStr,
@@ -122,18 +168,46 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
         source: 'web'
       });
 
-      await sendBookingConfirmations({
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        date: activeDateStr,
-        time: selectedTime,
-        serviceName: selectedService.name,
-        duration: parseInt(selectedService.duration),
-        calendarLink,
-      });
+      let notif = { sms: false, email: false, adminEmail: false, emailError: '' };
+      let notificationsThrew = false;
+      try {
+        notif = await sendBookingConfirmations({
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          date: activeDateStr,
+          time: selectedTime,
+          serviceName: selectedService.name,
+          duration: parseInt(selectedService.duration),
+          calendarLink,
+        });
+      } catch (notifErr) {
+        notificationsThrew = true;
+        console.error('Oznámení po uložení rezervace:', notifErr);
+        toast.warning(
+          'Rezervace je uložená, ale oznámení (e-mail / SMS) se nepodařilo odeslat. Kontaktujte nás prosím telefonicky, pokud potřebujete potvrzení.'
+        );
+      }
 
-      if (onBookingSuccess) onBookingSuccess();
+      if (!notificationsThrew && formData.email?.trim() && !notif.email) {
+        const detail =
+          typeof notif.emailError === 'string' && notif.emailError.trim()
+            ? ` ${notif.emailError.trim().slice(0, 280)}`
+            : '';
+        toast.warning(
+          useResendEmails()
+            ? `Rezervace je uložená, ale potvrzovací e-mail neodešel.${detail ? ` —${detail}` : ''} (Resend / Cloud Functions). Více v konzoli (F12).`
+            : 'Rezervace je uložená, ale e-mail přes EmailJS neodešel. Zkontrolujte VITE_EMAILJS_* v .env a šablony v EmailJS. Konzole (F12).'
+        );
+      }
+
+      if (onBookingSuccess) {
+        try {
+          onBookingSuccess();
+        } catch (cbErr) {
+          console.error('onBookingSuccess:', cbErr);
+        }
+      }
 
       navigate('/dekujeme', {
         state: {
@@ -148,8 +222,16 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
       });
 
     } catch (err) {
-      console.error(err);
-      toast.error("Chyba při rezervaci. Zkuste to prosím znovu.");
+      console.error('Rezervace:', err?.code, err?.message, err);
+      const specific = bookingErrorToastMessage(err);
+      if (specific) {
+        toast.error(specific);
+      } else {
+        const hint = err?.message ? ` (${String(err.message).slice(0, 120)})` : '';
+        toast.error(
+          `Nepodařilo se dokončit rezervaci.${hint} Zkuste to znovu; podrobnosti v konzoli (F12).`
+        );
+      }
     } finally {
       setIsSending(false);
     }

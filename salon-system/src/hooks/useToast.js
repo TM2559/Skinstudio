@@ -26,7 +26,8 @@ export default function useToast(autoDismissMs = 4000) {
 
   const success = useCallback((msg) => show(msg, 'success'), [show]);
   const error = useCallback((msg) => show(msg, 'error'), [show]);
+  const warning = useCallback((msg) => show(msg, 'warning'), [show]);
   const info = useCallback((msg) => show(msg, 'info'), [show]);
 
-  return { toasts, show, success, error, info, dismiss };
+  return { toasts, show, success, error, warning, info, dismiss };
 }

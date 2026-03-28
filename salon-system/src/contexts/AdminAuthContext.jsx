@@ -5,6 +5,23 @@ import { ADMIN } from '../constants/config';
 
 const AdminAuthContext = createContext(null);
 
+/** Callable `verifyAdminPassword` potřebuje `request.auth.uid` – počkáme na anonymní účet z DataContextu. */
+async function waitForAnonymousUser(timeoutMs = 20000) {
+  if (auth.currentUser) return auth.currentUser;
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const id = setInterval(() => {
+      if (auth.currentUser) {
+        clearInterval(id);
+        resolve(auth.currentUser);
+      } else if (Date.now() - start > timeoutMs) {
+        clearInterval(id);
+        resolve(null);
+      }
+    }, 50);
+  });
+}
+
 export function AdminAuthProvider({ children }) {
   const location = useLocation();
   const [view, setView] = useState('customer');
@@ -44,16 +61,24 @@ export function AdminAuthProvider({ children }) {
     setIsLoggingIn(true);
     setLoginError('');
     try {
+      const anon = await waitForAnonymousUser();
+      if (!anon) {
+        setLoginError('Přihlášení k databázi ještě neběží. Obnovte stránku (F5) nebo chvilku počkejte a zkuste znovu.');
+        return;
+      }
       const { data } = await callVerifyAdminPassword({ password: adminPassword });
       if (data?.verified) {
-        await auth.currentUser?.getIdToken(true);
+        await auth.currentUser.getIdToken(true);
         setShowFaceIdSetupPrompt(true);
       } else {
         setLoginError('Chybné heslo');
       }
     } catch (err) {
       const msg = err?.message || '';
-      if (msg.includes('permission-denied') || msg.includes('Chybné heslo')) {
+      const code = err?.code || '';
+      if (code === 'functions/failed-precondition' || msg.includes('anonymní') || msg.includes('Chybí přihlášení')) {
+        setLoginError(msg || 'Nejste přihlášeni k databázi. Obnovte stránku a zkuste znovu.');
+      } else if (msg.includes('permission-denied') || msg.includes('Chybné heslo')) {
         setLoginError('Chybné heslo');
       } else {
         setLoginError('Přihlášení selhalo. Zkuste to znovu.');

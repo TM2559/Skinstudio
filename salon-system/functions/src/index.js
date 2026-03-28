@@ -4,6 +4,12 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { defineString } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { isResendConfigured } from './resendEnv.js';
+
+/** Lazy – nenačítá React / @react-email při startu emulátoru (jinak timeout ~10 s). */
+function loadResendMail() {
+  return import('./resendMail.js');
+}
 
 initializeApp();
 const db = getFirestore();
@@ -200,6 +206,88 @@ export const sendConfirmationSms = onCall(
   }
 );
 
+/**
+ * Callable: sendBookingEmails
+ * Body: { name, email, phone?, date, time, serviceName, calendarLink? }
+ * Odesílá potvrzení klientovi a kopii adminovi (pokud je RESEND_ADMIN_TO).
+ */
+export const sendBookingEmails = onCall({ region: 'europe-west1' }, async (request) => {
+  if (!isResendConfigured()) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Resend není nakonfigurován (RESEND_API_KEY, RESEND_FROM). Nastav v prostředí functions a znovu nasaď.'
+    );
+  }
+  const { name, email, phone, date, time, serviceName, calendarLink } = request.data || {};
+  if (!email || typeof email !== 'string' || !email.trim()) {
+    throw new HttpsError('invalid-argument', 'E-mail je povinný.');
+  }
+  if (!date || !time || !serviceName) {
+    throw new HttpsError('invalid-argument', 'Chybí datum, čas nebo služba.');
+  }
+  const { sendBookingEmailsInternal } = await loadResendMail();
+  const result = await sendBookingEmailsInternal({
+    name: typeof name === 'string' ? name : '',
+    email: email.trim(),
+    phone: typeof phone === 'string' ? phone : '',
+    date,
+    time,
+    serviceName,
+    calendarLink: typeof calendarLink === 'string' ? calendarLink : '',
+  });
+  const { clientOk, adminOk, clientError, adminError } = result;
+  return {
+    clientOk,
+    adminOk,
+    ...(clientError ? { clientError } : {}),
+    ...(adminError ? { adminError } : {}),
+  };
+});
+
+/**
+ * Callable: sendReminderEmails
+ * Body: { reservations: Array<{ id?, name?, email, date, time, serviceName? }> }
+ */
+export const sendReminderEmails = onCall({ region: 'europe-west1' }, async (request) => {
+  if (!isResendConfigured()) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Resend není nakonfigurován (RESEND_API_KEY, RESEND_FROM).'
+    );
+  }
+  const { reservations } = request.data || {};
+  if (!Array.isArray(reservations) || reservations.length === 0) {
+    return { sent: 0, errors: [], message: 'Žádné e-maily k odeslání.' };
+  }
+  let sent = 0;
+  const errors = [];
+  const { sendReminderEmailInternal } = await loadResendMail();
+  for (const r of reservations) {
+    const addr = r.email && typeof r.email === 'string' ? r.email.trim() : '';
+    if (!addr) {
+      errors.push({ id: r.id, reason: 'Chybějící e-mail' });
+      continue;
+    }
+    try {
+      const dateDisplay =
+        typeof r.date === 'string' ? r.date.replace(/-/g, '/') : String(r.date || '').replace(/-/g, '/');
+      const ok = await sendReminderEmailInternal({
+        name: r.name,
+        email: addr,
+        date: dateDisplay,
+        time: r.time,
+        serviceName: r.serviceName || 'rezervace',
+      });
+      if (ok) sent++;
+      else errors.push({ id: r.id, reason: 'Resend odmítl odeslání' });
+    } catch (err) {
+      console.error('sendReminderEmails položka:', r.id, err);
+      errors.push({ id: r.id, reason: err.message || 'Chyba odeslání' });
+    }
+  }
+  return { sent, errors, message: `Odesláno ${sent} e-mailů.` };
+});
+
 // --- format-content API (AI Magic Wand). Set GEMINI_API_KEY in Firebase Console or .env. ---
 const FORMAT_SYSTEM_PROMPT = `You are a luxury copywriter for Skin Studio. Your tone is 'Quiet Luxury'—minimalist, professional, and empathetic.
 Convert the user's raw notes into a Markdown-formatted description for a beauty service.
@@ -303,9 +391,13 @@ export const verifyAdminPassword = onCall(
     }
 
     const uid = request.auth?.uid;
-    if (uid) {
-      await getAuth().setCustomUserClaims(uid, { admin: true });
+    if (!uid) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Chybí přihlášení (anonymní účet). Načtěte stránku znovu, chvilku počkejte a zkuste heslo znovu.'
+      );
     }
+    await getAuth().setCustomUserClaims(uid, { admin: true });
 
     return { verified: true };
   }
@@ -350,7 +442,9 @@ function isOriginAllowed(origin) {
     const url = new URL(origin);
     if (url.protocol !== 'https:' && url.protocol !== 'http:') return false;
     const host = url.hostname.toLowerCase();
-    if (host === 'localhost' || host.endsWith('.web.app') || host.endsWith('.firebaseapp.com')) return true;
+    if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.web.app') || host.endsWith('.firebaseapp.com')) {
+      return true;
+    }
     if (getExtraOriginHosts().includes(host)) return true;
     return false;
   } catch {
@@ -556,9 +650,13 @@ export const verifyAdminWebAuthnLogin = onCall(
       await db.doc(ADMIN_WEBAUTHN_DOC).update({ credentials: updated });
     }
     const uid = request.auth?.uid;
-    if (uid) {
-      await getAuth().setCustomUserClaims(uid, { admin: true });
+    if (!uid) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Chybí přihlášení pro udělení oprávnění. Obnovte stránku a zkuste Face ID znovu.'
+      );
     }
+    await getAuth().setCustomUserClaims(uid, { admin: true });
     return { verified: true };
   }
 );
@@ -598,9 +696,16 @@ function formatDateDisplay(dateKey) {
 
 /**
  * Naplánovaná funkce: každý den v 16:00 (Praha) odešle připomínky na zítřek.
- * SMS přes BulkGate (rezervace s telefonem), e-mail přes EmailJS (rezervace s e-mailem).
- * Vyžaduje: BULKGATE_* pro SMS; EMAILJS_* volitelně pro e-mail.
+ * SMS přes BulkGate (rezervace s telefonem), e-mail přes Resend nebo fallback EmailJS.
+ * Vyžaduje: BULKGATE_* pro SMS; RESEND_* nebo EMAILJS_* pro e-mail.
  */
+function hasEmailJsReminderEnv() {
+  const sid = process.env.EMAILJS_SERVICE_ID || '';
+  const tid = process.env.EMAILJS_REMINDER_TEMPLATE_ID || '';
+  const pk = process.env.EMAILJS_PUBLIC_KEY || '';
+  return Boolean(sid && tid && pk);
+}
+
 export const sendDailyReminders = onSchedule(
   {
     schedule: '0 16 * * *',
@@ -625,14 +730,20 @@ export const sendDailyReminders = onSchedule(
     const sidVal = senderIdValue.value();
     const hasSms = Boolean(appId && appToken);
 
-    /** EmailJS pouze z process.env (volitelné), aby deploy v non-interactive nevyžadoval tyto proměnné. */
+    const useResend = isResendConfigured();
+    const useEmailJs = !useResend && hasEmailJsReminderEnv();
+    const hasEmailChannel = useResend || useEmailJs;
     const emailServiceId = process.env.EMAILJS_SERVICE_ID || '';
     const emailTemplateId = process.env.EMAILJS_REMINDER_TEMPLATE_ID || '';
     const emailPublicKey = process.env.EMAILJS_PUBLIC_KEY || '';
-    const hasEmail = Boolean(emailServiceId && emailTemplateId && emailPublicKey);
 
     let smsSent = 0;
     let emailSent = 0;
+
+    let sendReminderEmailInternal = null;
+    if (useResend) {
+      ({ sendReminderEmailInternal } = await loadResendMail());
+    }
 
     for (const res of reservations) {
       const dateDisplay = formatDateDisplay(res.date);
@@ -653,28 +764,42 @@ export const sendDailyReminders = onSchedule(
         }
       }
 
-      if (hasEmail && res.email) {
+      if (hasEmailChannel && res.email) {
         try {
-          const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              service_id: emailServiceId,
-              template_id: emailTemplateId,
-              user_id: emailPublicKey,
-              template_params: {
-                name: res.name,
-                to_email: res.email,
-                date: dateDisplay,
-                time: res.time,
-                service: res.serviceName,
-                reply_to: 'rezervace@skinstudio.cz',
-              },
-            }),
-          });
-          if (emailRes.ok) {
-            await db.doc(`reservations/${res.id}`).update({ reminderSent: true });
-            emailSent++;
+          if (useResend) {
+            const ok = await sendReminderEmailInternal({
+              name: res.name,
+              email: String(res.email).trim(),
+              date: dateDisplay,
+              time: res.time,
+              serviceName: res.serviceName || 'rezervace',
+            });
+            if (ok) {
+              await db.doc(`reservations/${res.id}`).update({ reminderSent: true });
+              emailSent++;
+            }
+          } else {
+            const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                service_id: emailServiceId,
+                template_id: emailTemplateId,
+                user_id: emailPublicKey,
+                template_params: {
+                  name: res.name,
+                  to_email: res.email,
+                  date: dateDisplay,
+                  time: res.time,
+                  service: res.serviceName,
+                  reply_to: 'rezervace@skinstudio.cz',
+                },
+              }),
+            });
+            if (emailRes.ok) {
+              await db.doc(`reservations/${res.id}`).update({ reminderSent: true });
+              emailSent++;
+            }
           }
         } catch (err) {
           console.error('sendDailyReminders email', res.id, err);

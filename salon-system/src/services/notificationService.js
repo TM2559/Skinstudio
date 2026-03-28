@@ -1,5 +1,5 @@
 import { callSendConfirmationSms, callSendReminderSms } from '../firebaseConfig';
-import { sendBookingConfirmationEmail, sendAdminNotificationEmail, sendReminderEmail } from './emailService';
+import { sendBookingConfirmationAndAdminEmails, sendReminderEmailsBatch } from './emailService';
 import { Utils } from '../utils/helpers';
 
 /**
@@ -8,7 +8,7 @@ import { Utils } from '../utils/helpers';
  */
 export async function sendBookingConfirmations({ name, phone, email, date, time, serviceName, duration, calendarLink }) {
   const dateDisplay = Utils.formatDateDisplay(date);
-  const results = { sms: false, email: false, adminEmail: false };
+  const results = { sms: false, email: false, adminEmail: false, emailError: '' };
 
   if (phone?.trim()) {
     try {
@@ -20,8 +20,18 @@ export async function sendBookingConfirmations({ name, phone, email, date, time,
   }
 
   if (email?.trim()) {
-    results.email = await sendBookingConfirmationEmail({ name, email, date: dateDisplay, time, serviceName });
-    results.adminEmail = await sendAdminNotificationEmail({ name, email, phone, date: dateDisplay, time, serviceName, calendarLink });
+    const emailResults = await sendBookingConfirmationAndAdminEmails({
+      name,
+      email,
+      phone,
+      date: dateDisplay,
+      time,
+      serviceName,
+      calendarLink,
+    });
+    results.email = emailResults.clientOk;
+    results.adminEmail = emailResults.adminOk;
+    results.emailError = emailResults.clientError || '';
   }
 
   return results;
@@ -56,15 +66,18 @@ export async function sendReminders(reservationsList) {
     }
   }
 
-  for (const res of withEmail) {
-    const ok = await sendReminderEmail({
-      name: res.name,
-      email: res.email,
-      date: Utils.formatDateDisplay(res.date),
-      time: res.time,
-      serviceName: res.serviceName,
-    });
-    if (ok) emailSent++;
+  if (withEmail.length > 0) {
+    const batch = await sendReminderEmailsBatch(
+      withEmail.map((r) => ({
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        date: r.date,
+        time: r.time,
+        serviceName: r.serviceName,
+      }))
+    );
+    emailSent = batch.sent;
   }
 
   return { smsSent, emailSent };

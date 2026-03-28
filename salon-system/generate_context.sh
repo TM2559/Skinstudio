@@ -6,7 +6,7 @@ OUTPUT="AI_CONTEXT.md"
 # 1. HLAVIČKA A INSTRUKCE
 # Tady definujeme, co má AI vědět o roli a pravidlech
 echo "# PROJEKT: Skin Studio (Rezervační systém)" > "$OUTPUT"
-echo "Stack: React + Vite + Firebase + Tailwind + EmailJS + Vitest" >> "$OUTPUT"
+echo "Stack: React + Vite + Firebase + Tailwind + Resend (Functions) + Vitest" >> "$OUTPUT"
 echo "Date: $(date)" >> "$OUTPUT"
 echo "--------------------------------------------------" >> "$OUTPUT"
 echo "" >> "$OUTPUT"

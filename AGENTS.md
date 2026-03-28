@@ -6,8 +6,8 @@ Skin Studio is a React + Vite salon booking system for a Czech beauty studio. Th
 
 ### Running the app
 
-- **Dev server:** `npm run dev` from `salon-system/` (Vite on port 5173)
-- **Tests:** `npx vitest run` from `salon-system/` (60 tests, all self-contained with mocks)
+- **Dev server:** `npm run dev` from the repo root **or** from `salon-system/` (Vite, default port **5173**; if busy, Vite picks the next free port, e.g. 5174). **Local Resend:** set `VITE_USE_EMULATORS=true` and `VITE_USE_RESEND_EMAILS=true`, run `firebase emulators:start --only functions` from `salon-system/` after `npm run build` in `functions/`; see `salon-system/functions/README.md`.
+- **Tests:** `npx vitest run` from `salon-system/` (Vitest, all self-contained with mocks)
 - **Lint:** `npx eslint .` from `salon-system/` (pre-existing lint errors exist in the codebase)
 - **Build:** `npm run build` runs tests first, then `vite build`
 
@@ -20,5 +20,5 @@ The app requires `VITE_FIREBASE_*` env vars for Firebase initialization. Without
 - The `npm run test` script runs vitest in **watch mode**. Use `npx vitest run` for a single run suitable for CI/automation.
 - ESLint exits with errors (pre-existing); this does not block development.
 - The Express API server (`npm run server` on port 3001) is optional — only needed for the "Magic Wand" AI content formatting feature and requires `OPENAI_API_KEY` or `GEMINI_API_KEY`.
-- Firebase Cloud Functions live in `salon-system/functions/` and require a separate `npm install`. They are optional for local development.
+- Firebase Cloud Functions live in `salon-system/functions/` and require a separate `npm install` and `npm run build` (esbuild → `lib/`). **Produkce (GitHub Actions):** workflow nastaví **`VITE_USE_RESEND_EMAILS=true`** a **`VITE_USE_EMULATORS=false`**; deploy vytvoří `functions/.env` z secrets včetně **`RESEND_*`**. Lokálně: `VITE_USE_RESEND_EMAILS=true` + `functions/.env` s `RESEND_*`; pro emulátor i `VITE_USE_EMULATORS=true`. Legacy **EmailJS:** vypni Resend (`VITE_USE_RESEND_EMAILS` ne `true`) a doplň `VITE_EMAILJS_*`. Plánované připomínky: Resend pokud je nakonfigurován, jinak **EmailJS** na funkci (`EMAILJS_*`).
 - **Admin login:** 7× klik na logo „Skin Studio“ otevře přihlášení. Heslo je z `VITE_ADMIN_PASSWORD` (`.env` v `salon-system/`). Pro Face ID / Touch ID musí být v prostředí Functions nastaveno `ADMIN_PASSWORD` (stejná hodnota) a po prvním přihlášení heslem lze v adminu nastavit Face ID (ikona u odhlášení).

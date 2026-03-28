@@ -11,6 +11,7 @@ import {
   verifyAdminWebAuthnRegistration,
 } from '../firebaseConfig';
 import { PMU_DURATIONS, CONTACT, COLLECTIONS } from '../constants/config';
+import { useResendEmails } from '../firebaseConfig';
 import { sendBookingConfirmations, sendReminders } from '../services/notificationService';
 
 import { useToastContext } from '../contexts/ToastContext';
@@ -252,9 +253,20 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   };
 
   const handleDeleteRes = async (id) => {
-    if (confirm('Smazat rezervaci?')) {
+    if (!confirm('Smazat rezervaci?')) return;
+    try {
       await deleteDoc(getDocPath(COLLECTIONS.RESERVATIONS, id));
       setSelectedOrder(null);
+    } catch (err) {
+      console.error('Smazání rezervace:', err);
+      const code = err?.code || '';
+      if (code === 'permission-denied') {
+        toast.error(
+          'Nemáte oprávnění mazat rezervace. Odhlaste se z adminu, obnovte stránku (F5) a přihlaste se heslem znovu (kvůli oprávnění v účtu).'
+        );
+      } else {
+        toast.error('Rezervaci se nepodařilo smazat. Zkuste to znovu nebo zkontrolujte připojení.');
+      }
     }
   };
 
@@ -357,7 +369,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
         source: 'admin',
       });
       if (sendNotification) {
-        await sendBookingConfirmations({
+        const notif = await sendBookingConfirmations({
           name: manualForm.name,
           phone,
           email,
@@ -366,6 +378,13 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           serviceName: selectedSrv?.name || 'Manual Booking',
           duration: parseInt(selectedSrv?.duration || 60),
         });
+        if (email && !notif.email) {
+          toast.warning(
+            useResendEmails()
+              ? 'Rezervace je uložená, ale e-mail (Resend) neodešel. Konzole (F12).'
+              : 'Rezervace je uložená, ale e-mail (EmailJS) neodešel. Zkontrolujte VITE_EMAILJS_*. Konzole (F12).'
+          );
+        }
       }
       setShowManualBooking(false);
       setManualForm({
