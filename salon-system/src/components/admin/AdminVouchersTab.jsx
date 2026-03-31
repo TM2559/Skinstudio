@@ -89,6 +89,8 @@ export default function AdminVouchersTab({
   onSave,
   onDelete,
   onToggleActive,
+  vouchersEnabled = true,
+  onSetVouchersEnabled,
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingVoucher, setEditingVoucher] = useState(null);
@@ -162,6 +164,27 @@ export default function AdminVouchersTab({
           Hodnotové poukazy (pevná částka nebo jeden řádek „vlastní částka“) a produktové (navázané na službu z
           ceníku).
         </p>
+        <div className="mt-4 inline-flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={vouchersEnabled}
+            aria-label={vouchersEnabled ? 'Stránka poukazů je zapnutá – vypnout' : 'Stránka poukazů je vypnutá – zapnout'}
+            onClick={() => onSetVouchersEnabled?.(!vouchersEnabled)}
+            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-1 ${
+              vouchersEnabled ? 'bg-stone-800 border-stone-800' : 'bg-stone-200 border-stone-200'
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                vouchersEnabled ? 'translate-x-5' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+          <span className="text-sm text-stone-700">
+            Zobrazovat stránku dárkových poukazů na webu
+          </span>
+        </div>
       </div>
 
       {/* Hodnotové */}

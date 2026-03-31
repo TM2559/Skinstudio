@@ -35,7 +35,18 @@ import ManualBookingModal from './admin/ManualBookingModal';
 import RemindersModal from './admin/RemindersModal';
 import OrderDetailModal from './admin/OrderDetailModal';
 
-const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons = [], serviceAddonLinks = [], voucherTemplates = [], voucherOrders = [], onLogout }) => {
+const AdminView = ({
+  services,
+  schedule,
+  schedulePmu = {},
+  reservations,
+  addons = [],
+  serviceAddonLinks = [],
+  voucherTemplates = [],
+  voucherOrders = [],
+  vouchersEnabled = true,
+  onLogout,
+}) => {
   const toast = useToastContext();
   const [activeTab, setActiveTab] = useState('bookings');
   const [searchTerm, setSearchTerm] = useState('');
@@ -338,6 +349,15 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     } catch (err) {
       console.error('Toggle voucher active:', err);
       toast.error('Změna stavu se nepovedla.');
+    }
+  };
+
+  const handleSetVouchersPageEnabled = async (enabled) => {
+    try {
+      await setDoc(getDocPath('config', 'site_settings'), { vouchersEnabled: enabled }, { merge: true });
+      toast.success(enabled ? 'Stránka dárkových poukazů byla zapnuta.' : 'Stránka dárkových poukazů byla vypnuta.');
+    } catch (e) {
+      toast.error(e?.message || 'Nepodařilo se uložit nastavení stránky dárkových poukazů.');
     }
   };
 
@@ -790,6 +810,8 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
             onSave={handleSaveVoucher}
             onDelete={handleDeleteVoucher}
             onToggleActive={handleToggleVoucherActive}
+            vouchersEnabled={vouchersEnabled}
+            onSetVouchersEnabled={handleSetVouchersPageEnabled}
           />
         )}
         {activeTab === 'orders' && (

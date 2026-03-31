@@ -45,7 +45,7 @@ export default function App() {
         <Route
           path="/"
           element={
-            <Layout setView={adminAuth.setView}>
+            <Layout setView={adminAuth.setView} vouchersEnabled={data.vouchersEnabled}>
               <CosmeticsPage services={data.servicesStandardOnly} />
             </Layout>
           }
@@ -53,7 +53,7 @@ export default function App() {
         <Route
           path="/kosmetika"
           element={
-            <Layout setView={adminAuth.setView}>
+            <Layout setView={adminAuth.setView} vouchersEnabled={data.vouchersEnabled}>
               <CosmeticsPage services={data.servicesStandardOnly} />
             </Layout>
           }
@@ -72,23 +72,31 @@ export default function App() {
         <Route
           path="/darkove-poukazy"
           element={
-            <Layout setView={adminAuth.setView}>
-              <GiftVoucherCheckoutPage />
-            </Layout>
+            data.vouchersEnabled ? (
+              <Layout setView={adminAuth.setView} vouchersEnabled={data.vouchersEnabled}>
+                <GiftVoucherCheckoutPage />
+              </Layout>
+            ) : (
+              <Navigate to="/" replace />
+            )
           }
         />
         <Route
           path="/poukaz/success"
           element={
-            <Layout setView={adminAuth.setView}>
-              <VoucherSuccessPage />
-            </Layout>
+            data.vouchersEnabled ? (
+              <Layout setView={adminAuth.setView} vouchersEnabled={data.vouchersEnabled}>
+                <VoucherSuccessPage />
+              </Layout>
+            ) : (
+              <Navigate to="/" replace />
+            )
           }
         />
         <Route
           path="/zpracovani-osobnich-udaju"
           element={
-            <Layout setView={adminAuth.setView}>
+            <Layout setView={adminAuth.setView} vouchersEnabled={data.vouchersEnabled}>
               <PrivacyPage />
             </Layout>
           }
@@ -97,7 +105,7 @@ export default function App() {
         <Route
           path="/rezervace"
           element={
-            <Layout setView={adminAuth.setView}>
+            <Layout setView={adminAuth.setView} vouchersEnabled={data.vouchersEnabled}>
               <ReservationApp
                 loading={false}
                 view={adminAuth.view}
@@ -121,6 +129,7 @@ export default function App() {
                 serviceAddonLinks={data.serviceAddonLinks}
                 voucherTemplates={data.voucherTemplates}
                 voucherOrders={data.voucherOrders}
+                vouchersEnabled={data.vouchersEnabled}
               />
             </Layout>
           }

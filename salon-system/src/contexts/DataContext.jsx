@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { query, onSnapshot } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged, onIdTokenChanged, signInWithCustomToken } from 'firebase/auth';
-import { auth, getCollectionPath } from '../firebaseConfig';
+import { auth, getCollectionPath, getDocPath } from '../firebaseConfig';
 import { filterCosmeticsServices } from '../utils/helpers';
 import { COLLECTIONS } from '../constants/config';
 
@@ -31,6 +31,7 @@ export function DataProvider({ children }) {
   const [serviceAddonLinks, setServiceAddonLinks] = useState([]);
   const [voucherTemplates, setVoucherTemplates] = useState([]);
   const [voucherOrders, setVoucherOrders] = useState([]);
+  const [vouchersEnabled, setVouchersEnabled] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +91,14 @@ export function DataProvider({ children }) {
       onSnapshot(query(getCollectionPath(COLLECTIONS.ADDONS)), (s) => setAddons(mapDocs(s)), onError('addons')),
       onSnapshot(query(getCollectionPath(COLLECTIONS.SERVICE_ADDON_LINKS)), (s) => setServiceAddonLinks(mapDocs(s)), onError('service_addon_links')),
       onSnapshot(query(getCollectionPath(COLLECTIONS.VOUCHER_TEMPLATES)), (s) => setVoucherTemplates([...mapDocs(s)].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))), onError('voucher_templates')),
+      onSnapshot(
+        getDocPath('config', 'site_settings'),
+        (docSnap) => {
+          const enabled = docSnap.exists() ? docSnap.data()?.vouchersEnabled !== false : true;
+          setVouchersEnabled(enabled);
+        },
+        onError('config/site_settings'),
+      ),
     ];
     if (tokenHasAdmin) {
       unsubs.push(
@@ -147,10 +156,11 @@ export function DataProvider({ children }) {
     serviceAddonLinks,
     voucherTemplates,
     voucherOrders,
+    vouchersEnabled,
     servicesStandardOnly,
     servicesWithAddons,
     servicesStandardWithAddons,
-  }), [loading, reservations, schedule, schedulePmu, services, addons, serviceAddonLinks, voucherTemplates, voucherOrders, servicesStandardOnly, servicesWithAddons, servicesStandardWithAddons]);
+  }), [loading, reservations, schedule, schedulePmu, services, addons, serviceAddonLinks, voucherTemplates, voucherOrders, vouchersEnabled, servicesStandardOnly, servicesWithAddons, servicesStandardWithAddons]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
