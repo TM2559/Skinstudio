@@ -1,0 +1,22 @@
+{
+  "name": "salon-functions",
+  "description": "Firebase Cloud Functions for Skin Studio (e.g. format-content API)",
+  "main": "index.js",
+  "type": "module",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "@react-email/components": "^1.0.10",
+    "@react-email/render": "^2.0.4",
+    "@simplewebauthn/server": "^13.2.3",
+    "firebase-admin": "^13.6.1",
+    "firebase-functions": "^7.0.6",
+    "react": "^19.2.4",
+    "resend": "^4.0.0"
+  }
+}
