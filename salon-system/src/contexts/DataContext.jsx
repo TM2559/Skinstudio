@@ -2,11 +2,22 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { query, onSnapshot } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-import { auth, getCollectionPath } from '../firebaseConfig';
+import * as FirebaseConfig from '../firebaseConfig';
 import { filterCosmeticsServices } from '../utils/helpers';
 import { COLLECTIONS } from '../constants/config';
 
 const DataContext = createContext(null);
+const { auth, getCollectionPath } = FirebaseConfig;
+const isVitest = typeof import.meta.env.VITEST !== 'undefined' && import.meta.env.VITEST;
+const isFirebaseRuntimeConfigured = (() => {
+  const isCanvas = typeof __firebase_config !== 'undefined';
+  if (isCanvas) return true;
+  try {
+    return !!import.meta.env.VITE_FIREBASE_API_KEY;
+  } catch {
+    return true;
+  }
+})();
 
 function mapDocs(snapshot) {
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -29,6 +40,10 @@ export function DataProvider({ children }) {
   const [serviceAddonLinks, setServiceAddonLinks] = useState([]);
 
   useEffect(() => {
+    if (!isFirebaseRuntimeConfigured && !isVitest) {
+      setLoading(false);
+      return;
+    }
     const init = async () => {
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -49,6 +64,7 @@ export function DataProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    if (!isFirebaseRuntimeConfigured) return;
     if (!user) return;
     const onError = (label) => (err) => console.error(`Firestore ${label}:`, err);
 
