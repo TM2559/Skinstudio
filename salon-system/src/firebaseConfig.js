@@ -18,6 +18,8 @@ const isVitestNoKey = typeof import.meta.env.VITEST !== 'undefined' && import.me
 const isCanvas = typeof __firebase_config !== 'undefined';
 
 const projectId = getEnv('VITE_FIREBASE_PROJECT_ID');
+const hasFirebaseApiKey = !!getEnv('VITE_FIREBASE_API_KEY');
+export const isFirebaseRuntimeConfigured = isCanvas || hasFirebaseApiKey;
 const storageBucketEnv = getEnv('VITE_FIREBASE_STORAGE_BUCKET');
 const firebaseConfig = isCanvas
   ? JSON.parse(__firebase_config)
@@ -49,13 +51,17 @@ let auth;
 let db;
 let storage;
 let functions;
+const useFirebaseMocks = isVitestNoKey || !isFirebaseRuntimeConfigured;
 
-if (isVitestNoKey) {
+if (useFirebaseMocks) {
   app = {};
   auth = { currentUser: null };
   db = {};
   storage = {};
   functions = {};
+  if (!isVitestNoKey && !isFirebaseRuntimeConfigured) {
+    console.warn('Firebase runtime config missing (VITE_FIREBASE_API_KEY). Running in degraded mode.');
+  }
 } else {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
@@ -81,60 +87,61 @@ export const getDocPath = (colName, docId) =>
       ? doc(db, 'artifacts', appId, 'public', 'data', colName, docId)
       : doc(db, colName, docId);
 
-export const callSendConfirmationSms = isVitestNoKey
+export const callSendConfirmationSms = useFirebaseMocks
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'sendConfirmationSms');
 
-export const callSendReminderSms = isVitestNoKey
+export const callSendReminderSms = useFirebaseMocks
   ? () => Promise.resolve({ data: { sent: 0, errors: [] } })
   : httpsCallable(functions, 'sendReminderSms');
-export const callSendBookingEmails = isVitestNoKey
+export const callSendBookingEmails = useFirebaseMocks
   ? () => Promise.resolve({ data: { clientOk: true, adminOk: true } })
   : httpsCallable(functions, 'sendBookingEmails');
-export const callSendReminderEmails = isVitestNoKey
+export const callSendReminderEmails = useFirebaseMocks
   ? () => Promise.resolve({ data: { sent: 0, errors: [] } })
   : httpsCallable(functions, 'sendReminderEmails');
 
 // Admin password verification (server-side)
-export const callVerifyAdminPassword = isVitestNoKey
+export const callVerifyAdminPassword = useFirebaseMocks
   ? () => Promise.resolve({ data: { verified: true } })
   : httpsCallable(functions, 'verifyAdminPassword');
 
 // Admin WebAuthn (Face ID / Touch ID)
-export const getAdminWebAuthnRegistrationOptions = isVitestNoKey
+export const getAdminWebAuthnRegistrationOptions = useFirebaseMocks
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'getAdminWebAuthnRegistrationOptions');
-export const verifyAdminWebAuthnRegistration = isVitestNoKey
+export const verifyAdminWebAuthnRegistration = useFirebaseMocks
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'verifyAdminWebAuthnRegistration');
-export const getAdminWebAuthnConfigured = isVitestNoKey
+<<<<<<< HEAD
+export const getAdminWebAuthnConfigured = useFirebaseMocks
   ? () => Promise.resolve({ data: { configured: false } })
   : httpsCallable(functions, 'getAdminWebAuthnConfigured');
-export const getAdminWebAuthnLoginOptions = isVitestNoKey
+export const getAdminWebAuthnLoginOptions = useFirebaseMocks
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'getAdminWebAuthnLoginOptions');
-export const verifyAdminWebAuthnLogin = isVitestNoKey
+export const verifyAdminWebAuthnLogin = useFirebaseMocks
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'verifyAdminWebAuthnLogin');
 
-export const callCreateVoucherOrder = isVitestNoKey
+export const callCreateVoucherOrder = useFirebaseMocks
   ? () => Promise.resolve({ data: { orderId: 'test-id', total_price: 0 } })
   : httpsCallable(functions, 'createVoucherOrder');
-export const callUpdateVoucherOrderStatus = isVitestNoKey
+export const callUpdateVoucherOrderStatus = useFirebaseMocks
   ? () => Promise.resolve({ data: { success: true, smsSent: false } })
   : httpsCallable(functions, 'updateVoucherOrderStatus');
 
 // Resend email callables
-export const callSendBookingConfirmationEmail = isVitestNoKey
+export const callSendBookingConfirmationEmail = useFirebaseMocks
   ? () => Promise.resolve({ data: { sent: true } })
   : httpsCallable(functions, 'sendBookingConfirmationEmail');
-export const callSendAdminNotificationEmail = isVitestNoKey
+export const callSendAdminNotificationEmail = useFirebaseMocks
   ? () => Promise.resolve({ data: { sent: true } })
   : httpsCallable(functions, 'sendAdminNotificationEmail');
-export const callSendReminderEmail = isVitestNoKey
+export const callSendReminderEmail = useFirebaseMocks
   ? () => Promise.resolve({ data: { sent: true } })
   : httpsCallable(functions, 'sendReminderEmailCallable');
 
-export const callSendAdminVoucherOrderEmail = isVitestNoKey
+export const callSendAdminVoucherOrderEmail = useFirebaseMocks
   ? () => Promise.resolve({ data: { sent: true } })
   : httpsCallable(functions, 'sendAdminVoucherOrderEmail');
