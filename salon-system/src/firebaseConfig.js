@@ -95,6 +95,12 @@ export const callSendConfirmationSms = isVitestNoKey
 export const callSendReminderSms = isVitestNoKey
   ? () => Promise.resolve({ data: { sent: 0, errors: [] } })
   : httpsCallable(functions, 'sendReminderSms');
+export const callSendBookingEmails = isVitestNoKey
+  ? () => Promise.resolve({ data: { clientOk: true, adminOk: true } })
+  : httpsCallable(functions, 'sendBookingEmails');
+export const callSendReminderEmails = isVitestNoKey
+  ? () => Promise.resolve({ data: { sent: 0, errors: [] } })
+  : httpsCallable(functions, 'sendReminderEmails');
 
 // Admin password verification (server-side)
 export const callVerifyAdminPassword = isVitestNoKey
@@ -108,6 +114,9 @@ export const getAdminWebAuthnRegistrationOptions = isVitestNoKey
 export const verifyAdminWebAuthnRegistration = isVitestNoKey
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'verifyAdminWebAuthnRegistration');
+export const getAdminWebAuthnConfigured = isVitestNoKey
+  ? () => Promise.resolve({ data: { configured: false } })
+  : httpsCallable(functions, 'getAdminWebAuthnConfigured');
 export const getAdminWebAuthnLoginOptions = isVitestNoKey
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'getAdminWebAuthnLoginOptions');

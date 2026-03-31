@@ -33,6 +33,10 @@ export const BREAKPOINTS = {
   MOBILE: 767,
 };
 
+/** Hero 21:9 nad formulářem — vložte `public/voucher-checkout-hero.jpg` nebo `VITE_VOUCHER_CHECKOUT_HERO_URL`. */
+export const VOUCHER_CHECKOUT_HERO_URL =
+  import.meta.env.VITE_VOUCHER_CHECKOUT_HERO_URL || '/voucher-checkout-hero.jpg';
+
 export const PMU_DURATIONS = [180, 210, 240, 270];
 
 export const COLLECTIONS = {
@@ -53,6 +57,9 @@ export const VOUCHER_TYPES = {
   VALUE: 'value',
   SERVICE: 'service',
 };
+
+/** Minimální částka u „vlastní hodnoty“ v administraci dárkových poukazů */
+export const VOUCHER_VALUE_CUSTOM_MIN_KC = 500;
 
 /** Display category for voucher grouping (value / cosmetics / pmu) */
 export const VOUCHER_CATEGORIES = {

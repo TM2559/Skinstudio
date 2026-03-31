@@ -4,6 +4,11 @@
  */
 
 export const WEB_CONTENT = {
+  voucherCheckout: {
+    backToSite: 'Zpět na web',
+    heroImageAlt: 'Dárkové poukazy Skin Studio',
+    pageTitle: 'Dárkový poukaz',
+  },
   header: {
     brandName: 'Skin Studio',
     ariaLabelHome: 'Skin Studio – Domů',

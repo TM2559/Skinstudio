@@ -34,6 +34,7 @@ export default function Layout({ children, setView }) {
 
   return (
     <div className="min-h-screen font-sans flex flex-col" style={{ backgroundColor: 'var(--skin-cream)' }}>
+      {!isVoucherCheckout && (
       <header
         className="sticky top-0 z-50 border-b backdrop-blur-md"
         style={{
@@ -161,6 +162,7 @@ export default function Layout({ children, setView }) {
           </div>
         )}
       </header>
+      )}
 
       <main className="flex-1">{children}</main>
 

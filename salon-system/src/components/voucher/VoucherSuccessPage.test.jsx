@@ -14,21 +14,30 @@ function renderWithState(state = {}) {
 }
 
 describe('VoucherSuccessPage', () => {
-  it('renders success heading and thank you text', () => {
+  it('renders thank-you heading and email copy', () => {
     renderWithState({});
-    expect(screen.getByRole('heading', { level: 1, name: 'Objednávka byla přijata' })).toBeInTheDocument();
-    expect(screen.getByText(/Děkujeme. Váš dárkový poukaz začínáme připravovat/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Děkujeme za objednávku' })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Váš dárkový poukaz jsme začali připravovat\. Detaily k platbě a vyzvednutí jsme vám právě odeslali na e-mail\./)
+    ).toBeInTheDocument();
   });
 
-  it('renders next steps with total price from state', () => {
-    renderWithState({ totalPrice: 3100 });
-    expect(screen.getByText(/Vyčkejte na SMS s potvrzením a adresou pro vyzvednutí/)).toBeInTheDocument();
-    expect(screen.getByText(/Připravte si prosím přesnou hotovost \(3\s*100 Kč\)/)).toBeInTheDocument();
+  it('renders summary with total and voucher label from state', () => {
+    renderWithState({
+      totalPrice: 3100,
+      voucherLabel: 'Hodnotový poukaz',
+      pickupSummaryLine: 'Osobní vyzvednutí (zítra)',
+    });
+    expect(screen.getByRole('heading', { name: 'Shrnutí' })).toBeInTheDocument();
+    expect(screen.getByText('Hodnotový poukaz')).toBeInTheDocument();
+    expect(screen.getByText(/3\s*100 Kč/)).toBeInTheDocument();
+    expect(screen.getByText('Osobní vyzvednutí (zítra)')).toBeInTheDocument();
+    expect(screen.getByText('Zdarma')).toBeInTheDocument();
   });
 
-  it('renders 0 Kč when no state totalPrice', () => {
+  it('renders em dash for price when no totalPrice in state', () => {
     renderWithState({});
-    expect(screen.getByText(/0 Kč/)).toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
   });
 
   it('renders link back to home', () => {

@@ -24,6 +24,13 @@ const MOCK_REVIEWS = [
     rating: 5,
     text: 'Perfektní laminace obočí a milé přijetí. Studio je útulné, Lucie je velmi vstřícná a odborně mi vše vysvětlila. Už mám objednaný další termín.',
   },
+  {
+    id: 4,
+    name: 'Veronika T.',
+    roleOrDate: 'Druhá návštěva, březen 2025',
+    rating: 5,
+    text: 'Cítila jsem se od začátku v dobrých rukou. Péče byla detailní, příjemná a výsledky jsou vidět. Oceňuji, že mi Lucie doporučila i domácí rutinu. Určitě se vrátím.',
+  },
 ];
 
 function ReviewCard({ name, roleOrDate, rating, text }) {
@@ -143,10 +150,40 @@ function ActionCard({ qrImageSrc = '/Skinstudio_ggl_qr.png', googleReviewUrl = S
 export default function SocialProofSection({
   qrImageSrc = '/Skinstudio_ggl_qr.png',
   googleReviewUrl,
-  reviews = MOCK_REVIEWS,
+  reviews,
   sectionTitle = 'Recenze klientek ze Skin Studia',
 }) {
   const reviewUrl = googleReviewUrl && googleReviewUrl.trim() ? googleReviewUrl.trim() : SKIN_STUDIO_GOOGLE_REVIEW_URL;
+
+  const parseReviewsFromEnv = () => {
+    const raw = import.meta.env.VITE_GOOGLE_REVIEWS_JSON;
+    if (!raw || typeof raw !== 'string') return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return null;
+      // Basic shape validation
+      return parsed.filter(
+        (r) =>
+          r &&
+          (typeof r.id === 'string' || typeof r.id === 'number') &&
+          typeof r.name === 'string' &&
+          typeof r.roleOrDate === 'string' &&
+          typeof r.rating === 'number' &&
+          typeof r.text === 'string'
+      );
+    } catch {
+      return null;
+    }
+  };
+
+  const envReviews = parseReviewsFromEnv();
+  const resolvedReviews = Array.isArray(reviews) && reviews.length > 0 ? reviews : envReviews && envReviews.length > 0 ? envReviews : MOCK_REVIEWS;
+  const ensuredFourReviews = [
+    ...resolvedReviews,
+    ...MOCK_REVIEWS,
+  ]
+    .slice(0, 4);
+
   return (
     <section className="bg-gray-50 py-12 md:py-16">
       <div className="max-w-6xl mx-auto px-4">
@@ -156,7 +193,7 @@ export default function SocialProofSection({
         <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6 md:gap-8 items-stretch">
           {/* Left: review cards — stretch to match row height */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 min-w-0 auto-rows-fr h-full min-h-0">
-            {reviews.map((r) => (
+            {ensuredFourReviews.map((r) => (
               <ReviewCard
                 key={r.id}
                 name={r.name}

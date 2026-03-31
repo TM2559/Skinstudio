@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ShoppingBag } from 'lucide-react';
+import { ChevronDown, ChevronRight, ShoppingBag } from 'lucide-react';
 import { callUpdateVoucherOrderStatus } from '../../firebaseConfig';
 import { useToastContext } from '../../contexts/ToastContext';
 
@@ -9,6 +9,21 @@ const STATUS_OPTIONS = [
   { value: 'completed', label: 'Vyzvednuto' },
   { value: 'cancelled', label: 'Zrušeno' },
 ];
+
+const STATUS_LABELS = {
+  new: 'Nová',
+  ready: 'Připraveno',
+  completed: 'Vyzvednuto',
+  cancelled: 'Zrušeno',
+  pending: 'Čekající',
+};
+
+const SMS_SKIP_LABELS = {
+  bulkgate_not_configured: 'SMS brána není nastavena',
+  missing_phone: 'chybí telefon',
+  invalid_phone: 'neplatné číslo',
+  send_failed: 'odeslání selhalo',
+};
 
 function packagingLabel(p) {
   if (p === 'box') return 'Krabička';
@@ -34,9 +49,75 @@ function formatCreated(ts) {
   }
 }
 
+function formatActivityAt(at) {
+  if (!at) return '—';
+  try {
+    const d = at.toDate ? at.toDate() : new Date(at);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '—';
+  }
+}
+
+function describeActivity(entry) {
+  const k = entry?.kind;
+  if (k === 'order_created') {
+    return 'Objednávka zaznamenána.';
+  }
+  if (k === 'emails_confirmation') {
+    if (entry.error) {
+      return `Potvrzovací e-maily: chyba (${entry.error}).`;
+    }
+    const c = entry.client_ok ? 'zákazník odeslán' : 'zákazník neodeslán';
+    const a = entry.admin_ok ? 'přehled salonu odeslán' : 'přehled salonu neodeslán';
+    return `Potvrzovací e-maily: ${c}, ${a}.`;
+  }
+  if (k === 'sms_order_confirmation') {
+    if (entry.skipped) {
+      if (entry.reason === 'bulkgate_not_configured') return 'SMS potvrzení objednávky: přeskočeno (SMS brána není nastavena).';
+      if (entry.reason === 'invalid_phone') return 'SMS potvrzení objednávky: přeskočeno (neplatné číslo).';
+      return 'SMS potvrzení objednávky: přeskočeno.';
+    }
+    if (entry.error) {
+      return `SMS potvrzení objednávky: chyba (${entry.error}).`;
+    }
+    return entry.ok
+      ? 'SMS s potvrzením objednávky odeslána.'
+      : 'SMS s potvrzením objednávky se nepodařila odeslat.';
+  }
+  if (k === 'status_change') {
+    const from = STATUS_LABELS[entry.from] || entry.from || '—';
+    const to = STATUS_LABELS[entry.to] || entry.to || '—';
+    let s = `Změna stavu: ${from} → ${to}.`;
+    const toReady = entry.to === 'ready';
+    const fromNewish = entry.from === 'new' || entry.from === 'pending';
+    if (toReady && fromNewish) {
+      if (entry.sms_ready_sent) {
+        s += ' Odeslána SMS o připraveném poukazu k vyzvednutí.';
+      } else if (entry.sms_ready_skipped) {
+        const why = SMS_SKIP_LABELS[entry.sms_ready_skipped] || entry.sms_ready_skipped;
+        s += ` SMS o připraveném poukazu neodeslána (${why}).`;
+      }
+    }
+    return s;
+  }
+  return null;
+}
+
+function normalizeActivityLog(raw) {
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+  return [...raw].sort((a, b) => {
+    const ta = a?.at?.toMillis?.() ?? 0;
+    const tb = b?.at?.toMillis?.() ?? 0;
+    return ta - tb;
+  });
+}
+
 export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = [] }) {
   const toast = useToastContext();
   const [updatingId, setUpdatingId] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
 
   const templateNameById = useMemo(() => {
     const m = {};
@@ -71,7 +152,8 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
           Objednávky poukazů
         </h2>
         <p className="text-xs text-stone-500">
-          Přehled objednávek k vyzvednutí v salonu. Při přechodu na „Připraveno“ může zákazník dostat SMS.
+          Přehled objednávek k vyzvednutí v salonu. Při přechodu na „Připraveno“ může zákazník dostat SMS. Níže u
+          každé objednávky je historie stavů a odeslaných zpráv.
         </p>
       </div>
 
@@ -81,9 +163,10 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm overflow-x-auto">
-          <table className="w-full text-left text-sm min-w-[720px]">
+          <table className="w-full text-left text-sm min-w-[760px]">
             <thead>
               <tr className="border-b border-stone-200 bg-stone-50/80">
+                <th className="px-2 py-3 w-10 font-semibold text-stone-700" aria-label="Historie" />
                 <th className="px-3 py-3 font-semibold text-stone-700">Vytvořeno</th>
                 <th className="px-3 py-3 font-semibold text-stone-700">Poukaz</th>
                 <th className="px-3 py-3 font-semibold text-stone-700">Balení</th>
@@ -94,39 +177,84 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
               </tr>
             </thead>
             <tbody>
-              {voucherOrders.map((o) => (
-                <tr key={o.id} className="border-b border-stone-100 hover:bg-stone-50/50 align-top">
-                  <td className="px-3 py-3 text-stone-600 whitespace-nowrap">{formatCreated(o.created_at)}</td>
-                  <td className="px-3 py-3 font-medium text-stone-800">
-                    {templateNameById[o.voucher_id] || o.voucher_id || '—'}
-                  </td>
-                  <td className="px-3 py-3 text-stone-600">{packagingLabel(o.packaging)}</td>
-                  <td className="px-3 py-3 text-stone-600 whitespace-nowrap">{formatDate(o.target_pickup_date)}</td>
-                  <td className="px-3 py-3 text-stone-600 text-xs">
-                    <div>{o.contact_phone || '—'}</div>
-                    <div className="text-stone-500 truncate max-w-[200px]" title={o.contact_email}>
-                      {o.contact_email || '—'}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 text-stone-800 font-medium whitespace-nowrap">
-                    {o.total_price != null ? `${o.total_price} Kč` : '—'}
-                  </td>
-                  <td className="px-3 py-3">
-                    <select
-                      value={o.status || 'new'}
-                      disabled={updatingId === o.id}
-                      onChange={(e) => handleStatusChange(o.id, e.target.value)}
-                      className="text-sm border border-stone-200 rounded-lg px-2 py-1.5 bg-white text-stone-800 max-w-[140px] disabled:opacity-60"
-                    >
-                      {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                </tr>
-              ))}
+              {voucherOrders.map((o) => {
+                const log = normalizeActivityLog(o.activity_log);
+                const open = expandedId === o.id;
+                return (
+                  <React.Fragment key={o.id}>
+                    <tr className="border-b border-stone-100 hover:bg-stone-50/50 align-top">
+                      <td className="px-2 py-3 align-top">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedId(open ? null : o.id)}
+                          className="p-1 rounded-md text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+                          aria-expanded={open}
+                          aria-label={open ? 'Skrýt historii' : 'Zobrazit historii'}
+                        >
+                          {open ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                        </button>
+                      </td>
+                      <td className="px-3 py-3 text-stone-600 whitespace-nowrap">{formatCreated(o.created_at)}</td>
+                      <td className="px-3 py-3 font-medium text-stone-800">
+                        {o.is_custom_amount || (o.custom_amount_kc != null && !o.voucher_id)
+                          ? `Vlastní hodnota (${o.custom_amount_kc != null ? `${o.custom_amount_kc} Kč` : '—'})`
+                          : templateNameById[o.voucher_id] || o.voucher_id || '—'}
+                      </td>
+                      <td className="px-3 py-3 text-stone-600">{packagingLabel(o.packaging)}</td>
+                      <td className="px-3 py-3 text-stone-600 whitespace-nowrap">{formatDate(o.target_pickup_date)}</td>
+                      <td className="px-3 py-3 text-stone-600 text-xs">
+                        <div>{o.contact_phone || '—'}</div>
+                        <div className="text-stone-500 truncate max-w-[200px]" title={o.contact_email}>
+                          {o.contact_email || '—'}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-stone-800 font-medium whitespace-nowrap">
+                        {o.total_price != null ? `${o.total_price} Kč` : '—'}
+                      </td>
+                      <td className="px-3 py-3">
+                        <select
+                          value={o.status || 'new'}
+                          disabled={updatingId === o.id}
+                          onChange={(e) => handleStatusChange(o.id, e.target.value)}
+                          className="text-sm border border-stone-200 rounded-lg px-2 py-1.5 bg-white text-stone-800 max-w-[140px] disabled:opacity-60"
+                        >
+                          {STATUS_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                    {open && (
+                      <tr className="border-b border-stone-100 bg-stone-50/70">
+                        <td colSpan={8} className="px-4 py-3 text-xs text-stone-600">
+                          <div className="font-semibold text-stone-700 mb-2">Historie objednávky a zpráv</div>
+                          {log.length === 0 ? (
+                            <p className="text-stone-500 italic">
+                              U této objednávky není uložená historie (starší záznamy před rozšířením administrace).
+                            </p>
+                          ) : (
+                            <ul className="space-y-2 list-none pl-0">
+                              {log.map((entry, idx) => {
+                                const text = describeActivity(entry);
+                                return (
+                                  <li key={idx} className="flex gap-2">
+                                    <span className="text-stone-400 shrink-0 whitespace-nowrap">
+                                      {formatActivityAt(entry.at)}
+                                    </span>
+                                    <span>{text || 'Událost v systému.'}</span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>

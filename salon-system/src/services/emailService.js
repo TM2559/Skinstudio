@@ -27,20 +27,23 @@ async function send(templateId, templateParams) {
   }
 }
 
-export async function sendBookingConfirmationEmail({ name, email, date, time, serviceName }) {
+export async function sendBookingConfirmationEmail({ name, email, date, time, serviceName, calendarIcsLink }) {
   return send(EMAILJS_CONFIG.CONFIRM_TEMPLATE, {
+    greeting_line: 'Dobrý den,',
     name,
     to_email: email,
     date,
     time,
     service: serviceName,
+    calendar_ics_link: calendarIcsLink || '',
     reply_to: CONTACT.EMAIL_PUBLIC,
   });
 }
 
-export async function sendAdminNotificationEmail({ name, email, phone, date, time, serviceName, calendarLink }) {
+export async function sendAdminNotificationEmail({ name, email, phone, date, time, serviceName, calendarLink, calendarIcsLink }) {
   if (!EMAILJS_CONFIG.ADMIN_TEMPLATE) return false;
   return send(EMAILJS_CONFIG.ADMIN_TEMPLATE, {
+    greeting_line: 'Dobrý den,',
     name,
     to_email: CONTACT.EMAIL_PUBLIC,
     date,
@@ -49,16 +52,19 @@ export async function sendAdminNotificationEmail({ name, email, phone, date, tim
     phone,
     reply_to: email,
     calendar_link: calendarLink,
+    calendar_ics_link: calendarIcsLink || '',
   });
 }
 
-export async function sendReminderEmail({ name, email, date, time, serviceName }) {
+export async function sendReminderEmail({ name, email, date, time, serviceName, calendarIcsLink }) {
   return send(EMAILJS_CONFIG.REMINDER_TEMPLATE, {
+    greeting_line: 'Dobrý den,',
     name,
     to_email: email,
     date,
     time,
     service: serviceName,
+    calendar_ics_link: calendarIcsLink || '',
     reply_to: CONTACT.EMAIL_RESERVATIONS,
   });
 }

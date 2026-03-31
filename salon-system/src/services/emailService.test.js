@@ -42,8 +42,10 @@ describe('emailService', () => {
     expect(body.service_id).toBe('test-service');
     expect(body.template_id).toBe('tpl-confirm');
     expect(body.user_id).toBe('test-key');
+    expect(body.template_params.greeting_line).toBe('Dobrý den,');
     expect(body.template_params.name).toBe('Jan');
     expect(body.template_params.to_email).toBe('jan@test.cz');
+    expect(body.template_params.calendar_ics_link).toBe('');
     expect(body.template_params.reply_to).toBe('info@test.cz');
   });
 
@@ -73,7 +75,9 @@ describe('emailService', () => {
     const body = JSON.parse(global.fetch.mock.calls[0][1].body);
     expect(body.template_id).toBe('tpl-admin');
     expect(body.template_params.to_email).toBe('info@test.cz');
+    expect(body.template_params.greeting_line).toBe('Dobrý den,');
     expect(body.template_params.calendar_link).toBe('https://cal.google.com/test');
+    expect(body.template_params.calendar_ics_link).toBe('');
   });
 
   it('sends reminder email with correct template', async () => {
@@ -84,6 +88,7 @@ describe('emailService', () => {
     expect(result).toBe(true);
     const body = JSON.parse(global.fetch.mock.calls[0][1].body);
     expect(body.template_id).toBe('tpl-reminder');
+    expect(body.template_params.greeting_line).toBe('Dobrý den,');
     expect(body.template_params.reply_to).toBe('rez@test.cz');
   });
 

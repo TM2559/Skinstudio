@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { query, onSnapshot } from 'firebase/firestore';
-import { signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { signInAnonymously, onAuthStateChanged, onIdTokenChanged, signInWithCustomToken } from 'firebase/auth';
 import { auth, getCollectionPath } from '../firebaseConfig';
 import { filterCosmeticsServices } from '../utils/helpers';
 import { COLLECTIONS } from '../constants/config';
@@ -20,6 +20,8 @@ function mapDict(snapshot) {
 
 export function DataProvider({ children }) {
   const [user, setUser] = useState(null);
+  /** Objednávky poukazů ve Firestore vyžadují isAdmin – bez claimu by posluchač házel permission-denied a rozbíjel SDK. */
+  const [tokenHasAdmin, setTokenHasAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reservations, setReservations] = useState([]);
   const [schedule, setSchedule] = useState({});
@@ -31,8 +33,16 @@ export function DataProvider({ children }) {
   const [voucherOrders, setVoucherOrders] = useState([]);
 
   useEffect(() => {
-    const init = async () => {
+    let cancelled = false;
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (cancelled) return;
+      setUser(u);
+      setLoading(false);
+    });
+    (async () => {
       try {
+        await auth.authStateReady?.();
+        if (cancelled) return;
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
@@ -40,18 +50,36 @@ export function DataProvider({ children }) {
         }
       } catch (e) {
         console.error('Auth error:', e);
+        if (!cancelled) setLoading(false);
       }
+    })();
+    return () => {
+      cancelled = true;
+      unsub();
     };
-    init();
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const unsub = onIdTokenChanged(auth, async (u) => {
+      if (!u) {
+        setTokenHasAdmin(false);
+        return;
+      }
+      try {
+        const r = await u.getIdTokenResult();
+        setTokenHasAdmin(!!r.claims.admin);
+      } catch {
+        setTokenHasAdmin(false);
+      }
     });
     return () => unsub();
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setVoucherOrders([]);
+      return;
+    }
     const onError = (label) => (err) => console.error(`Firestore ${label}:`, err);
 
     const unsubs = [
@@ -62,10 +90,20 @@ export function DataProvider({ children }) {
       onSnapshot(query(getCollectionPath(COLLECTIONS.ADDONS)), (s) => setAddons(mapDocs(s)), onError('addons')),
       onSnapshot(query(getCollectionPath(COLLECTIONS.SERVICE_ADDON_LINKS)), (s) => setServiceAddonLinks(mapDocs(s)), onError('service_addon_links')),
       onSnapshot(query(getCollectionPath(COLLECTIONS.VOUCHER_TEMPLATES)), (s) => setVoucherTemplates([...mapDocs(s)].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))), onError('voucher_templates')),
-      onSnapshot(query(getCollectionPath(COLLECTIONS.VOUCHER_ORDERS)), (s) => setVoucherOrders([...mapDocs(s)].sort((a, b) => (b.created_at?.toMillis?.() ?? 0) - (a.created_at?.toMillis?.() ?? 0))), onError('voucher_orders')),
     ];
+    if (tokenHasAdmin) {
+      unsubs.push(
+        onSnapshot(
+          query(getCollectionPath(COLLECTIONS.VOUCHER_ORDERS)),
+          (s) => setVoucherOrders([...mapDocs(s)].sort((a, b) => (b.created_at?.toMillis?.() ?? 0) - (a.created_at?.toMillis?.() ?? 0))),
+          onError('voucher_orders'),
+        ),
+      );
+    } else {
+      setVoucherOrders([]);
+    }
     return () => unsubs.forEach((u) => u());
-  }, [user]);
+  }, [user, tokenHasAdmin]);
 
   const servicesStandardOnly = useMemo(
     () => filterCosmeticsServices(services),

@@ -4,6 +4,7 @@ import { addDoc, deleteDoc, updateDoc, setDoc, getDocs, query, where } from 'fir
 import { startRegistration } from '@simplewebauthn/browser';
 import { platformAuthenticatorIsAvailable } from '@simplewebauthn/browser';
 import { Utils } from '../utils/helpers';
+import { ensureAnonymousAuthForCallable, packWebAuthnCredentialForCallable } from '../utils/webAuthnCallable';
 import {
   auth,
   getCollectionPath,
@@ -12,6 +13,12 @@ import {
   verifyAdminWebAuthnRegistration,
 } from '../firebaseConfig';
 import { PMU_DURATIONS, CONTACT, COLLECTIONS } from '../constants/config';
+import {
+  syncServiceGiftVoucherTemplate,
+  backfillGiftVouchersFromServices,
+  servicesNeedingGiftVoucherTemplate,
+} from '../utils/syncServiceGiftVoucherTemplate';
+import { normalizeVoucherType } from '../utils/voucherHelpers';
 import { sendBookingConfirmations, sendReminders } from '../services/notificationService';
 
 import { useToastContext } from '../contexts/ToastContext';
@@ -35,7 +42,18 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
   const [adminDateInput, setAdminDateInput] = useState(Utils.getLocalISODate());
   const initialDateSetRef = useRef(false);
   const [editingServiceId, setEditingServiceId] = useState(null);
-  const [serviceForm, setServiceForm] = useState({ name: '', price: '', duration: '60', description: '', category: 'STANDARD', isStartingPrice: false });
+  const [serviceForm, setServiceForm] = useState({
+    name: '',
+    price: '',
+    duration: '60',
+    description: '',
+    category: 'STANDARD',
+    isStartingPrice: false,
+    availableForGiftVoucher: false,
+  });
+  /** Automatické doplnění šablon poukazů pro služby se zaškrtnutým poukazem (data před zavedením sync při uložení). */
+  const giftVoucherBackfillInFlight = useRef(false);
+  const giftVoucherBackfillErrorStop = useRef(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [remindersList, setRemindersList] = useState([]);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
@@ -69,11 +87,16 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     setFaceIdError('');
     setFaceIdLoading(true);
     try {
+      await ensureAnonymousAuthForCallable();
       const origin = window.location.origin;
       const { data: options } = await getAdminWebAuthnRegistrationOptions({ password: faceIdPassword, origin });
       if (!options) throw new Error('Nepodařilo načíst možnosti registrace.');
-      const credential = await startRegistration(options);
-      const { data } = await verifyAdminWebAuthnRegistration({ password: faceIdPassword, origin, credential });
+      const credential = await startRegistration({ optionsJSON: options });
+      const { data } = await verifyAdminWebAuthnRegistration({
+        password: faceIdPassword,
+        origin,
+        credential: packWebAuthnCredentialForCallable(credential),
+      });
       if (data?.verified) {
         setShowFaceIdModal(false);
         setFaceIdPassword('');
@@ -183,35 +206,93 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
       description: (serviceForm.description || '').trim(),
       category: serviceForm.category || 'STANDARD',
       isStartingPrice: !!serviceForm.isStartingPrice,
+      availableForGiftVoucher: !!serviceForm.availableForGiftVoucher,
       order: editingServiceId ? undefined : services.length,
     };
     const updateData = { ...data };
     if (updateData.order === undefined) delete updateData.order;
+
+    let savedServiceId = editingServiceId;
+    try {
+      await auth.currentUser?.getIdToken(true);
+    } catch (_) {
+      /* best-effort */
+    }
+
     if (editingServiceId) {
       await updateDoc(getDocPath(COLLECTIONS.SERVICES, editingServiceId), updateData);
       await saveServiceAddonLinks(editingServiceId);
       setEditingServiceId(null);
       setEditingAddonLinks([]);
     } else {
-      await addDoc(getCollectionPath(COLLECTIONS.SERVICES), data);
+      const ref = await addDoc(getCollectionPath(COLLECTIONS.SERVICES), data);
+      savedServiceId = ref.id;
     }
-    setServiceForm({ name: '', price: '', duration: '60', description: '', category: 'STANDARD', isStartingPrice: false });
+
+    try {
+      await syncServiceGiftVoucherTemplate({
+        serviceId: savedServiceId,
+        serviceForm,
+        voucherTemplates,
+        getCollectionPath,
+        COLLECTIONS,
+        addDoc,
+        updateDoc,
+        deleteDoc,
+        getDocs,
+        query,
+        where,
+      });
+    } catch (err) {
+      console.error('syncServiceGiftVoucherTemplate:', err);
+      toast.error(
+        'Služba byla uložena, ale synchronizace dárkového poukazu se nepovedla. Zkuste službu uložit znovu.'
+      );
+    }
+
+    setServiceForm({
+      name: '',
+      price: '',
+      duration: '60',
+      description: '',
+      category: 'STANDARD',
+      isStartingPrice: false,
+      availableForGiftVoucher: false,
+    });
   };
 
   const handleDeleteService = async (id) => {
-    if (confirm('Smazat tuto proceduru?')) await deleteDoc(getDocPath(COLLECTIONS.SERVICES, id));
+    if (!confirm('Smazat tuto proceduru?')) return;
+    try {
+      await auth.currentUser?.getIdToken(true);
+    } catch (_) {
+      /* best-effort */
+    }
+    try {
+      const tSnap = await getDocs(
+        query(getCollectionPath(COLLECTIONS.VOUCHER_TEMPLATES), where('service_id', '==', id))
+      );
+      await Promise.all(tSnap.docs.map((d) => deleteDoc(d.ref)));
+    } catch (err) {
+      console.error('delete voucher templates for service:', err);
+    }
+    await deleteDoc(getDocPath(COLLECTIONS.SERVICES, id));
   };
 
   const handleSaveVoucher = async (payload, editingId) => {
     const col = getCollectionPath(COLLECTIONS.VOUCHER_TEMPLATES);
+    const isValue = normalizeVoucherType(payload.type) === 'value';
     const data = {
-      type: payload.type,
+      type: normalizeVoucherType(payload.type),
       service_id: payload.service_id || null,
-      category: payload.category || (payload.type === 'value' ? 'value' : 'cosmetics'),
+      category:
+        payload.category ||
+        (isValue ? 'value' : 'cosmetics'),
       name: payload.name,
       description: payload.description || '',
       price: payload.price,
       is_active: payload.is_active !== false,
+      is_custom_amount: isValue && !!payload.is_custom_amount,
       sort_order: editingId ? undefined : voucherTemplates.length,
     };
     try {
@@ -260,6 +341,39 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     }
   };
 
+  useEffect(() => {
+    if (giftVoucherBackfillErrorStop.current) return;
+    if (!services?.length) return;
+    const pending = servicesNeedingGiftVoucherTemplate(services, voucherTemplates);
+    if (pending.length === 0) return;
+    if (giftVoucherBackfillInFlight.current) return;
+
+    giftVoucherBackfillInFlight.current = true;
+    (async () => {
+      try {
+        await auth.currentUser?.getIdToken(true);
+        await backfillGiftVouchersFromServices(services, voucherTemplates, {
+          getCollectionPath,
+          COLLECTIONS,
+          addDoc,
+          updateDoc,
+          deleteDoc,
+          getDocs,
+          query,
+          where,
+        });
+      } catch (err) {
+        console.error('backfillGiftVouchersFromServices:', err);
+        giftVoucherBackfillErrorStop.current = true;
+        toast.error(
+          'Dárkové poukazy ze služeb se nepodařilo doplnit automaticky. U každé služby dejte Uložit změny, nebo obnovte stránku později.'
+        );
+      } finally {
+        giftVoucherBackfillInFlight.current = false;
+      }
+    })();
+  }, [services, voucherTemplates]);
+
   // PMU_DURATIONS imported from constants/config
   const startEdit = (s) => {
     setActiveTab('services');
@@ -268,7 +382,15 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     const duration = category === 'PMU' && !PMU_DURATIONS.includes(Number(s.duration))
       ? 180
       : s.duration;
-    setServiceForm({ name: s.name, price: s.price, duration, description: s.description || '', category, isStartingPrice: !!s.isStartingPrice });
+    setServiceForm({
+      name: s.name,
+      price: s.price,
+      duration,
+      description: s.description || '',
+      category,
+      isStartingPrice: !!s.isStartingPrice,
+      availableForGiftVoucher: !!s.availableForGiftVoucher,
+    });
     const links = serviceAddonLinks
       .filter((l) => l.main_service_id === s.id)
       .map((l) => ({
@@ -426,14 +548,31 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
         source: 'admin',
       });
       if (sendNotification) {
+        const dur = parseInt(selectedSrv?.duration || 60);
+        const svcName = selectedSrv?.name || 'Manual Booking';
+        const calTitle = `REZERVACE: ${svcName} (${manualForm.name})`;
+        const calDesc = `Klient: ${manualForm.name}, Tel: ${manualForm.phone || ''}`;
+        const calendarLink = Utils.createGoogleCalendarLink(
+          manualDateKey, manualForm.time, dur, calTitle, calDesc
+        );
+        const calendarIcsLink = Utils.createCalendarIcsHttpUrl(
+          import.meta.env.VITE_FIREBASE_PROJECT_ID,
+          manualDateKey,
+          manualForm.time,
+          dur,
+          calTitle,
+          calDesc
+        );
         await sendBookingConfirmations({
           name: manualForm.name,
           phone,
           email,
           date: manualDateKey,
           time: manualForm.time,
-          serviceName: selectedSrv?.name || 'Manual Booking',
-          duration: parseInt(selectedSrv?.duration || 60),
+          serviceName: svcName,
+          duration: dur,
+          calendarLink,
+          calendarIcsLink,
         });
       }
       setShowManualBooking(false);
@@ -628,7 +767,15 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
             draggedItemIndex={draggedItemIndex}
             onCancelEdit={() => {
               setEditingServiceId(null);
-              setServiceForm({ name: '', price: '', duration: '60', description: '', category: 'STANDARD', isStartingPrice: false });
+              setServiceForm({
+                name: '',
+                price: '',
+                duration: '60',
+                description: '',
+                category: 'STANDARD',
+                isStartingPrice: false,
+                availableForGiftVoucher: false,
+              });
               setEditingAddonLinks([]);
             }}
             addons={addons}

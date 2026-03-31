@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { Loader2, Lock, ScanFace } from 'lucide-react';
 import { startAuthentication } from '@simplewebauthn/browser';
@@ -8,12 +8,17 @@ import AdminView from './AdminView';
 import useSEO from '../hooks/useSEO';
 import { SEO } from '../constants/seo';
 import {
+  getAdminWebAuthnConfigured,
   getAdminWebAuthnLoginOptions,
   verifyAdminWebAuthnLogin,
   getAdminWebAuthnRegistrationOptions,
   verifyAdminWebAuthnRegistration,
 } from '../firebaseConfig';
 import { startRegistration } from '@simplewebauthn/browser';
+import { ensureAnonymousAuthForCallable, packWebAuthnCredentialForCallable } from '../utils/webAuthnCallable';
+
+/** Kratší než server CHALLENGE_TTL (5 min) – po expiraci znovu načíst options. */
+const WEBAUTHN_LOGIN_OPTIONS_MAX_AGE_MS = 4 * 60 * 1000;
 
 export default function ReservationApp({
   loading,
@@ -36,6 +41,8 @@ export default function ReservationApp({
   reservations,
   addons = [],
   serviceAddonLinks = [],
+  voucherTemplates = [],
+  voucherOrders = [],
   widgetOnly = false,
   mode = 'light',
 }) {
@@ -45,6 +52,11 @@ export default function ReservationApp({
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [faceIdSetupLoading, setFaceIdSetupLoading] = useState(false);
   const [faceIdSetupError, setFaceIdSetupError] = useState('');
+  /** Přednačtené options + challenge – při kliknutí první await = WebAuthn (nutné pro Safari/localhost). */
+  const webAuthnLoginOptionsRef = useRef(null);
+  const [faceIdWebAuthnReady, setFaceIdWebAuthnReady] = useState(false);
+  const [faceIdWebAuthnPrepError, setFaceIdWebAuthnPrepError] = useState(false);
+  const [webAuthnPrepRetryKey, setWebAuthnPrepRetryKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,11 +71,61 @@ export default function ReservationApp({
     let cancelled = false;
     setFaceIdConfigured(null);
     setShowPasswordForm(false);
-    getAdminWebAuthnLoginOptions({ origin: window.location.origin })
-      .then(() => { if (!cancelled) setFaceIdConfigured(true); })
-      .catch(() => { if (!cancelled) setFaceIdConfigured(false); });
+    const probeFaceIdConfigured = async () => {
+      try {
+        const res = await getAdminWebAuthnConfigured({ origin: window.location.origin });
+        if (!cancelled) setFaceIdConfigured(!!res.data?.configured);
+      } catch {
+        if (cancelled) return;
+        // Starší nasazení bez nové funkce: stejná sonda jako dřív (úspěch = klíč je uložený)
+        try {
+          await getAdminWebAuthnLoginOptions({ origin: window.location.origin });
+          if (!cancelled) setFaceIdConfigured(true);
+        } catch {
+          if (!cancelled) setFaceIdConfigured(false);
+        }
+      }
+    };
+    probeFaceIdConfigured();
     return () => { cancelled = true; };
   }, [view]);
+
+  // Přednačíst login options na pozadí; po kliknutí není await před startAuthentication → funguje user activation (zejm. lokálně).
+  useEffect(() => {
+    if (view !== 'login' || !faceIdAvailable || faceIdConfigured !== true) {
+      webAuthnLoginOptionsRef.current = null;
+      setFaceIdWebAuthnReady(false);
+      setFaceIdWebAuthnPrepError(false);
+      return;
+    }
+    let cancelled = false;
+    setFaceIdWebAuthnReady(false);
+    setFaceIdWebAuthnPrepError(false);
+    (async () => {
+      try {
+        const origin = window.location.origin;
+        const { data: options } = await getAdminWebAuthnLoginOptions({ origin });
+        if (!cancelled && options) {
+          webAuthnLoginOptionsRef.current = { options, fetchedAt: Date.now() };
+          setFaceIdWebAuthnReady(true);
+        } else if (!cancelled) {
+          setFaceIdWebAuthnPrepError(true);
+        }
+      } catch {
+        if (!cancelled) {
+          webAuthnLoginOptionsRef.current = null;
+          setFaceIdWebAuthnPrepError(true);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [view, faceIdAvailable, faceIdConfigured, webAuthnPrepRetryKey]);
+
+  useEffect(() => {
+    if (view !== 'login') return;
+    ensureAnonymousAuthForCallable().catch(() => {});
+  }, [view]);
+
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const initialServiceId = searchParams.get('service') || null;
@@ -142,24 +204,59 @@ export default function ReservationApp({
               {/* Face ID jako první, pokud je dostupný a už nastaven */}
               {faceIdAvailable && faceIdConfigured === true && onWebAuthnLoginSuccess && (
                 <div className="space-y-4 mb-6">
+                  {faceIdWebAuthnPrepError && (
+                    <div className="text-xs text-amber-700 text-left space-y-2">
+                      <p>Nepodařilo se připravit Face ID (síť?). Obnovte stránku, zkuste znovu níže, nebo se přihlaste heslem.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFaceIdWebAuthnPrepError(false);
+                          setWebAuthnPrepRetryKey((k) => k + 1);
+                        }}
+                        className="text-stone-800 underline font-medium"
+                      >
+                        Zkusit znovu
+                      </button>
+                    </div>
+                  )}
+                  {!faceIdWebAuthnReady && !faceIdWebAuthnPrepError && (
+                    <p className="text-xs text-stone-500 flex items-center justify-center gap-2">
+                      <Loader2 className="animate-spin" size={14} /> Připravuji Face ID…
+                    </p>
+                  )}
                   <button
                     type="button"
-                    disabled={webauthnLoading}
+                    disabled={webauthnLoading || !faceIdWebAuthnReady}
                     onClick={async () => {
                       setLoginError('');
                       setWebauthnLoading(true);
                       try {
                         const origin = window.location.origin;
-                        const { data: options } = await getAdminWebAuthnLoginOptions({ origin });
-                        if (!options) throw new Error('Nepodařilo načíst možnosti přihlášení.');
-                        const assertion = await startAuthentication(options);
-                        const { data } = await verifyAdminWebAuthnLogin({ origin, assertion });
+                        const cached = webAuthnLoginOptionsRef.current;
+                        const cacheOk =
+                          cached?.options &&
+                          typeof cached.fetchedAt === 'number' &&
+                          Date.now() - cached.fetchedAt < WEBAUTHN_LOGIN_OPTIONS_MAX_AGE_MS;
+                        let options = cacheOk ? cached.options : null;
+                        if (!options) {
+                          const { data } = await getAdminWebAuthnLoginOptions({ origin });
+                          if (!data) throw new Error('Nepodařilo načíst možnosti přihlášení.');
+                          options = data;
+                          webAuthnLoginOptionsRef.current = { options: data, fetchedAt: Date.now() };
+                        }
+                        const assertion = await startAuthentication({ optionsJSON: options });
+                        await ensureAnonymousAuthForCallable();
+                        const assertionPayload = packWebAuthnCredentialForCallable(assertion);
+                        const { data } = await verifyAdminWebAuthnLogin({ origin, assertion: assertionPayload });
                         if (data?.verified) onWebAuthnLoginSuccess();
                         else setLoginError('Přihlášení Face ID selhalo.');
                       } catch (err) {
                         if (err.name === 'NotAllowedError') {
                           setLoginError('Přihlášení bylo zrušeno.');
                         } else {
+                          webAuthnLoginOptionsRef.current = null;
+                          setFaceIdWebAuthnReady(false);
+                          setFaceIdWebAuthnPrepError(true);
                           setLoginError(err.message || 'Face ID přihlášení selhalo.');
                         }
                       } finally {
@@ -248,11 +345,16 @@ export default function ReservationApp({
                       setFaceIdSetupError('');
                       setFaceIdSetupLoading(true);
                       try {
+                        await ensureAnonymousAuthForCallable();
                         const origin = window.location.origin;
                         const { data: options } = await getAdminWebAuthnRegistrationOptions({ password: adminPassword, origin });
                         if (!options) throw new Error('Nepodařilo načíst možnosti.');
-                        const credential = await startRegistration(options);
-                        const { data } = await verifyAdminWebAuthnRegistration({ password: adminPassword, origin, credential });
+                        const credential = await startRegistration({ optionsJSON: options });
+                        const { data } = await verifyAdminWebAuthnRegistration({
+                          password: adminPassword,
+                          origin,
+                          credential: packWebAuthnCredentialForCallable(credential),
+                        });
                         if (data?.verified) onFaceIdSetupDone?.();
                         else setFaceIdSetupError('Nastavení se nepovedlo.');
                       } catch (err) {
@@ -291,6 +393,8 @@ export default function ReservationApp({
               reservations={reservations}
               addons={addons}
               serviceAddonLinks={serviceAddonLinks}
+              voucherTemplates={voucherTemplates}
+              voucherOrders={voucherOrders}
               onLogout={() => {
                 setView('customer');
                 setAdminPassword('');

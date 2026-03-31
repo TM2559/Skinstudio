@@ -16,14 +16,16 @@ describe('AdminVouchersTab', () => {
     window.confirm = vi.fn(() => true);
   });
 
-  it('renders heading and empty state when no vouchers', () => {
+  it('renders two sections and empty hints when no vouchers', () => {
     render(<AdminVouchersTab {...defaultProps} />);
     expect(screen.getByText('Dárkové poukazy')).toBeInTheDocument();
-    expect(screen.getByText(/Zatím nemáte vytvořené žádné dárkové poukazy/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Vytvořit první poukaz/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Hodnotové poukazy' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Produktové poukazy' })).toBeInTheDocument();
+    expect(screen.getByText(/Žádné hodnotové poukazy/)).toBeInTheDocument();
+    expect(screen.getByText(/Žádné produktové poukazy/)).toBeInTheDocument();
   });
 
-  it('renders list of voucher templates', () => {
+  it('renders value and product vouchers in correct sections', () => {
     const vouchers = [
       { id: 'v1', name: 'Poukaz 2000 Kč', type: 'value', price: 2000, is_active: true, sort_order: 0 },
       { id: 'v2', name: 'PMU obočí', type: 'service', price: 3500, is_active: true, sort_order: 1 },
@@ -31,15 +33,15 @@ describe('AdminVouchersTab', () => {
     render(<AdminVouchersTab {...defaultProps} voucherTemplates={vouchers} />);
     expect(screen.getByText('Poukaz 2000 Kč')).toBeInTheDocument();
     expect(screen.getByText('PMU obočí')).toBeInTheDocument();
-    expect(screen.getByText('Hodnota')).toBeInTheDocument();
-    expect(screen.getByText('Služba')).toBeInTheDocument();
+    expect(screen.getAllByText('Hodnota').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Produkt').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('opens modal when clicking Nový poukaz', () => {
+  it('opens modal for new value voucher', () => {
     render(<AdminVouchersTab {...defaultProps} />);
-    fireEvent.click(screen.getByRole('button', { name: /Nový poukaz/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Hodnotový poukaz/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Nový poukaz' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Nový hodnotový poukaz' })).toBeInTheDocument();
   });
 
   it('calls onDelete when delete is clicked and confirmed', () => {

@@ -1,13 +1,132 @@
+import { randomUUID } from 'node:crypto';
 import { onCall, HttpsError, onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { defineString } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { buildVoucherReadySms, buildVoucherOrderConfirmationSms } from './smsTemplates.js';
+import { sendVoucherOrderEmailsInternal } from './voucherResendMail.js';
+
+function isResendConfigured() {
+  return Boolean((process.env.RESEND_API_KEY || '') && (process.env.RESEND_FROM || ''));
+}
+
+async function loadResendMail() {
+  return import('./lib/resendMail-WCKHW2GS.js');
+}
+
+/** ICS pro e-mail / Apple Kalendář (GET calendarIcs?start=&end=&sum=…) */
+const COMPACT_UTC_RE = /^\d{8}T\d{6}Z$/;
+function escapeIcsText(text) {
+  if (text == null) return '';
+  return String(text).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/;/g, '\\;').replace(/,/g, '\\,');
+}
+function buildIcsBody({ start, end, summary, description, location }) {
+  const uid = `${randomUUID()}@skinstudio.cz`;
+  const dtstamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Skin Studio//Rezervace//CS',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${dtstamp}`,
+    `DTSTART:${start}`,
+    `DTEND:${end}`,
+    `SUMMARY:${escapeIcsText(summary)}`,
+  ];
+  if (description) lines.push(`DESCRIPTION:${escapeIcsText(description)}`);
+  lines.push(`LOCATION:${escapeIcsText(location || 'Skin Studio')}`, 'END:VEVENT', 'END:VCALENDAR');
+  return lines.join('\r\n');
+}
+function firstQueryString(q, key) {
+  const v = q[key];
+  if (v == null) return '';
+  return Array.isArray(v) ? String(v[0] ?? '') : String(v);
+}
+function icsFromQuery(query) {
+  const start = firstQueryString(query, 'start');
+  const end = firstQueryString(query, 'end');
+  const sum = firstQueryString(query, 'sum');
+  if (!start || !end || !sum.trim()) {
+    return { error: 'Chybí start, end nebo sum.' };
+  }
+  if (!COMPACT_UTC_RE.test(start) || !COMPACT_UTC_RE.test(end)) {
+    return { error: 'Neplatný formát start/end (očekává se YYYYMMDDTHHmmssZ).' };
+  }
+  const desc = firstQueryString(query, 'desc');
+  const loc = firstQueryString(query, 'loc');
+  return {
+    body: buildIcsBody({
+      start,
+      end,
+      summary: sum.slice(0, 500),
+      description: desc.slice(0, 4000),
+      location: loc.slice(0, 500) || 'Masarykovo nám. 72, Uherský Brod',
+    }),
+  };
+}
+
+/** HTTPS odkaz na calendarIcs pro rezervaci (stejná logika jako klient). */
+function buildCalendarIcsUrlForReservation(res) {
+  const project = process.env.GCLOUD_PROJECT || '';
+  if (!project || !res?.date || !res?.time) return '';
+  const duration = Number(res.duration) || 60;
+  const dateStr = String(res.date);
+  const timeStr = String(res.time);
+  let year;
+  let month;
+  let day;
+  if (dateStr.includes('-')) {
+    const parts = dateStr.split('-');
+    if (parts[0].length === 4) {
+      [year, month, day] = parts;
+    } else {
+      [day, month, year] = parts;
+    }
+  } else {
+    return '';
+  }
+  const title = `REZERVACE: ${res.serviceName || 'rezervace'}`;
+  const desc = res.name ? `Klient: ${res.name}` : '';
+  const startDate = new Date(`${year}-${month}-${day}T${timeStr}:00`);
+  if (Number.isNaN(startDate.getTime())) return '';
+  const endDate = new Date(startDate.getTime() + duration * 60000);
+  const compact = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const base = `https://europe-west1-${project}.cloudfunctions.net/calendarIcs`;
+  const params = new URLSearchParams({
+    start: compact(startDate),
+    end: compact(endDate),
+    sum: title.slice(0, 500),
+  });
+  if (desc) params.set('desc', desc.slice(0, 4000));
+  params.set('loc', 'Masarykovo nám. 72, Uherský Brod');
+  return `${base}?${params.toString()}`;
+}
 
 initializeApp();
 const db = getFirestore();
+
+/** Připojí záznam do voucher_orders.activity_log (transakce kvůli souběžným zápisům). */
+async function appendVoucherOrderActivity(orderRef, entry) {
+  const at = entry?.at?.toMillis ? entry.at : Timestamp.now();
+  const { at: _dropAt, ...rest } = entry || {};
+  try {
+    await db.runTransaction(async (t) => {
+      const snap = await t.get(orderRef);
+      if (!snap.exists) return;
+      const prev = snap.data().activity_log;
+      const list = Array.isArray(prev) ? [...prev] : [];
+      list.push({ ...rest, at });
+      t.update(orderRef, { activity_log: list });
+    });
+  } catch (e) {
+    console.error('appendVoucherOrderActivity:', e);
+  }
+}
 
 const adminPasswordParam = defineString('ADMIN_PASSWORD', { default: '' });
 const applicationId = defineString('BULKGATE_APPLICATION_ID', { default: '' });
@@ -78,9 +197,9 @@ function buildConfirmationSmsMessage(serviceName, date, time, duration) {
   return `Skin Studio: Váš termín je potvrzen\nSlužba: ${service}${dur}\nKdy: ${d} v ${t}\nKde: Masarykovo nám. 72, Uherský Brod\n\nTěším se na vás, Lucie.`;
 }
 
-/** Build reminder SMS text (Czech, short). */
-function buildReminderText(name, dateDisplay, time, serviceName) {
-  return `Skin Studio: Dobrý den ${name}, připomínáme zítřejší rezervaci ${dateDisplay} v ${time} - ${serviceName}. Těšíme se.`;
+/** Build reminder SMS text (Czech, short). Bez jména – nelze spolehlivě skloňovat. */
+function buildReminderText(dateDisplay, time, serviceName) {
+  return `Skin Studio: Dobrý den, připomínáme zítřejší rezervaci ${dateDisplay} v ${time} - ${serviceName}. Těšíme se.`;
 }
 
 /** Send one SMS via BulkGate (shared). @param unicode - false for GSM 03.38 (160 chars). */
@@ -142,7 +261,7 @@ export const sendReminderSms = onCall(
       }
 
       const dateDisplay = res.date ? res.date.replace(/-/g, '/') : '';
-      const text = buildReminderText(res.name || '', dateDisplay, res.time || '', res.serviceName || 'rezervace');
+      const text = buildReminderText(dateDisplay, res.time || '', res.serviceName || 'rezervace');
 
       const sid = senderId.value();
       const sidVal = senderIdValue.value();
@@ -167,6 +286,82 @@ export const sendReminderSms = onCall(
     return { sent, errors, message: `Odesláno ${sent} SMS.` };
   }
 );
+
+export const sendBookingEmails = onCall({ region: 'europe-west1' }, async (request) => {
+  if (!isResendConfigured()) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Resend není nakonfigurován (RESEND_API_KEY, RESEND_FROM). Nastav v prostředí functions a znovu nasaď.'
+    );
+  }
+
+  const { name, email, phone, date, time, serviceName, calendarLink, calendarIcsLink } = request.data || {};
+  if (!email || typeof email !== 'string' || !email.trim()) {
+    throw new HttpsError('invalid-argument', 'E-mail je povinný.');
+  }
+  if (!date || !time || !serviceName) {
+    throw new HttpsError('invalid-argument', 'Chybí datum, čas nebo služba.');
+  }
+
+  const { sendBookingEmailsInternal } = await loadResendMail();
+  const result = await sendBookingEmailsInternal({
+    name: typeof name === 'string' ? name : '',
+    email: email.trim(),
+    phone: typeof phone === 'string' ? phone : '',
+    date,
+    time,
+    serviceName,
+    calendarLink: typeof calendarLink === 'string' ? calendarLink : '',
+    calendarIcsLink: typeof calendarIcsLink === 'string' ? calendarIcsLink : '',
+  });
+
+  const { clientOk, adminOk, clientError, adminError } = result;
+  return {
+    clientOk,
+    adminOk,
+    ...(clientError ? { clientError } : {}),
+    ...(adminError ? { adminError } : {}),
+  };
+});
+
+export const sendReminderEmails = onCall({ region: 'europe-west1' }, async (request) => {
+  if (!isResendConfigured()) {
+    throw new HttpsError('failed-precondition', 'Resend není nakonfigurován (RESEND_API_KEY, RESEND_FROM).');
+  }
+  const { reservations } = request.data || {};
+  if (!Array.isArray(reservations) || reservations.length === 0) {
+    return { sent: 0, errors: [], message: 'Žádné e-maily k odeslání.' };
+  }
+
+  let sent = 0;
+  const errors = [];
+  const { sendReminderEmailInternal } = await loadResendMail();
+  for (const r of reservations) {
+    const addr = r.email && typeof r.email === 'string' ? r.email.trim() : '';
+    if (!addr) {
+      errors.push({ id: r.id, reason: 'Chybějící e-mail' });
+      continue;
+    }
+    try {
+      const dateDisplay =
+        typeof r.date === 'string' ? r.date.replace(/-/g, '/') : String(r.date || '').replace(/-/g, '/');
+      const ok = await sendReminderEmailInternal({
+        name: r.name,
+        email: addr,
+        date: dateDisplay,
+        time: r.time,
+        serviceName: r.serviceName || 'rezervace',
+        calendarIcsLink: typeof r.calendarIcsLink === 'string' ? r.calendarIcsLink : '',
+      });
+      if (ok) sent++;
+      else errors.push({ id: r.id, reason: 'Resend odmítl odeslání' });
+    } catch (err) {
+      console.error('sendReminderEmails položka:', r.id, err);
+      errors.push({ id: r.id, reason: err.message || 'Chyba odeslání' });
+    }
+  }
+  return { sent, errors, message: `Odesláno ${sent} e-mailů.` };
+});
 
 /**
  * Callable: sendConfirmationSms
@@ -332,6 +527,7 @@ export const createVoucherOrder = onCall(
     const data = request.data || {};
     const {
       voucherId,
+      customAmountKc,
       packaging,
       pickupDateType,
       customPickupDate,
@@ -343,9 +539,6 @@ export const createVoucherOrder = onCall(
       throw new HttpsError('unauthenticated', 'Pro objednání je nutné být přihlášen.');
     }
 
-    if (!voucherId || typeof voucherId !== 'string') {
-      throw new HttpsError('invalid-argument', 'Neplatný výběr poukazu.');
-    }
     if (!['envelope', 'box'].includes(packaging)) {
       throw new HttpsError('invalid-argument', 'Neplatný typ balení.');
     }
@@ -375,16 +568,54 @@ export const createVoucherOrder = onCall(
       throw new HttpsError('invalid-argument', 'Vyberte datum vyzvednutí.');
     }
 
+    const hasCustomAmount =
+      customAmountKc !== undefined && customAmountKc !== null && customAmountKc !== '';
+
+    if (!voucherId || typeof voucherId !== 'string') {
+      throw new HttpsError('invalid-argument', 'Neplatný výběr poukazu.');
+    }
+
     const voucherSnap = await db.collection('voucher_templates').doc(voucherId).get();
     if (!voucherSnap.exists) {
       throw new HttpsError('not-found', 'Vybraný poukaz nebyl nalezen.');
     }
     const voucherData = voucherSnap.data();
-    const voucherPrice = typeof voucherData.price === 'number' ? voucherData.price : parseInt(voucherData.price, 10) || 0;
+    const templateCustom = voucherData.is_custom_amount === true;
+
+    let voucherPrice;
+    const resolvedVoucherId = voucherId;
+    let isCustomAmount = false;
+
+    if (templateCustom) {
+      if (!hasCustomAmount) {
+        throw new HttpsError('invalid-argument', 'Zadejte částku poukazu.');
+      }
+      const amt = typeof customAmountKc === 'number' ? customAmountKc : parseInt(String(customAmountKc), 10);
+      const minFromTemplate =
+        typeof voucherData.price === 'number' ? voucherData.price : parseInt(voucherData.price, 10) || 500;
+      const floor = Math.max(500, minFromTemplate);
+      if (!Number.isFinite(amt) || amt < floor || amt > 500000) {
+        throw new HttpsError(
+          'invalid-argument',
+          `Zadejte platnou částku (${floor.toLocaleString('cs-CZ')}–500 000 Kč).`
+        );
+      }
+      voucherPrice = Math.floor(amt);
+      isCustomAmount = true;
+    } else {
+      if (hasCustomAmount) {
+        throw new HttpsError('invalid-argument', 'Tento poukaz má pevnou cenu.');
+      }
+      voucherPrice = typeof voucherData.price === 'number' ? voucherData.price : parseInt(voucherData.price, 10) || 0;
+      if (!Number.isFinite(voucherPrice) || voucherPrice <= 0) {
+        throw new HttpsError('failed-precondition', 'Neplatná cena poukazu.');
+      }
+    }
+
     const totalPrice = voucherPrice + (packaging === 'box' ? 100 : 0);
 
     const orderData = {
-      voucher_id: voucherId,
+      voucher_id: resolvedVoucherId,
       packaging,
       target_pickup_date: targetPickupDate,
       contact_phone: phone,
@@ -392,9 +623,46 @@ export const createVoucherOrder = onCall(
       total_price: totalPrice,
       status: 'new',
       created_at: FieldValue.serverTimestamp(),
+      activity_log: [
+        {
+          at: Timestamp.now(),
+          kind: 'order_created',
+        },
+      ],
+      ...(isCustomAmount
+        ? { is_custom_amount: true, custom_amount_kc: voucherPrice }
+        : {}),
     };
 
     const ref = await db.collection('voucher_orders').add(orderData);
+
+    const voucherLabel = isCustomAmount
+      ? `Poukaz na ${voucherPrice.toLocaleString('cs-CZ')} Kč`
+      : (voucherData.name || 'Dárkový poukaz');
+
+    void sendVoucherOrderEmailsInternal({
+      orderId: ref.id,
+      voucherLabel,
+      packaging,
+      targetPickupDate,
+      contactEmail: email,
+      contactPhone: phone,
+      totalPriceKc: totalPrice,
+    })
+      .then(async (result) => {
+        await appendVoucherOrderActivity(ref, {
+          kind: 'emails_confirmation',
+          client_ok: !!result.clientOk,
+          admin_ok: !!result.adminOk,
+        });
+      })
+      .catch(async (err) => {
+        console.error('createVoucherOrder confirmation emails:', err);
+        await appendVoucherOrderActivity(ref, {
+          kind: 'emails_confirmation',
+          error: err?.message || String(err),
+        });
+      });
 
     // Initial order confirmation SMS (fire-and-forget; do not block response)
     const number = toE164(phone);
@@ -407,13 +675,34 @@ export const createVoucherOrder = onCall(
         const sid = senderId.value();
         const sidVal = senderIdValue.value();
         sendOneSms(appId, appToken, number, text, false, sid || undefined, sidVal || undefined)
-          .then(({ ok, data: resData }) => {
+          .then(async ({ ok, data: resData }) => {
             if (!ok) console.warn('createVoucherOrder confirmation SMS BulkGate:', resData);
+            await appendVoucherOrderActivity(ref, {
+              kind: 'sms_order_confirmation',
+              ok: !!ok,
+            });
           })
-          .catch((err) => {
+          .catch(async (err) => {
             console.error('createVoucherOrder confirmation SMS failed:', err);
+            await appendVoucherOrderActivity(ref, {
+              kind: 'sms_order_confirmation',
+              ok: false,
+              error: err?.message || String(err),
+            });
           });
+      } else {
+        void appendVoucherOrderActivity(ref, {
+          kind: 'sms_order_confirmation',
+          skipped: true,
+          reason: 'bulkgate_not_configured',
+        });
       }
+    } else {
+      void appendVoucherOrderActivity(ref, {
+        kind: 'sms_order_confirmation',
+        skipped: true,
+        reason: 'invalid_phone',
+      });
     }
 
     return { orderId: ref.id, total_price: totalPrice };
@@ -451,9 +740,8 @@ export const updateVoucherOrderStatus = onCall(
     const data = snap.data();
     const previousStatus = data.status || 'new';
 
-    await ref.update({ status });
-
     let smsSent = false;
+    let smsReadySkippedReason = null;
     const wasPendingOrNew = previousStatus === 'new' || previousStatus === 'pending';
     if (wasPendingOrNew && status === 'ready') {
       const appId = applicationId.value();
@@ -461,9 +749,15 @@ export const updateVoucherOrderStatus = onCall(
       const phone = data.contact_phone;
       const totalPrice = data.total_price;
 
-      if (appId && appToken && phone) {
+      if (!appId || !appToken) {
+        smsReadySkippedReason = 'bulkgate_not_configured';
+      } else if (!phone) {
+        smsReadySkippedReason = 'missing_phone';
+      } else {
         const number = toE164(phone);
-        if (number) {
+        if (!number) {
+          smsReadySkippedReason = 'invalid_phone';
+        } else {
           const rawText = buildVoucherReadySms(totalPrice);
           const text = removeDiacritics(rawText);
           const sid = senderId.value();
@@ -474,13 +768,39 @@ export const updateVoucherOrderStatus = onCall(
               smsSent = true;
             } else {
               console.warn('updateVoucherOrderStatus BulkGate:', resData);
+              smsReadySkippedReason = 'send_failed';
             }
           } catch (err) {
             console.error('updateVoucherOrderStatus SMS:', err);
+            smsReadySkippedReason = 'send_failed';
           }
         }
       }
     }
+
+    const logEntry = {
+      at: Timestamp.now(),
+      kind: 'status_change',
+      from: previousStatus,
+      to: status,
+    };
+    if (wasPendingOrNew && status === 'ready') {
+      logEntry.sms_ready_sent = smsSent;
+      if (!smsSent && smsReadySkippedReason) {
+        logEntry.sms_ready_skipped = smsReadySkippedReason;
+      }
+    }
+
+    await db.runTransaction(async (t) => {
+      const fresh = await t.get(ref);
+      if (!fresh.exists) {
+        throw new HttpsError('not-found', 'Objednávka nebyla nalezena.');
+      }
+      const prevLog = fresh.data().activity_log;
+      const list = Array.isArray(prevLog) ? [...prevLog] : [];
+      list.push(logEntry);
+      t.update(ref, { status, activity_log: list });
+    });
 
     return { success: true, smsSent };
   }
@@ -559,6 +879,37 @@ function getRpIdFromOrigin(origin) {
   }
 }
 
+/** @simplewebauthn/server vyžaduje u authentication response shodu id a rawId (base64url). */
+function normalizeAuthenticationAssertion(assertion) {
+  if (!assertion || typeof assertion !== 'object') return assertion;
+  const rawId = typeof assertion.rawId === 'string' ? assertion.rawId : assertion.id;
+  if (!rawId || typeof rawId !== 'string') return assertion;
+  return { ...assertion, id: rawId, rawId };
+}
+
+async function findCredentialByAssertionId(creds, assertionId) {
+  if (!assertionId || typeof assertionId !== 'string') return undefined;
+  const direct = creds.find((c) => c && typeof c.id === 'string' && c.id === assertionId);
+  if (direct) return direct;
+  const { isoBase64URL } = await import('@simplewebauthn/server/helpers');
+  let bufAssertion;
+  try {
+    bufAssertion = isoBase64URL.toBuffer(assertionId);
+  } catch {
+    return undefined;
+  }
+  for (const c of creds) {
+    if (!c || typeof c.id !== 'string') continue;
+    try {
+      const bufC = isoBase64URL.toBuffer(c.id);
+      if (bufC.length === bufAssertion.length && bufC.every((v, i) => v === bufAssertion[i])) return c;
+    } catch {
+      /* další credential */
+    }
+  }
+  return undefined;
+}
+
 /** Callable: getAdminWebAuthnRegistrationOptions. Tělo: { password, origin }. */
 export const getAdminWebAuthnRegistrationOptions = onCall(
   { region: 'europe-west1' },
@@ -603,7 +954,11 @@ export const verifyAdminWebAuthnRegistration = onCall(
     const { verifyRegistrationResponse } = await import('@simplewebauthn/server');
     const adminPw = adminPasswordParam.value();
     if (!adminPw) throw new HttpsError('failed-precondition', 'ADMIN_PASSWORD není nastaven.');
-    const { password, credential } = request.data || {};
+    const { password, credential: rawCredential } = request.data || {};
+    const credential = normalizeAuthenticationAssertion(rawCredential);
+    if (!credential || !credential.response) {
+      throw new HttpsError('invalid-argument', 'Chybí odpověď WebAuthn (credential).');
+    }
     const origin = getOriginFromRequest(request);
     if (password !== adminPw) throw new HttpsError('permission-denied', 'Chybné heslo.');
     if (!origin || !isOriginAllowed(origin)) {
@@ -656,6 +1011,24 @@ export const verifyAdminWebAuthnRegistration = onCall(
   }
 );
 
+/**
+ * Callable: getAdminWebAuthnConfigured. Tělo: { origin }.
+ * Pouze zjistí, zda je uložen alespoň jeden klíč — nezasahuje do challenge dokumentu.
+ * (Probe přes getAdminWebAuthnLoginOptions by jinak závodil s kliknutím na Face ID a přepisoval challenge.)
+ */
+export const getAdminWebAuthnConfigured = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const origin = getOriginFromRequest(request);
+    if (!origin || !isOriginAllowed(origin)) {
+      throw new HttpsError('invalid-argument', `Neplatný origin. Obdrženo: ${origin ?? '(prázdné)'}`);
+    }
+    const docSnap = await db.doc(ADMIN_WEBAUTHN_DOC).get();
+    const creds = (docSnap.data() && docSnap.data().credentials) || [];
+    return { configured: creds.length > 0 };
+  }
+);
+
 /** Callable: getAdminWebAuthnLoginOptions. Tělo: { origin }. */
 export const getAdminWebAuthnLoginOptions = onCall(
   { region: 'europe-west1' },
@@ -689,7 +1062,11 @@ export const verifyAdminWebAuthnLogin = onCall(
   { region: 'europe-west1' },
   async (request) => {
     const { verifyAuthenticationResponse } = await import('@simplewebauthn/server');
-    const { assertion } = request.data || {};
+    const { assertion: rawAssertion } = request.data || {};
+    const assertion = normalizeAuthenticationAssertion(rawAssertion);
+    if (!assertion || !assertion.response) {
+      throw new HttpsError('invalid-argument', 'Chybí odpověď WebAuthn (assertion).');
+    }
     const origin = getOriginFromRequest(request);
     if (!origin || !isOriginAllowed(origin)) {
       throw new HttpsError('invalid-argument', `Neplatný origin. Obdrženo: ${origin ?? '(prázdné)'}`);
@@ -702,9 +1079,14 @@ export const verifyAdminWebAuthnLogin = onCall(
     if (!challengeData || challengeData.type !== 'authentication' || Date.now() - (challengeData.createdAt || 0) > CHALLENGE_TTL_MS) {
       throw new HttpsError('failed-precondition', 'Vypršela platnost přihlášení. Zkuste znovu.');
     }
-    const cred = creds.find((c) => c.id === assertion.id);
+    const assertionId = assertion.id || assertion.rawId;
+    const cred = await findCredentialByAssertionId(creds, assertionId);
     if (!cred) throw new HttpsError('permission-denied', 'Neznámý přihlašovací klíč.');
     const publicKey = new Uint8Array(Buffer.from(cred.publicKey, 'base64'));
+    const counter =
+      typeof cred.counter === 'number' && !Number.isNaN(cred.counter)
+        ? cred.counter
+        : parseInt(String(cred.counter), 10) || 0;
     let verification;
     try {
       verification = await verifyAuthenticationResponse({
@@ -715,7 +1097,7 @@ export const verifyAdminWebAuthnLogin = onCall(
         credential: {
           id: cred.id,
           publicKey,
-          counter: cred.counter,
+          counter,
           transports: cred.transports,
         },
       });
@@ -738,6 +1120,31 @@ export const verifyAdminWebAuthnLogin = onCall(
   }
 );
 
+/**
+ * GET /calendarIcs?start=YYYYMMDDTHHmmssZ&end=...&sum=...&desc=...&loc=...
+ * Odpověď: text/calendar pro „Přidat do kalendáře“ z e-mailu (Apple / Outlook).
+ */
+export const calendarIcs = onRequest({ region: 'europe-west1' }, async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'GET') {
+    res.status(405).set('Allow', 'GET, OPTIONS').send('Method Not Allowed');
+    return;
+  }
+  const result = icsFromQuery(req.query || {});
+  if (result.error) {
+    res.status(400).set('Content-Type', 'text/plain; charset=utf-8').send(result.error);
+    return;
+  }
+  res.set('Content-Type', 'text/calendar; charset=utf-8');
+  res.set('Content-Disposition', 'attachment; filename="skin-studio-rezervace.ics"');
+  res.set('Cache-Control', 'private, max-age=300');
+  res.send(result.body);
+});
+
 /** Vrátí klíč data ve formátu DD-MM-YYYY pro zítřek (lokální čas). */
 function getTomorrowDateKey() {
   const t = new Date();
@@ -755,8 +1162,7 @@ function formatDateDisplay(dateKey) {
 
 /**
  * Naplánovaná funkce: každý den v 16:00 (Praha) odešle připomínky na zítřek.
- * SMS přes BulkGate (rezervace s telefonem), e-mail přes EmailJS (rezervace s e-mailem).
- * Vyžaduje: BULKGATE_* pro SMS; EMAILJS_* volitelně pro e-mail.
+ * SMS přes BulkGate; e-mail primárně přes Resend, fallback přes EmailJS.
  */
 export const sendDailyReminders = onSchedule(
   {
@@ -782,14 +1188,20 @@ export const sendDailyReminders = onSchedule(
     const sidVal = senderIdValue.value();
     const hasSms = Boolean(appId && appToken);
 
-    /** EmailJS pouze z process.env (volitelné), aby deploy v non-interactive nevyžadoval tyto proměnné. */
+    const useResend = isResendConfigured();
+    /** EmailJS fallback pouze z process.env (volitelné). */
     const emailServiceId = process.env.EMAILJS_SERVICE_ID || '';
     const emailTemplateId = process.env.EMAILJS_REMINDER_TEMPLATE_ID || '';
     const emailPublicKey = process.env.EMAILJS_PUBLIC_KEY || '';
-    const hasEmail = Boolean(emailServiceId && emailTemplateId && emailPublicKey);
+    const useEmailJsFallback = !useResend && Boolean(emailServiceId && emailTemplateId && emailPublicKey);
+    const hasEmailChannel = useResend || useEmailJsFallback;
 
     let smsSent = 0;
     let emailSent = 0;
+    let sendReminderEmailInternal = null;
+    if (useResend) {
+      ({ sendReminderEmailInternal } = await loadResendMail());
+    }
 
     for (const res of reservations) {
       const dateDisplay = formatDateDisplay(res.date);
@@ -798,7 +1210,7 @@ export const sendDailyReminders = onSchedule(
         const number = toE164(res.phone);
         if (number) {
           try {
-            const text = buildReminderText(res.name || '', dateDisplay, res.time || '', res.serviceName || 'rezervace');
+            const text = buildReminderText(dateDisplay, res.time || '', res.serviceName || 'rezervace');
             const { ok } = await sendOneSms(appId, appToken, number, text, true, sid || undefined, sidVal || undefined);
             if (ok) {
               await db.doc(`reservations/${res.id}`).update({ reminderSent: true });
@@ -810,28 +1222,45 @@ export const sendDailyReminders = onSchedule(
         }
       }
 
-      if (hasEmail && res.email) {
+      if (hasEmailChannel && res.email) {
         try {
-          const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              service_id: emailServiceId,
-              template_id: emailTemplateId,
-              user_id: emailPublicKey,
-              template_params: {
-                name: res.name,
-                to_email: res.email,
-                date: dateDisplay,
-                time: res.time,
-                service: res.serviceName,
-                reply_to: 'rezervace@skinstudio.cz',
-              },
-            }),
-          });
-          if (emailRes.ok) {
-            await db.doc(`reservations/${res.id}`).update({ reminderSent: true });
-            emailSent++;
+          if (useResend) {
+            const ok = await sendReminderEmailInternal({
+              name: res.name,
+              email: String(res.email).trim(),
+              date: dateDisplay,
+              time: res.time,
+              serviceName: res.serviceName || 'rezervace',
+              calendarIcsLink: buildCalendarIcsUrlForReservation(res),
+            });
+            if (ok) {
+              await db.doc(`reservations/${res.id}`).update({ reminderSent: true });
+              emailSent++;
+            }
+          } else {
+            const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                service_id: emailServiceId,
+                template_id: emailTemplateId,
+                user_id: emailPublicKey,
+                template_params: {
+                  greeting_line: 'Dobrý den,',
+                  name: res.name,
+                  to_email: res.email,
+                  date: dateDisplay,
+                  time: res.time,
+                  service: res.serviceName,
+                  calendar_ics_link: buildCalendarIcsUrlForReservation(res),
+                  reply_to: 'rezervace@skinstudio.cz',
+                },
+              }),
+            });
+            if (emailRes.ok) {
+              await db.doc(`reservations/${res.id}`).update({ reminderSent: true });
+              emailSent++;
+            }
           }
         } catch (err) {
           console.error('sendDailyReminders email', res.id, err);
