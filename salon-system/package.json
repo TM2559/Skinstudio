@@ -5,20 +5,31 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run test run && vite build",
+    "build": "npm run test && vite build",
     "test": "vitest",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node server/index.js",
+    "deploy": "npm run build && firebase deploy"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
+    "@simplewebauthn/browser": "^13.2.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
     "firebase": "^12.8.0",
+    "framer-motion": "^12.34.3",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-compare-slider": "^3.1.0",
+    "react-dom": "^19.2.0",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^7.13.0",
+    "remark-breaks": "^4.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@tailwindcss/vite": "^4.2.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@types/react": "^19.2.5",
@@ -34,6 +45,7 @@
     "tailwindcss": "^4.1.18",
     "vite": "^7.2.4",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^3.0.4"
+    "vitest": "^3.0.4",
+    "workbox-build": "^7.4.0"
   }
 }
