@@ -110,9 +110,6 @@ function ServiceList({ cosmeticsVouchers, pmuVouchers, selectedVoucher, onSelect
                 >
                   <div className="min-w-0">
                     <span className="block text-[15px] font-medium text-[#2a2624]">{v.name}</span>
-                    {v.description && (
-                      <span className="block text-[13px] text-[#6b6560] mt-0.5">{v.description}</span>
-                    )}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-[15px] font-semibold text-[#2a2624] tabular-nums">{formatPrice(v.price)}</span>

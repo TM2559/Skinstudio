@@ -29,7 +29,7 @@ export default function VoucherSuccessPage() {
         </h1>
 
         <p className="mb-12 max-w-md text-[16px] text-[#71717A]">
-          Váš dárkový poukaz jsme začali připravovat. Budeme vás brzy kontaktovat telefonicky a zašleme QR kód k platbě.
+          Váš dárkový poukaz jsme začali připravovat. Budeme vás brzy kontaktovat telefonicky nebo emailem a domluvíme si čas a místo převzetí.
         </p>
 
         <div className="mb-12 w-full border border-[#E4E4E7] bg-[#FFFFFF] p-6 text-left" role="region" aria-labelledby="voucher-success-summary-heading">
