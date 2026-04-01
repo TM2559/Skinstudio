@@ -144,3 +144,7 @@ export const callSendReminderEmail = useFirebaseMocks
 export const callSendAdminVoucherOrderEmail = useFirebaseMocks
   ? () => Promise.resolve({ data: { sent: true } })
   : httpsCallable(functions, 'sendAdminVoucherOrderEmail');
+
+export const callUpdateVoucherOrder = useFirebaseMocks
+  ? () => Promise.resolve({ data: { success: true } })
+  : httpsCallable(functions, 'updateVoucherOrder');

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, ShoppingBag } from 'lucide-react';
-import { callUpdateVoucherOrderStatus } from '../../firebaseConfig';
+import { ChevronDown, ChevronRight, ShoppingBag, Pencil } from 'lucide-react';
+import { callUpdateVoucherOrderStatus, callUpdateVoucherOrder } from '../../firebaseConfig';
 import { useToastContext } from '../../contexts/ToastContext';
 
 const STATUS_OPTIONS = [
@@ -114,10 +114,62 @@ function normalizeActivityLog(raw) {
   });
 }
 
+/** Vyhodnotí stav SMS brány ze všech activity_log záznamů. */
+function getSmsGatewayStatus(orders) {
+  let hasSkipped = false;
+  let hasSent = false;
+  for (const order of orders) {
+    const log = order.activity_log;
+    if (!Array.isArray(log)) continue;
+    for (const entry of log) {
+      if (entry?.kind === 'status_change') {
+        if (entry.sms_ready_skipped === 'bulkgate_not_configured') hasSkipped = true;
+        if (entry.sms_ready_sent === true) hasSent = true;
+      }
+    }
+  }
+  if (hasSkipped) return 'warning';
+  if (hasSent) return 'ok';
+  return 'neutral';
+}
+
+function SmsBadge({ status }) {
+  if (status === 'ok') {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-0.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        SMS brána aktivní
+      </span>
+    );
+  }
+  if (status === 'warning') {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-0.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+        SMS brána není nastavena
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-stone-500 bg-stone-100 border border-stone-200 rounded-full px-2.5 py-0.5">
+      <span className="w-1.5 h-1.5 rounded-full bg-stone-400" />
+      SMS brána – bez dat
+    </span>
+  );
+}
+
 export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = [] }) {
   const toast = useToastContext();
   const [updatingId, setUpdatingId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [savingId, setSavingId] = useState(null);
+
+  // Filtrace / řazení
+  const [searchText, setSearchText] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [sortMode, setSortMode] = useState('newest');
 
   const templateNameById = useMemo(() => {
     const m = {};
@@ -126,6 +178,48 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
     });
     return m;
   }, [voucherTemplates]);
+
+  const smsStatus = useMemo(() => getSmsGatewayStatus(voucherOrders), [voucherOrders]);
+
+  const filteredOrders = useMemo(() => {
+    let list = [...voucherOrders];
+
+    // Textové vyhledávání
+    const q = searchText.trim().toLowerCase();
+    if (q) {
+      list = list.filter((o) => {
+        const name = (templateNameById[o.voucher_id] || o.voucher_id || '').toLowerCase();
+        const phone = (o.contact_phone || '').toLowerCase();
+        const email = (o.contact_email || '').toLowerCase();
+        const id = (o.id || '').toLowerCase();
+        return name.includes(q) || phone.includes(q) || email.includes(q) || id.includes(q);
+      });
+    }
+
+    // Filtr stavu
+    if (filterStatus) {
+      list = list.filter((o) => (o.status || 'new') === filterStatus);
+    }
+
+    // Řazení
+    list.sort((a, b) => {
+      const getMs = (o) => {
+        if (!o.created_at) return 0;
+        try {
+          return o.created_at.toDate ? o.created_at.toDate().getTime() : new Date(o.created_at).getTime();
+        } catch {
+          return 0;
+        }
+      };
+      if (sortMode === 'newest') return getMs(b) - getMs(a);
+      if (sortMode === 'oldest') return getMs(a) - getMs(b);
+      if (sortMode === 'price_desc') return (b.total_price ?? 0) - (a.total_price ?? 0);
+      if (sortMode === 'price_asc') return (a.total_price ?? 0) - (b.total_price ?? 0);
+      return 0;
+    });
+
+    return list;
+  }, [voucherOrders, searchText, filterStatus, sortMode, templateNameById]);
 
   const handleStatusChange = async (orderId, nextStatus) => {
     setUpdatingId(orderId);
@@ -144,29 +238,103 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
     }
   };
 
+  const openEdit = (order) => {
+    setEditingId(order.id);
+    setEditForm({
+      contactPhone: order.contact_phone || '',
+      contactEmail: order.contact_email || '',
+      targetPickupDate: order.target_pickup_date || '',
+      packaging: order.packaging || 'envelope',
+    });
+  };
+
+  const closeEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
+  const handleEditSave = async (orderId) => {
+    setSavingId(orderId);
+    try {
+      await callUpdateVoucherOrder({
+        orderId,
+        contactPhone: editForm.contactPhone,
+        contactEmail: editForm.contactEmail,
+        targetPickupDate: editForm.targetPickupDate,
+        packaging: editForm.packaging,
+      });
+      toast.success('Objednávka byla uložena.');
+      closeEdit();
+    } catch (e) {
+      console.error(e);
+      toast.error(e?.message || 'Nepodařilo se uložit objednávku.');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   return (
     <div className="bg-stone-50/60 rounded-2xl border border-stone-200 p-6 md:p-8 shadow-sm">
       <div className="mb-6">
-        <h2 className="font-display text-xl mb-1 flex items-center gap-2 text-stone-800">
-          <ShoppingBag size={20} className="text-stone-500" />
-          Objednávky poukazů
-        </h2>
+        <div className="flex items-center gap-3 flex-wrap mb-1">
+          <h2 className="font-display text-xl flex items-center gap-2 text-stone-800">
+            <ShoppingBag size={20} className="text-stone-500" />
+            Objednávky poukazů
+          </h2>
+          <SmsBadge status={smsStatus} />
+        </div>
         <p className="text-xs text-stone-500">
-          Přehled objednávek k vyzvednutí v salonu. Při přechodu na „Připraveno“ může zákazník dostat SMS. Níže u
+          Přehled objednávek k vyzvednutí v salonu. Při přechodu na „Připraveno" může zákazník dostat SMS. Níže u
           každé objednávky je historie stavů a odeslaných zpráv.
         </p>
+      </div>
+
+      {/* Filtrace a řazení */}
+      <div className="mb-4 flex flex-wrap gap-2 items-center">
+        <input
+          type="search"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          placeholder="Hledat (jméno, telefon, e-mail, ID)…"
+          className="text-sm border border-stone-200 rounded-lg px-3 py-1.5 bg-white text-stone-800 placeholder:text-stone-400 min-w-[220px] flex-1"
+        />
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="text-sm border border-stone-200 rounded-lg px-2 py-1.5 bg-white text-stone-800"
+        >
+          <option value="">Všechny stavy</option>
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        <select
+          value={sortMode}
+          onChange={(e) => setSortMode(e.target.value)}
+          className="text-sm border border-stone-200 rounded-lg px-2 py-1.5 bg-white text-stone-800"
+        >
+          <option value="newest">Nejnovější</option>
+          <option value="oldest">Nejstarší</option>
+          <option value="price_desc">Cena ↓</option>
+          <option value="price_asc">Cena ↑</option>
+        </select>
       </div>
 
       {voucherOrders.length === 0 ? (
         <div className="bg-white rounded-xl border border-stone-200 p-10 text-center text-stone-500 text-sm">
           Zatím žádné objednávky poukazů.
         </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="bg-white rounded-xl border border-stone-200 p-10 text-center text-stone-500 text-sm">
+          Žádné objednávky neodpovídají filtru.
+        </div>
       ) : (
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm overflow-x-auto">
-          <table className="w-full text-left text-sm min-w-[760px]">
+          <table className="w-full text-left text-sm min-w-[820px]">
             <thead>
               <tr className="border-b border-stone-200 bg-stone-50/80">
                 <th className="px-2 py-3 w-10 font-semibold text-stone-700" aria-label="Historie" />
+                <th className="px-2 py-3 w-10 font-semibold text-stone-700" aria-label="Editace" />
                 <th className="px-3 py-3 font-semibold text-stone-700">Vytvořeno</th>
                 <th className="px-3 py-3 font-semibold text-stone-700">Poukaz</th>
                 <th className="px-3 py-3 font-semibold text-stone-700">Balení</th>
@@ -177,12 +345,14 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
               </tr>
             </thead>
             <tbody>
-              {voucherOrders.map((o) => {
+              {filteredOrders.map((o) => {
                 const log = normalizeActivityLog(o.activity_log);
                 const open = expandedId === o.id;
+                const editing = editingId === o.id;
                 return (
                   <React.Fragment key={o.id}>
                     <tr className="border-b border-stone-100 hover:bg-stone-50/50 align-top">
+                      {/* Rozbalení historie */}
                       <td className="px-2 py-3 align-top">
                         <button
                           type="button"
@@ -192,6 +362,17 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
                           aria-label={open ? 'Skrýt historii' : 'Zobrazit historii'}
                         >
                           {open ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                        </button>
+                      </td>
+                      {/* Editace */}
+                      <td className="px-2 py-3 align-top">
+                        <button
+                          type="button"
+                          onClick={() => editing ? closeEdit() : openEdit(o)}
+                          className="p-1 rounded-md text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+                          aria-label="Editovat objednávku"
+                        >
+                          <Pencil size={15} />
                         </button>
                       </td>
                       <td className="px-3 py-3 text-stone-600 whitespace-nowrap">{formatCreated(o.created_at)}</td>
@@ -226,9 +407,77 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
                         </select>
                       </td>
                     </tr>
+
+                    {/* Inline editace */}
+                    {editing && (
+                      <tr className="border-b border-stone-100 bg-amber-50/40">
+                        <td colSpan={9} className="px-4 py-4">
+                          <div className="font-semibold text-stone-700 text-xs mb-3">Editace objednávky</div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                            <label className="flex flex-col gap-1 text-xs text-stone-600">
+                              Telefon
+                              <input
+                                type="text"
+                                value={editForm.contactPhone}
+                                onChange={(e) => setEditForm((f) => ({ ...f, contactPhone: e.target.value }))}
+                                className="border border-stone-200 rounded-lg px-2.5 py-1.5 text-sm bg-white text-stone-800 focus:outline-none focus:ring-1 focus:ring-stone-300"
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1 text-xs text-stone-600">
+                              E-mail
+                              <input
+                                type="text"
+                                value={editForm.contactEmail}
+                                onChange={(e) => setEditForm((f) => ({ ...f, contactEmail: e.target.value }))}
+                                className="border border-stone-200 rounded-lg px-2.5 py-1.5 text-sm bg-white text-stone-800 focus:outline-none focus:ring-1 focus:ring-stone-300"
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1 text-xs text-stone-600">
+                              Datum vyzvednutí
+                              <input
+                                type="date"
+                                value={editForm.targetPickupDate}
+                                onChange={(e) => setEditForm((f) => ({ ...f, targetPickupDate: e.target.value }))}
+                                className="border border-stone-200 rounded-lg px-2.5 py-1.5 text-sm bg-white text-stone-800 focus:outline-none focus:ring-1 focus:ring-stone-300"
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1 text-xs text-stone-600">
+                              Balení
+                              <select
+                                value={editForm.packaging}
+                                onChange={(e) => setEditForm((f) => ({ ...f, packaging: e.target.value }))}
+                                className="border border-stone-200 rounded-lg px-2.5 py-1.5 text-sm bg-white text-stone-800 focus:outline-none focus:ring-1 focus:ring-stone-300"
+                              >
+                                <option value="envelope">Obálka</option>
+                                <option value="box">Krabička</option>
+                              </select>
+                            </label>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              type="button"
+                              onClick={() => handleEditSave(o.id)}
+                              disabled={savingId === o.id}
+                              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-stone-800 text-white hover:bg-stone-700 disabled:opacity-60"
+                            >
+                              {savingId === o.id ? 'Ukládám…' : 'Uložit'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={closeEdit}
+                              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                            >
+                              Zrušit
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Historie */}
                     {open && (
                       <tr className="border-b border-stone-100 bg-stone-50/70">
-                        <td colSpan={8} className="px-4 py-3 text-xs text-stone-600">
+                        <td colSpan={9} className="px-4 py-3 text-xs text-stone-600">
                           <div className="font-semibold text-stone-700 mb-2">Historie objednávky a zpráv</div>
                           {log.length === 0 ? (
                             <p className="text-stone-500 italic">

@@ -1298,3 +1298,27 @@ export const sendDailyReminders = onSchedule(
     console.log(`sendDailyReminders: ${tomorrowKey} – odesláno ${smsSent} SMS, ${emailSent} e-mailů.`);
   }
 );
+
+export const updateVoucherOrder = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', 'Nutné přihlášení.');
+    const { orderId, contactPhone, contactEmail, targetPickupDate, packaging } = request.data || {};
+    if (!orderId || typeof orderId !== 'string') throw new HttpsError('invalid-argument', 'Chybí orderId.');
+
+    const ref = db.collection('voucher_orders').doc(orderId);
+    const snap = await ref.get();
+    if (!snap.exists) throw new HttpsError('not-found', 'Objednávka nenalezena.');
+
+    const updates = {};
+    if (contactPhone !== undefined) updates.contact_phone = String(contactPhone).trim();
+    if (contactEmail !== undefined) updates.contact_email = String(contactEmail).trim();
+    if (targetPickupDate !== undefined) updates.target_pickup_date = String(targetPickupDate).trim();
+    if (packaging !== undefined && ['envelope', 'box'].includes(packaging)) updates.packaging = packaging;
+
+    if (Object.keys(updates).length === 0) throw new HttpsError('invalid-argument', 'Žádná pole ke změně.');
+
+    await ref.update(updates);
+    return { success: true };
+  }
+);
