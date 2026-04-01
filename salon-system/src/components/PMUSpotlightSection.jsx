@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { query, where, onSnapshot } from 'firebase/firestore';
 import { motion, useInView } from 'framer-motion';
-import { getCollectionPath } from '../firebaseConfig';
+import { getCollectionPath, isFirebaseRuntimeConfigured } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
 import { WEB_CONTENT } from '../constants/content';
 
@@ -10,6 +10,7 @@ import { WEB_CONTENT } from '../constants/content';
 function useSpotlightPmuImage() {
   const [imageUrl, setImageUrl] = useState(null);
   useEffect(() => {
+    if (!isFirebaseRuntimeConfigured) return;
     const col = getCollectionPath(TRANSFORMATIONS_COLLECTION);
     const q = query(col, where('category', '==', PMU_CATEGORY));
     const unsub = onSnapshot(q, (snap) => {

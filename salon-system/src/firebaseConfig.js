@@ -74,14 +74,14 @@ export { auth, db, storage };
 
 // Helpery pro cesty
 export const getCollectionPath = (colName) =>
-  isVitestNoKey
+  useFirebaseMocks
     ? {}
     : isCanvas
       ? collection(db, 'artifacts', appId, 'public', 'data', colName)
       : collection(db, colName);
 
 export const getDocPath = (colName, docId) =>
-  isVitestNoKey
+  useFirebaseMocks
     ? {}
     : isCanvas
       ? doc(db, 'artifacts', appId, 'public', 'data', colName, docId)
@@ -113,7 +113,6 @@ export const getAdminWebAuthnRegistrationOptions = useFirebaseMocks
 export const verifyAdminWebAuthnRegistration = useFirebaseMocks
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'verifyAdminWebAuthnRegistration');
-<<<<<<< HEAD
 export const getAdminWebAuthnConfigured = useFirebaseMocks
   ? () => Promise.resolve({ data: { configured: false } })
   : httpsCallable(functions, 'getAdminWebAuthnConfigured');

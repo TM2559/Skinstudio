@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { onSnapshot } from 'firebase/firestore';
 import { Instagram } from 'lucide-react';
-import { INSTAGRAM_URL, getDocPath } from '../firebaseConfig';
+import { INSTAGRAM_URL, getDocPath, isFirebaseRuntimeConfigured } from '../firebaseConfig';
 import { WEB_CONTENT } from '../constants/content';
 
 const INSTAGRAM_HANDLE = '@skin_studio_lucie_metelkova';
@@ -45,6 +45,7 @@ export default function InstagramShowcase() {
   }, [pool]);
 
   useEffect(() => {
+    if (!isFirebaseRuntimeConfigured) return;
     const docRef = getDocPath('config', CONFIG_DOC);
     const unsub = onSnapshot(
       docRef,

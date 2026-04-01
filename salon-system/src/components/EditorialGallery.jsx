@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { query, where, onSnapshot } from 'firebase/firestore';
-import { getCollectionPath } from '../firebaseConfig';
+import { getCollectionPath, isFirebaseRuntimeConfigured } from '../firebaseConfig';
 import { GALLERY_COLLECTION } from '../constants/cosmetics';
 
 const MAX_ITEMS = 6;
@@ -9,6 +9,7 @@ export default function EditorialGallery({ category, theme = 'light' }) {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
+    if (!isFirebaseRuntimeConfigured) return;
     const col = getCollectionPath(GALLERY_COLLECTION);
     const q = query(col, where('category', '==', category));
     const unsub = onSnapshot(q, (snap) => {

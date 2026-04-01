@@ -75,6 +75,7 @@ export function DataProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    if (!isFirebaseRuntimeConfigured) return;
     const unsub = onIdTokenChanged(auth, async (u) => {
       if (!u) {
         setTokenHasAdmin(false);
