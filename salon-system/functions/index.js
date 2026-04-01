@@ -6,7 +6,7 @@ import { defineString } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { buildVoucherReadySms, buildVoucherOrderConfirmationSms } from './smsTemplates.js';
-import { sendVoucherOrderEmailsInternal } from './voucherResendMail.js';
+import { sendVoucherOrderEmailsInternal, sendVoucherReadyEmailInternal } from './voucherResendMail.js';
 
 function isResendConfigured() {
   return Boolean((process.env.RESEND_API_KEY || '') && (process.env.RESEND_FROM || ''));
@@ -778,6 +778,32 @@ export const updateVoucherOrderStatus = onCall(
       }
     }
 
+    // Email zákazníkovi při přechodu na „Připraveno" (fire-and-forget)
+    let emailReadySent = false;
+    if (wasPendingOrNew && status === 'ready' && data.contact_email) {
+      try {
+        // Dohledání názvu poukazu ze šablony
+        let voucherLabel = 'Dárkový poukaz';
+        if (data.is_custom_amount && data.custom_amount_kc) {
+          voucherLabel = `Poukaz na ${Number(data.custom_amount_kc).toLocaleString('cs-CZ')} Kč`;
+        } else if (data.voucher_id) {
+          const tSnap = await db.collection('voucher_templates').doc(data.voucher_id).get();
+          if (tSnap.exists) voucherLabel = tSnap.data().name || voucherLabel;
+        }
+        const emailResult = await sendVoucherReadyEmailInternal({
+          contactEmail: data.contact_email,
+          voucherLabel,
+          totalPriceKc: data.total_price,
+        });
+        emailReadySent = emailResult.ok;
+        if (!emailResult.ok) {
+          console.warn('updateVoucherOrderStatus: email ready failed:', emailResult.error);
+        }
+      } catch (err) {
+        console.error('updateVoucherOrderStatus: email ready error:', err);
+      }
+    }
+
     const logEntry = {
       at: Timestamp.now(),
       kind: 'status_change',
@@ -789,6 +815,7 @@ export const updateVoucherOrderStatus = onCall(
       if (!smsSent && smsReadySkippedReason) {
         logEntry.sms_ready_skipped = smsReadySkippedReason;
       }
+      logEntry.email_ready_sent = emailReadySent;
     }
 
     await db.runTransaction(async (t) => {

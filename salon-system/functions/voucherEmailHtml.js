@@ -198,3 +198,55 @@ export function buildAdminVoucherOrderHtml({
 </body>
 </html>`;
 }
+
+/**
+ * Zákazník: poukaz je připraven k vyzvednutí.
+ */
+export function buildVoucherReadyHtml({
+  voucherLabel,
+  totalPriceKc,
+}) {
+  const preview = `Váš poukaz je připraven — ${voucherLabel || BRAND.name}`;
+  const totalStr =
+    typeof totalPriceKc === 'number'
+      ? `${totalPriceKc.toLocaleString('cs-CZ')} Kč`
+      : escapeHtml(String(totalPriceKc ?? '—'));
+
+  const inner = `
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>${escapeHtml(preview)}</title>
+</head>
+<body style="${confirmBodyOuter}">
+  <div style="${confirmCard}">
+    <div style="${confirmHeaderBar}">
+      <img src="${BRAND.headerImageUrl}" width="600" alt="Skin Studio" style="${confirmHeaderImg}" />
+    </div>
+    <div style="${confirmContent}">
+      <h1 style="${confirmTitle}">VÁŠ POUKAZ JE PŘIPRAVEN</h1>
+      <p style="${confirmGreeting}">Dobrý den,</p>
+      <p style="${confirmLead}">
+        Váš dárkový poukaz <strong>${escapeHtml(voucherLabel || '')}</strong> je krásně zabalený a čeká na vás.
+      </p>
+      <div style="${confirmDetailBox}">
+        ${detailRow('Poukaz', escapeHtml(voucherLabel || '—'))}
+        ${detailRow('Celkem k úhradě', escapeHtml(totalStr))}
+        ${detailRow('Platba', 'Hotovost nebo QR kód při převzetí')}
+        ${detailRow('Adresa', escapeHtml(BRAND.addressLine))}
+      </div>
+      <p style="${confirmMuted}">
+        Napište nám, kdy vám to vyhovuje přijít — odpovíme co nejdříve.
+        Kontakt: <a href="mailto:${BRAND.emailReservations}" style="${confirmLink}">${BRAND.emailReservations}</a>
+        nebo <a href="${BRAND.phoneTel}" style="${confirmLink}">${BRAND.phone}</a>.
+      </p>
+      <p style="${confirmClosing}">Těšíme se na vás!</p>
+      ${mailFooterHtml()}
+    </div>
+  </div>
+</body>
+</html>`;
+  return inner;
+}

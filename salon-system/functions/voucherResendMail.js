@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { buildAdminVoucherOrderHtml, buildVoucherConfirmationHtml } from './voucherEmailHtml.js';
+import { buildAdminVoucherOrderHtml, buildVoucherConfirmationHtml, buildVoucherReadyHtml } from './voucherEmailHtml.js';
 
 function getResendApiKey() {
   return process.env.RESEND_API_KEY || '';
@@ -128,4 +128,35 @@ export async function sendVoucherOrderEmailsInternal({
   if (clientError) out.clientError = clientError;
   if (adminError) out.adminError = adminError;
   return out;
+}
+
+/**
+ * Odešle zákazníkovi email že je poukaz připraven k vyzvednutí.
+ */
+export async function sendVoucherReadyEmailInternal({
+  contactEmail,
+  voucherLabel,
+  totalPriceKc,
+}) {
+  const resend = getResendClient();
+  const from = getFrom();
+  const replyTo = getReplyTo();
+
+  if (!getResendApiKey() || !from || !resend) return { ok: false };
+  if (!contactEmail || typeof contactEmail !== 'string') return { ok: false };
+
+  const html = buildVoucherReadyHtml({ voucherLabel, totalPriceKc });
+  const result = await resend.emails.send({
+    from,
+    to: [contactEmail.trim()],
+    replyTo: replyTo || undefined,
+    subject: `Váš poukaz je připraven — ${voucherLabel || 'Skin Studio'}`,
+    html,
+  });
+
+  if (result.error) {
+    console.error('Resend voucher ready → klient:', result.error);
+    return { ok: false, error: resendErrText(result.error) };
+  }
+  return { ok: true };
 }
