@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(find /Users/tm/Desktop/reservations/salon-system/functions -name .env* -type f)",
+      "Bash(grep -r RESEND /Users/tm/Desktop/reservations/salon-system --include=*.md --include=*.js --include=*.json)",
+      "Bash(grep -l \"sendBookingConfirmations\\\\|notificationService\" /Users/tm/Desktop/reservations/salon-system/src/components/*.jsx /Users/tm/Desktop/reservations/salon-system/src/components/*/*.jsx)",
+      "Bash(npx vitest:*)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git stash:*)",
+      "Bash(firebase functions:secrets:set RESEND_API_KEY)"
+    ]
+  }
+}
