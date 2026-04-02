@@ -630,88 +630,26 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           </div>
         </div>
 
-        <div className="mobile-carousel-strip flex gap-6 text-sm font-medium">
-          <button
-            onClick={() => {
-              setActiveTab('bookings');
-              setSearchTerm('');
-            }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'bookings' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
-          >
-            <Calendar size={16} /> Rezervace
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('shifts');
-              setSearchTerm('');
-            }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'shifts' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
-          >
-            <Clock size={16} /> Směny
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('services');
-              setSearchTerm('');
-            }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'services' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
-          >
-            <Scissors size={16} /> Služby
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('history');
-              setSearchTerm('');
-            }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'history' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
-          >
-            <Archive size={16} /> Archiv
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('addons');
-              setSearchTerm('');
-            }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'addons' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
-          >
-            <Package size={16} /> Add-ony
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('instagram');
-              setSearchTerm('');
-            }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'instagram' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
-          >
-            <Instagram size={16} /> Instagram
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('photos');
-              setSearchTerm('');
-            }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'photos' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
-          >
-            <ImageIcon size={16} /> Fotografie
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('vouchers');
-              setSearchTerm('');
-            }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'vouchers' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
-          >
-            <Gift size={16} /> Dárkové poukazy
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('orders');
-              setSearchTerm('');
-            }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'orders' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
-          >
-            <ShoppingBag size={16} /> Objednávky
-          </button>
+        <div className="admin-tab-bar flex flex-wrap gap-x-6 gap-y-0 text-sm font-medium">
+          {[
+            { id: 'bookings', label: 'Rezervace', icon: <Calendar size={16} /> },
+            { id: 'shifts', label: 'Směny', icon: <Clock size={16} /> },
+            { id: 'services', label: 'Služby', icon: <Scissors size={16} /> },
+            { id: 'history', label: 'Archiv', icon: <Archive size={16} /> },
+            { id: 'addons', label: 'Add-ony', icon: <Package size={16} /> },
+            { id: 'instagram', label: 'Instagram', icon: <Instagram size={16} /> },
+            { id: 'photos', label: 'Fotografie', icon: <ImageIcon size={16} /> },
+            { id: 'vouchers', label: 'Poukazy', icon: <Gift size={16} /> },
+            { id: 'orders', label: 'Objednávky', icon: <ShoppingBag size={16} /> },
+          ].map(({ id, label, icon }) => (
+            <button
+              key={id}
+              onClick={() => { setActiveTab(id); setSearchTerm(''); }}
+              className={`pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === id ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            >
+              {icon} {label}
+            </button>
+          ))}
         </div>
       </div>
 
