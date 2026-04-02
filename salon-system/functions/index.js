@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import https from 'node:https';
 import { onCall, HttpsError, onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
@@ -202,10 +203,10 @@ function buildReminderText(dateDisplay, time, serviceName) {
   return `Skin Studio: Dobrý den, připomínáme zítřejší rezervaci ${dateDisplay} v ${time} - ${serviceName}. Těšíme se.`;
 }
 
-/** Send one SMS via BulkGate (shared). @param unicode - false for GSM 03.38 (160 chars). */
+/** Send one SMS via BulkGate (shared). Uses node:https to avoid undici/HTTP2 issues. */
 async function sendOneSms(appId, appToken, number, text, unicode = true, senderIdOpt, senderIdValueOpt) {
   const payload = {
-    application_id: appId,
+    application_id: parseInt(appId, 10) || appId,
     application_token: appToken,
     number,
     text,
@@ -215,13 +216,40 @@ async function sendOneSms(appId, appToken, number, text, unicode = true, senderI
     payload.sender_id = senderIdOpt;
     payload.sender_id_value = senderIdValueOpt;
   }
-  const response = await fetch(BULKGATE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+  const body = JSON.stringify(payload);
+  console.log(`sendOneSms → number=${number} appId=${appId} bodyLen=${body.length}`);
+  return new Promise((resolve) => {
+    const req = https.request(
+      {
+        hostname: 'portal.bulkgate.com',
+        port: 443,
+        path: '/api/1.0/simple/transactional',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+        timeout: 15000,
+      },
+      (res) => {
+        let raw = '';
+        res.on('data', (chunk) => { raw += chunk; });
+        res.on('end', () => {
+          let data = {};
+          try { data = JSON.parse(raw); } catch { /* non-JSON response */ }
+          console.log(`sendOneSms ← status=${res.statusCode} body=${raw.slice(0, 200)}`);
+          resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, data });
+        });
+      }
+    );
+    req.on('timeout', () => {
+      console.error('sendOneSms timeout → destroying socket');
+      req.destroy(new Error('BulkGate request timed out'));
+    });
+    req.on('error', (err) => {
+      console.error('sendOneSms error:', err.message);
+      resolve({ ok: false, data: { error: err.message } });
+    });
+    req.write(body);
+    req.end();
   });
-  const data = await response.json().catch(() => ({}));
-  return { ok: response.ok, data };
 }
 
 /**
@@ -1052,6 +1080,7 @@ export const getAdminWebAuthnConfigured = onCall(
     }
     const docSnap = await db.doc(ADMIN_WEBAUTHN_DOC).get();
     const creds = (docSnap.data() && docSnap.data().credentials) || [];
+    console.log(`getAdminWebAuthnConfigured: origin=${origin} creds=${creds.length}`);
     return { configured: creds.length > 0 };
   }
 );
