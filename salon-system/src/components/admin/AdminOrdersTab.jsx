@@ -329,8 +329,8 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
           Žádné objednávky neodpovídají filtru.
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm overflow-x-auto">
-          <table className="w-full text-left text-sm min-w-[820px]">
+        <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-x-auto">
+          <table className="w-full text-left text-sm min-w-[960px]">
             <thead>
               <tr className="border-b border-stone-200 bg-stone-50/80">
                 <th className="px-2 py-3 w-10 font-semibold text-stone-700" aria-label="Historie" />
