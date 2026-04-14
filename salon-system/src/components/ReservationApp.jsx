@@ -178,14 +178,12 @@ export default function ReservationApp({
     );
   }
 
-  const showInnerBanner = view !== 'customer' || isDark;
-
   return (
-    <div className="max-w-4xl mx-auto px-2 sm:px-4 py-2 sm:py-8">
+    <div className="max-w-4xl mx-auto px-2.5 sm:px-4 py-4 sm:py-8">
       <div className={cardClass} style={cardStyle}>
         {/* Banner – typografické logo */}
         <div
-          className={`w-full border-b py-2.5 sm:py-8 cursor-default select-none active:opacity-95 transition-opacity text-center ${showInnerBanner ? '' : 'hidden sm:block'}`}
+          className="w-full border-b py-3 sm:py-8 cursor-default select-none active:opacity-95 transition-opacity text-center"
           style={{ borderColor: 'var(--skin-beige-muted)', backgroundColor: 'var(--skin-cream)' }}
           onClick={handleLogoClick}
           onKeyDown={(e) => e.key === 'Enter' && handleLogoClick()}
@@ -193,7 +191,7 @@ export default function ReservationApp({
           tabIndex={0}
           aria-label="Logo"
         >
-          <span className="font-display font-bold text-lg sm:text-3xl tracking-wide text-[var(--skin-charcoal)]">
+          <span className="font-display font-bold text-xl sm:text-3xl tracking-wide text-[var(--skin-charcoal)]">
             Skin Studio
           </span>
         </div>

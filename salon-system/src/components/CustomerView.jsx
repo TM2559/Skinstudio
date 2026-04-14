@@ -177,8 +177,8 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
   };
 
   return (
-    <div className="flex flex-col gap-4 md:grid md:grid-cols-2 md:gap-12">
-      <div className="flex flex-col gap-4 md:gap-10">
+    <div className="flex flex-col gap-6 md:grid md:grid-cols-2 md:gap-12">
+      <div className="flex flex-col gap-6 md:gap-10">
         <ServiceSelector
           services={displayServices}
           selectedService={selectedService}
