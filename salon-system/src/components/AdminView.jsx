@@ -69,7 +69,16 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     email: '',
     sendNotification: true,
   });
+  const [manualPrefillTime, setManualPrefillTime] = useState(null);
+  const [manualPrefillSlot, setManualPrefillSlot] = useState(null);
   const [isManualSubmitting, setIsManualSubmitting] = useState(false);
+  const [shiftDraftModal, setShiftDraftModal] = useState({
+    open: false,
+    isoDate: '',
+    start: '',
+    end: '',
+    isSaving: false,
+  });
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
   const [editingAddonLinks, setEditingAddonLinks] = useState([]);
   const [showFaceIdModal, setShowFaceIdModal] = useState(false);
@@ -142,11 +151,11 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     );
   };
 
-  const { dailyReservations, historyReservations, isGlobalSearchMode } = useMemo(() => {
+  const { dailyReservations, historyReservations, isGlobalSearchMode, upcomingReservations } = useMemo(() => {
     const sorted = [...reservations].sort((a, b) => {
       const dateDiff = getComparableDate(a.date) - getComparableDate(b.date);
       if (dateDiff !== 0) return dateDiff;
-      return a.time.localeCompare(b.time);
+      return Utils.timeToMinutes(a.time) - Utils.timeToMinutes(b.time);
     });
     const filtered = sorted.filter((r) => matchSearch(r, searchTerm));
     const selectedDateKey = Utils.getDateKeyFromISO(adminDateInput);
@@ -157,7 +166,8 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     const history = filtered
       .filter((r) => getComparableDate(r.date) < todayComparable)
       .reverse();
-    return { dailyReservations: daily, historyReservations: history, isGlobalSearchMode: isGlobal };
+    const upcoming = sorted.filter((r) => getComparableDate(r.date) >= todayComparable);
+    return { dailyReservations: daily, historyReservations: history, isGlobalSearchMode: isGlobal, upcomingReservations: upcoming };
   }, [reservations, searchTerm, adminDateInput, todayComparable]);
 
   const handleSaveDay = async (dateKey, type, periodsToSave) => {
@@ -497,6 +507,62 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     setShowReminderModal(true);
   };
 
+  const createShiftForDateFromReservations = (isoDate) => {
+    const dateKey = Utils.getDateKeyFromISO(isoDate);
+    const dayReservations = (reservations || []).filter((r) => r.date === dateKey && r.time);
+    if (dayReservations.length === 0) {
+      toast.info('Pro tento den nejsou žádné rezervace, ze kterých by šla vytvořit směna.');
+      return;
+    }
+
+    const starts = dayReservations.map((r) => Utils.timeToMinutes(r.time));
+    const ends = dayReservations.map(
+      (r) => Utils.timeToMinutes(r.time) + (Number(r.duration) > 0 ? Number(r.duration) : 60)
+    );
+    const minStart = Math.min(...starts);
+    const maxEnd = Math.max(...ends);
+    const period = {
+      start: Utils.minutesToTime(minStart),
+      end: Utils.minutesToTime(maxEnd),
+    };
+
+    setShiftDraftModal({
+      open: true,
+      isoDate,
+      start: period.start,
+      end: period.end,
+      isSaving: false,
+    });
+  };
+
+  const handleConfirmCreateShift = async () => {
+    const dateKey = Utils.getDateKeyFromISO(shiftDraftModal.isoDate);
+    if (!shiftDraftModal.start || !shiftDraftModal.end) {
+      toast.info('Vyplňte začátek i konec směny.');
+      return;
+    }
+    if (Utils.timeToMinutes(shiftDraftModal.end) <= Utils.timeToMinutes(shiftDraftModal.start)) {
+      toast.info('Konec směny musí být později než začátek.');
+      return;
+    }
+
+    const period = {
+      start: shiftDraftModal.start,
+      end: shiftDraftModal.end,
+    };
+
+    setShiftDraftModal((s) => ({ ...s, isSaving: true }));
+    try {
+      await setDoc(getDocPath(COLLECTIONS.SCHEDULE, dateKey), { periods: [period] });
+      toast.success(`Směna ${period.start}–${period.end} byla vypsána.`);
+      setShiftDraftModal({ open: false, isoDate: '', start: '', end: '', isSaving: false });
+    } catch (e) {
+      console.error(e);
+      toast.error('Směnu se nepodařilo vypsat.');
+      setShiftDraftModal((s) => ({ ...s, isSaving: false }));
+    }
+  };
+
   const manualDateKey = Utils.getDateKeyFromISO(manualForm.date);
   const manualDaySchedule = schedule[manualDateKey];
   const hasShifts =
@@ -517,6 +583,81 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
       }));
     return Utils.getSmartSlots(periods, parseInt(srv.duration), booked);
   }, [manualDateKey, manualForm.serviceId, manualDaySchedule, reservations, services, hasShifts]);
+
+  useEffect(() => {
+    if (!showManualBooking || manualPrefillTime == null) return;
+
+    if (!hasShifts) {
+      const opts = Utils.generateTimeOptions();
+      if (opts.includes(manualPrefillTime)) {
+        setManualForm((f) => ({ ...f, time: manualPrefillTime }));
+      }
+      setManualPrefillTime(null);
+      return;
+    }
+
+    if (!manualForm.serviceId) return;
+
+    if (manualAvailableSlots.includes(manualPrefillTime)) {
+      setManualForm((f) => ({ ...f, time: manualPrefillTime }));
+      setManualPrefillTime(null);
+    }
+  }, [showManualBooking, manualPrefillTime, manualForm.serviceId, hasShifts, manualAvailableSlots]);
+
+  const openManualBooking = () => {
+    setManualPrefillTime(null);
+    setManualPrefillSlot(null);
+    setShowManualBooking(true);
+  };
+
+  const openManualBookingFromSlot = (isoDate, slot) => {
+    setManualPrefillTime(slot?.startTime || null);
+    setManualPrefillSlot(slot || null);
+    setManualForm((f) => ({ ...f, date: isoDate, time: slot?.startTime || '' }));
+    setShowManualBooking(true);
+  };
+
+  const ensureScheduleCoversManualReservation = async (dateKey, startTime, duration, category) => {
+    const targetCollection = category === 'pmu' ? COLLECTIONS.SCHEDULE_PMU : COLLECTIONS.SCHEDULE;
+    const sourceSchedule = category === 'pmu' ? (schedulePmu || {}) : (schedule || {});
+    const day = sourceSchedule[dateKey];
+    const existingPeriods =
+      day?.periods?.length > 0
+        ? day.periods
+        : day?.start
+          ? [{ start: day.start, end: day.end }]
+          : [];
+
+    const startMin = Utils.timeToMinutes(startTime);
+    const endMin = startMin + (Number(duration) > 0 ? Number(duration) : 60);
+
+    const isCovered = existingPeriods.some((p) => {
+      const pStart = Utils.timeToMinutes(p.start);
+      const pEnd = Utils.timeToMinutes(p.end);
+      return startMin >= pStart && endMin <= pEnd;
+    });
+    if (isCovered) return;
+
+    const intervals = existingPeriods.map((p) => [
+      Utils.timeToMinutes(p.start),
+      Utils.timeToMinutes(p.end),
+    ]);
+    intervals.push([startMin, endMin]);
+    intervals.sort((a, b) => a[0] - b[0]);
+
+    const merged = [];
+    for (const [s, e] of intervals) {
+      const prev = merged[merged.length - 1];
+      if (!prev || s > prev[1]) merged.push([s, e]);
+      else prev[1] = Math.max(prev[1], e);
+    }
+
+    const periods = merged.map(([s, e]) => ({
+      start: Utils.minutesToTime(s),
+      end: Utils.minutesToTime(e),
+    }));
+    await setDoc(getDocPath(targetCollection, dateKey), { periods });
+  };
 
   const handleManualSubmit = async (e) => {
     e.preventDefault();
@@ -547,6 +688,12 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
         reminderSent: false,
         source: 'admin',
       });
+      await ensureScheduleCoversManualReservation(
+        manualDateKey,
+        manualForm.time,
+        parseInt(selectedSrv?.duration || 60),
+        manualForm.category
+      );
       if (sendNotification) {
         const dur = parseInt(selectedSrv?.duration || 60);
         const svcName = selectedSrv?.name || 'Manual Booking';
@@ -576,6 +723,8 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
         });
       }
       setShowManualBooking(false);
+      setManualPrefillTime(null);
+      setManualPrefillSlot(null);
       setManualForm({
         category: null,
         serviceId: '',
@@ -607,7 +756,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           </span>
           <div className="flex gap-3">
             <button
-              onClick={() => setShowManualBooking(true)}
+              onClick={openManualBooking}
               className="skin-accent px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-all shadow-sm"
             >
               <PlusCircle size={14} /> <span className="hidden sm:inline">Nová rezervace</span>
@@ -725,9 +874,13 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
             dailyReservations={dailyReservations}
             onOpenReminders={openReminders}
             onSelectOrder={setSelectedOrder}
-            onAddReservation={() => setShowManualBooking(true)}
+            onAddReservation={openManualBooking}
+            onManualBookingFromSlot={openManualBookingFromSlot}
+            onCreateShiftForDay={createShiftForDateFromReservations}
+            schedule={schedule}
             todayKey={todayKey}
             reservations={reservations}
+            upcomingReservations={upcomingReservations}
             isGlobalSearchMode={isGlobalSearchMode}
           />
         )}
@@ -802,11 +955,16 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
 
       <ManualBookingModal
         open={showManualBooking}
-        onClose={() => setShowManualBooking(false)}
+        onClose={() => {
+          setShowManualBooking(false);
+          setManualPrefillTime(null);
+          setManualPrefillSlot(null);
+        }}
         services={services}
         manualForm={manualForm}
         setManualForm={setManualForm}
         manualAvailableSlots={manualAvailableSlots}
+        manualPrefillSlot={manualPrefillSlot}
         hasShifts={hasShifts}
         onSubmit={handleManualSubmit}
         isSubmitting={isManualSubmitting}
@@ -819,6 +977,58 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
         onSend={handleReminders}
         isSending={isSendingReminders}
       />
+
+      {shiftDraftModal.open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => !shiftDraftModal.isSaving && setShiftDraftModal({ open: false, isoDate: '', start: '', end: '', isSaving: false })}
+        >
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-display font-bold text-lg text-stone-800 mb-2">Vypsat směnu</h3>
+            <p className="text-sm text-stone-500 mb-4">
+              Nastavte čas směny pro {Utils.formatDateDisplay(Utils.getDateKeyFromISO(shiftDraftModal.isoDate))}.
+            </p>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-stone-400 block mb-1.5">Od</label>
+                <input
+                  type="time"
+                  value={shiftDraftModal.start}
+                  onChange={(e) => setShiftDraftModal((s) => ({ ...s, start: e.target.value }))}
+                  className="w-full p-2.5 rounded-lg border border-stone-200 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-stone-400 block mb-1.5">Do</label>
+                <input
+                  type="time"
+                  value={shiftDraftModal.end}
+                  onChange={(e) => setShiftDraftModal((s) => ({ ...s, end: e.target.value }))}
+                  className="w-full p-2.5 rounded-lg border border-stone-200 text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShiftDraftModal({ open: false, isoDate: '', start: '', end: '', isSaving: false })}
+                disabled={shiftDraftModal.isSaving}
+                className="flex-1 py-2 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium disabled:opacity-50"
+              >
+                Zrušit
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCreateShift}
+                disabled={shiftDraftModal.isSaving}
+                className="flex-1 py-2 rounded-xl bg-stone-800 text-white text-sm font-medium disabled:opacity-50"
+              >
+                {shiftDraftModal.isSaving ? 'Ukládám…' : 'Vypsat směnu'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedOrder && (
         <OrderDetailModal

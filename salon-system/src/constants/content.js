@@ -18,7 +18,6 @@ export const WEB_CONTENT = {
       { label: 'KOSMETIKA', to: '/kosmetika' },
       { label: 'CENÍK', to: '/', hash: 'cenik' },
       { label: 'PERMANENTNÍ MAKE-UP', to: '/pmu', hash: 'pmu' },
-      { label: 'DÁRKOVÉ POUKAZY', to: '/darkove-poukazy' },
       { label: 'KONTAKT', to: '/', hash: 'kontakt' },
       { label: 'REZERVACE', to: '/rezervace', cta: true },
     ],
