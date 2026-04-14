@@ -741,7 +741,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
 
   return (
     <div className="relative min-h-[80vh] overflow-x-hidden">
-      <div className="bg-white sticky top-0 z-30 border-b border-stone-200 -mx-4 px-4 sm:px-8 pt-4 pb-0 mb-6 shadow-sm">
+      <div className="bg-white sticky top-0 z-30 border border-stone-200 rounded-xl px-3 sm:px-6 pt-4 pb-0 mb-6 shadow-sm">
         <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
           <span className="font-display font-bold uppercase tracking-widest text-xs text-stone-400">
             Admin Panel
@@ -771,7 +771,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           </div>
         </div>
 
-        <div className="mobile-carousel-strip overflow-x-auto -mx-4 px-4 flex gap-4 text-sm font-medium">
+        <div className="mobile-carousel-strip overflow-x-auto flex gap-4 text-sm font-medium">
           <button
             onClick={() => {
               setActiveTab('bookings');

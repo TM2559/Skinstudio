@@ -41,9 +41,17 @@
 }
 
 @layer base {
+  html,
+  body,
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     background-color: var(--skin-cream);
     color: var(--skin-charcoal);
+    -webkit-text-size-adjust: 100%;
   }
 }
 
