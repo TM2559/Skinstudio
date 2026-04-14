@@ -274,7 +274,7 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
   };
 
   return (
-    <div className="bg-stone-50/60 rounded-2xl border border-stone-200 p-6 md:p-8 shadow-sm">
+    <div className="bg-stone-50/60 rounded-2xl border border-stone-200 p-3 sm:p-5 md:p-8 shadow-sm">
       <div className="mb-6">
         <div className="flex items-center gap-3 flex-wrap mb-1">
           <h2 className="font-display text-xl flex items-center gap-2 text-stone-800">
@@ -301,7 +301,7 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="text-sm border border-stone-200 rounded-lg px-2 py-1.5 bg-white text-stone-800"
+          className="text-sm border border-stone-200 rounded-lg px-2 py-1.5 bg-white text-stone-800 w-full sm:w-auto"
         >
           <option value="">Všechny stavy</option>
           {STATUS_OPTIONS.map((opt) => (
@@ -311,7 +311,7 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
         <select
           value={sortMode}
           onChange={(e) => setSortMode(e.target.value)}
-          className="text-sm border border-stone-200 rounded-lg px-2 py-1.5 bg-white text-stone-800"
+          className="text-sm border border-stone-200 rounded-lg px-2 py-1.5 bg-white text-stone-800 w-full sm:w-auto"
         >
           <option value="newest">Nejnovější</option>
           <option value="oldest">Nejstarší</option>

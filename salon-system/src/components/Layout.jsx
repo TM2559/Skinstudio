@@ -15,7 +15,7 @@ const NAV = getNav();
 
 const VOUCHER_ROUTES = ['/darkove-poukazy', '/poukaz/success'];
 
-export default function Layout({ children, setView, hideFooter = false }) {
+export default function Layout({ children, setView, hideFooter = false, hideHeader = false, hideInstagram = false }) {
   const location = useLocation();
   const errorResetKey = `${location.pathname}${location.search}${location.hash}`;
   const isHome = location.pathname === '/';
@@ -36,7 +36,7 @@ export default function Layout({ children, setView, hideFooter = false }) {
 
   return (
     <div className="min-h-screen font-sans flex flex-col" style={{ backgroundColor: 'var(--skin-cream)' }}>
-      {!isVoucherCheckout && (
+      {!isVoucherCheckout && !hideHeader && (
       <header
         className="sticky top-0 z-50 border-b backdrop-blur-md"
         style={{
@@ -172,7 +172,7 @@ export default function Layout({ children, setView, hideFooter = false }) {
         </ErrorBoundary>
       </main>
 
-      {!isVoucherCheckout && <InstagramShowcase />}
+      {!isVoucherCheckout && !hideInstagram && <InstagramShowcase />}
 
       {!isVoucherCheckout && !hideFooter && (
       <footer id="kontakt" className="mt-auto bg-[#1c1c1c] font-sans font-light text-gray-200">

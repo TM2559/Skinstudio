@@ -154,9 +154,9 @@ export default function ReservationApp({
   }
 
   const cardClass = isDark
-    ? 'sm:rounded-2xl overflow-hidden border border-stone-800 bg-stone-950 shadow-xl'
-    : 'sm:rounded-2xl shadow-sm sm:shadow-lg overflow-hidden';
-  const cardStyle = isDark ? {} : { backgroundColor: 'var(--skin-white)', border: '1px solid var(--skin-beige-muted)' };
+    ? 'rounded-none sm:rounded-2xl overflow-hidden border-0 sm:border border-stone-800 bg-stone-950 shadow-none sm:shadow-xl'
+    : 'rounded-none sm:rounded-2xl shadow-none sm:shadow-lg overflow-hidden border-0 sm:border sm:border-[var(--skin-beige-muted)] bg-white';
+  const cardStyle = isDark ? {} : { backgroundColor: 'var(--skin-white)' };
   const innerClass = isDark ? 'p-4 sm:p-8 bg-stone-950' : 'p-4 sm:p-10 bg-white';
 
   if (widgetOnly) {
@@ -208,7 +208,7 @@ export default function ReservationApp({
           )}
 
           {view === 'login' && (
-            <div className="max-w-sm mx-auto py-8 sm:py-20 text-center animate-in zoom-in">
+            <div className="w-full max-w-none sm:max-w-sm mx-auto py-8 sm:py-20 text-center animate-in zoom-in">
               <Lock className="mx-auto mb-4 text-stone-200" size={48} />
               <h2 className="font-display text-2xl mb-6 text-stone-800 font-bold">Admin Vstup</h2>
 

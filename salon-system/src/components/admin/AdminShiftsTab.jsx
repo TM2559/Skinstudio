@@ -203,7 +203,7 @@ const AdminShiftsTab = ({
   return (
     <>
       <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden" style={{ boxShadow: 'none' }}>
-        <div className="p-6 md:p-8 pb-4">
+        <div className="p-3 sm:p-5 md:p-8 pb-4">
           <h2 className="font-display text-xl font-semibold text-stone-800 mb-1 flex items-center gap-2">
             <Calendar size={20} className="text-stone-400" />
             Seznam směn
@@ -258,9 +258,9 @@ const AdminShiftsTab = ({
 
         <div className="max-h-[440px] overflow-y-auto">
           {monthShifts.length === 0 ? (
-            <p className="text-sm text-stone-500 font-normal italic px-6 pb-6">Žádné dny v měsíci.</p>
+            <p className="text-sm text-stone-500 font-normal italic px-3 sm:px-5 md:px-6 pb-6">Žádné dny v měsíci.</p>
           ) : (
-            <ul className="px-6 pb-6">
+            <ul className="px-3 sm:px-5 md:px-6 pb-6">
               {monthShifts.map(({ dateKey, dayShort, dateOnly, type, periodsK, periodsP }) => (
                 <li key={dateKey} className="border-b last:border-b-0" style={{ borderColor: '#f0f0f0' }}>
                   <button
@@ -327,7 +327,7 @@ const AdminShiftsTab = ({
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0">
-              <div className="p-6 pb-36 md:pb-32">
+              <div className="p-4 sm:p-6 pb-36 md:pb-32">
                 <h2 id="drawer-title" className="text-lg font-semibold text-stone-800 mb-6">
                   Upravit: {editingDateKey ? Utils.formatDateWithDayLong(editingDateKey) : ''}
                 </h2>

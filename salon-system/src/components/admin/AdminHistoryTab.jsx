@@ -20,7 +20,7 @@ const AdminHistoryTab = ({
   }, [searchTerm, resetPage]);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="w-full max-w-none mx-auto space-y-4 sm:space-y-6">
       <div className="bg-stone-50 p-4 rounded-xl border border-stone-100 mb-6">
         <p className="text-xs text-stone-500 font-medium">
           Zde najdete všechny proběhlé rezervace. Můžete vyhledávat podle jména, emailu nebo telefonu.

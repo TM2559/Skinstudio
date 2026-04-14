@@ -139,12 +139,12 @@ const AdminBookingsTab = ({
   }, [upcomingReservations]);
 
   return (
-  <div className="max-w-2xl mx-auto space-y-6">
-    <div className="flex flex-wrap items-center gap-2">
+  <div className="w-full max-w-none mx-auto space-y-4 sm:space-y-6">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
       <button
         type="button"
         onClick={() => setViewMode('future')}
-        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-colors ${
+        className={`px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-colors ${
           isFutureListMode
             ? 'bg-stone-800 text-white'
             : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
@@ -155,7 +155,7 @@ const AdminBookingsTab = ({
       <button
         type="button"
         onClick={() => setViewMode('shifts')}
-        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-colors ${
+        className={`px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-colors ${
           isShiftListMode
             ? 'bg-stone-800 text-white'
             : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
@@ -166,7 +166,7 @@ const AdminBookingsTab = ({
       <button
         type="button"
         onClick={() => setViewMode('day')}
-        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-colors ${
+        className={`px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-colors ${
           isDayMode
             ? 'bg-stone-800 text-white'
             : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
@@ -195,7 +195,7 @@ const AdminBookingsTab = ({
         />
       </div>
     )}
-    <div className="flex flex-col sm:flex-row gap-3">
+    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-3 text-stone-400" size={16} />
         <input
@@ -208,13 +208,13 @@ const AdminBookingsTab = ({
       </div>
       <button
         onClick={onOpenReminders}
-        className="bg-white border border-stone-200 text-stone-600 px-4 py-3 sm:py-0 rounded-xl text-xs font-bold uppercase hover:bg-stone-50 flex items-center justify-center gap-2 transition-all"
+        className="bg-white border border-stone-200 text-stone-600 px-4 py-3 rounded-xl text-xs font-bold uppercase hover:bg-stone-50 flex items-center justify-center gap-2 transition-all sm:w-auto w-full"
       >
-        <Send size={14} /> <span className="hidden sm:inline">Připomínky</span>
+        <Send size={14} /> <span>Připomínky</span>
       </button>
     </div>
 
-    <div className="flex justify-between items-end mt-4 mb-2">
+    <div className="flex justify-between items-end mt-2 sm:mt-4 mb-2 gap-2">
       <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest">
         {isFutureListMode
           ? 'Budoucí rezervace'
@@ -241,7 +241,7 @@ const AdminBookingsTab = ({
           {groupedUpcomingReservations.map((group) => (
             <section key={group.date} className="rounded-xl border border-stone-200 bg-stone-50/40 p-2">
               <div className="px-2 py-1.5 flex items-center justify-between">
-                <span className="text-base font-bold uppercase tracking-wide text-stone-600">
+                <span className="text-sm sm:text-base font-bold uppercase tracking-wide text-stone-600">
                   {Utils.getDayOfWeekShort(group.date)} {formatDateShortNoYear(group.date)}
                 </span>
                 <span className="text-[10px] bg-stone-100 text-stone-500 px-2 py-0.5 rounded-lg">{group.items.length}</span>
@@ -270,9 +270,9 @@ const AdminBookingsTab = ({
                     onClick={() => onSelectOrder(res)}
                     className="w-full text-left p-4 bg-white border border-stone-200 rounded-xl hover:border-stone-300 transition-colors"
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-[72px] sm:min-w-[90px]">
-                        <div className="text-2xl font-semibold text-stone-400 leading-none">{res.time}</div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-[64px] sm:min-w-[90px]">
+                        <div className="text-xl sm:text-2xl font-semibold text-stone-400 leading-none">{res.time}</div>
                       </div>
                       <div className="flex-1">
                         <div className="text-sm font-semibold text-stone-900">{res.name}</div>

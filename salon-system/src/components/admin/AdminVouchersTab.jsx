@@ -205,7 +205,7 @@ export default function AdminVouchersTab({
   const hasAny = voucherTemplates.length > 0;
 
   return (
-    <div className="bg-stone-50/60 rounded-2xl border border-stone-200 p-6 md:p-8 shadow-sm space-y-10">
+    <div className="bg-stone-50/60 rounded-2xl border border-stone-200 p-3 sm:p-5 md:p-8 shadow-sm space-y-6 sm:space-y-10">
       <div>
         <h2 className="font-display text-xl mb-1 flex items-center gap-2 text-stone-800">
           <Gift size={20} className="text-stone-500" />
@@ -219,7 +219,7 @@ export default function AdminVouchersTab({
 
       {/* Hodnotové */}
       <section className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 p-5 border-b border-stone-100 bg-stone-50/50">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 p-3 sm:p-5 border-b border-stone-100 bg-stone-50/50">
           <div className="flex gap-3">
             <div className="p-2 rounded-lg bg-stone-100 text-stone-600 shrink-0">
               <Banknote size={20} />
@@ -262,7 +262,7 @@ export default function AdminVouchersTab({
 
       {/* Produktové */}
       <section className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 p-5 border-b border-stone-100 bg-stone-50/50">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 p-3 sm:p-5 border-b border-stone-100 bg-stone-50/50">
           <div className="flex gap-3">
             <div className="p-2 rounded-lg bg-stone-100 text-stone-600 shrink-0">
               <Package size={20} />

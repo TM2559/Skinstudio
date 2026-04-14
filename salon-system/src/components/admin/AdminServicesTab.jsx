@@ -71,14 +71,14 @@ const AdminServicesTab = ({
   };
 
   return (
-  <div className="bg-stone-50/60 rounded-2xl border border-stone-200 p-6 md:p-8 shadow-sm">
+  <div className="bg-stone-50/60 rounded-2xl border border-stone-200 p-3 sm:p-5 md:p-8 shadow-sm">
     <h2 className="font-display text-xl mb-1 flex items-center gap-2 text-stone-800">
       <Scissors size={20} className="text-stone-500" />
       Služby
     </h2>
     <p className="text-xs text-stone-500 mb-6">Procedury a ceník – přidávání, úprava pořadí a nastavení upsellů.</p>
 
-    <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-3 shadow-sm mb-6">
+    <div className="bg-white p-3 sm:p-5 rounded-xl border border-stone-200 space-y-3 shadow-sm mb-6">
       <h3 className="text-[10px] uppercase text-stone-400 font-bold tracking-widest">
         {editingServiceId ? 'Upravit produkt' : 'Nový produkt / Služba'}
       </h3>
@@ -195,7 +195,7 @@ const AdminServicesTab = ({
           </span>
         </label>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <button
           onClick={onService}
           className="flex-1 bg-stone-800 text-white py-3 rounded-lg font-bold text-[10px] uppercase shadow-md"
@@ -205,7 +205,7 @@ const AdminServicesTab = ({
         {editingServiceId && (
           <button
             onClick={onCancelEdit}
-            className="px-4 bg-stone-100 text-stone-500 rounded-lg font-bold text-[10px] uppercase"
+            className="w-full sm:w-auto px-4 py-3 sm:py-0 bg-stone-100 text-stone-500 rounded-lg font-bold text-[10px] uppercase"
           >
             Zrušit
           </button>
@@ -214,7 +214,7 @@ const AdminServicesTab = ({
     </div>
 
     {editingServiceId && setEditingAddonLinks && (
-      <div className="bg-stone-50 p-5 rounded-xl border border-stone-200 space-y-4 shadow-sm mb-6">
+      <div className="bg-stone-50 p-3 sm:p-5 rounded-xl border border-stone-200 space-y-4 shadow-sm mb-6">
         <h3 className="text-[10px] uppercase text-stone-400 font-bold tracking-widest">
           Upsell konfigurace
         </h3>
@@ -311,7 +311,7 @@ const AdminServicesTab = ({
         {services.map((s, index) => (
           <div
             key={s.id}
-            className={`flex justify-between items-center bg-white p-3 rounded-lg border border-stone-100 transition-all ${draggedItemIndex === index ? 'opacity-50' : 'opacity-100'}`}
+            className={`flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-white p-3 rounded-lg border border-stone-100 transition-all ${draggedItemIndex === index ? 'opacity-50' : 'opacity-100'}`}
             draggable
             onDragStart={(e) => onDragStart(e, index)}
             onDragOver={onDragOver}
@@ -350,7 +350,7 @@ const AdminServicesTab = ({
                 </div>
               </div>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 self-end sm:self-auto">
               <button type="button" onClick={() => onStartEdit(s)} className="p-2 text-stone-400 hover:text-stone-800" data-testid="edit-service" aria-label={`Upravit ${s.name}`}>
                 <Edit2 size={14} />
               </button>

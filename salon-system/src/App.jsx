@@ -91,7 +91,12 @@ export default function App() {
         <Route
           path="/rezervace"
           element={
-            <Layout setView={adminAuth.setView} hideFooter={adminAuth.view === 'admin'}>
+            <Layout
+              setView={adminAuth.setView}
+              hideFooter={adminAuth.view === 'admin'}
+              hideHeader={adminAuth.view === 'admin'}
+              hideInstagram={adminAuth.view === 'admin'}
+            >
               <ReservationApp
                 loading={false}
                 view={adminAuth.view}

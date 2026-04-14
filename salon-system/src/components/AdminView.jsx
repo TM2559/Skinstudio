@@ -741,17 +741,17 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
 
   return (
     <div className="relative min-h-[80vh] overflow-x-hidden">
-      <div className="bg-white sticky top-0 z-30 border border-stone-200 rounded-xl px-3 sm:px-6 pt-4 pb-0 mb-6 shadow-sm">
+      <div className="bg-white sticky top-0 z-30 border border-stone-200 rounded-xl px-2 sm:px-6 pt-3 sm:pt-4 pb-0 mb-4 sm:mb-6 shadow-sm">
         <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
           <span className="font-display font-bold uppercase tracking-widest text-xs text-stone-400">
             Admin Panel
           </span>
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             <button
               onClick={openManualBooking}
-              className="skin-accent px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-all shadow-sm"
+              className="skin-accent px-3 sm:px-4 py-2 rounded-lg text-[11px] sm:text-xs font-bold uppercase flex items-center gap-2 transition-all shadow-sm"
             >
-              <PlusCircle size={14} /> <span className="hidden sm:inline">Nová rezervace</span>
+              <PlusCircle size={14} /> <span>Nová rezervace</span>
             </button>
             {faceIdAvailable && (
               <button
@@ -771,13 +771,13 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           </div>
         </div>
 
-        <div className="mobile-carousel-strip overflow-x-auto flex gap-4 text-sm font-medium">
+        <div className="mobile-carousel-strip grid grid-cols-3 sm:grid-cols-4 lg:flex lg:overflow-x-auto gap-2 text-xs sm:text-sm font-medium pb-2">
           <button
             onClick={() => {
               setActiveTab('bookings');
               setSearchTerm('');
             }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'bookings' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item py-2 px-2 rounded-lg border transition-all flex items-center justify-center gap-1.5 min-w-0 ${activeTab === 'bookings' ? 'border-stone-800 text-stone-900 font-bold bg-stone-50' : 'border-stone-200 text-stone-500 hover:text-stone-700 hover:bg-stone-50'}`}
           >
             <Calendar size={16} /> Rezervace
           </button>
@@ -786,7 +786,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('shifts');
               setSearchTerm('');
             }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'shifts' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item py-2 px-2 rounded-lg border transition-all flex items-center justify-center gap-1.5 min-w-0 ${activeTab === 'shifts' ? 'border-stone-800 text-stone-900 font-bold bg-stone-50' : 'border-stone-200 text-stone-500 hover:text-stone-700 hover:bg-stone-50'}`}
           >
             <Clock size={16} /> Směny
           </button>
@@ -795,7 +795,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('services');
               setSearchTerm('');
             }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'services' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item py-2 px-2 rounded-lg border transition-all flex items-center justify-center gap-1.5 min-w-0 ${activeTab === 'services' ? 'border-stone-800 text-stone-900 font-bold bg-stone-50' : 'border-stone-200 text-stone-500 hover:text-stone-700 hover:bg-stone-50'}`}
           >
             <Scissors size={16} /> Služby
           </button>
@@ -804,7 +804,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('history');
               setSearchTerm('');
             }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'history' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item py-2 px-2 rounded-lg border transition-all flex items-center justify-center gap-1.5 min-w-0 ${activeTab === 'history' ? 'border-stone-800 text-stone-900 font-bold bg-stone-50' : 'border-stone-200 text-stone-500 hover:text-stone-700 hover:bg-stone-50'}`}
           >
             <Archive size={16} /> Archiv
           </button>
@@ -813,7 +813,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('addons');
               setSearchTerm('');
             }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'addons' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item py-2 px-2 rounded-lg border transition-all flex items-center justify-center gap-1.5 min-w-0 ${activeTab === 'addons' ? 'border-stone-800 text-stone-900 font-bold bg-stone-50' : 'border-stone-200 text-stone-500 hover:text-stone-700 hover:bg-stone-50'}`}
           >
             <Package size={16} /> Add-ony
           </button>
@@ -822,7 +822,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('instagram');
               setSearchTerm('');
             }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'instagram' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item py-2 px-2 rounded-lg border transition-all flex items-center justify-center gap-1.5 min-w-0 ${activeTab === 'instagram' ? 'border-stone-800 text-stone-900 font-bold bg-stone-50' : 'border-stone-200 text-stone-500 hover:text-stone-700 hover:bg-stone-50'}`}
           >
             <Instagram size={16} /> Instagram
           </button>
@@ -831,7 +831,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('photos');
               setSearchTerm('');
             }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'photos' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item py-2 px-2 rounded-lg border transition-all flex items-center justify-center gap-1.5 min-w-0 ${activeTab === 'photos' ? 'border-stone-800 text-stone-900 font-bold bg-stone-50' : 'border-stone-200 text-stone-500 hover:text-stone-700 hover:bg-stone-50'}`}
           >
             <ImageIcon size={16} /> Fotografie
           </button>
@@ -840,7 +840,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('vouchers');
               setSearchTerm('');
             }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'vouchers' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item py-2 px-2 rounded-lg border transition-all flex items-center justify-center gap-1.5 min-w-0 ${activeTab === 'vouchers' ? 'border-stone-800 text-stone-900 font-bold bg-stone-50' : 'border-stone-200 text-stone-500 hover:text-stone-700 hover:bg-stone-50'}`}
           >
             <Gift size={16} /> Dárkové poukazy
           </button>
@@ -849,7 +849,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
               setActiveTab('orders');
               setSearchTerm('');
             }}
-            className={`mobile-carousel-strip-item pb-3 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'orders' ? 'border-stone-800 text-stone-900 font-bold' : 'border-transparent text-stone-400 hover:text-stone-600'}`}
+            className={`mobile-carousel-strip-item py-2 px-2 rounded-lg border transition-all flex items-center justify-center gap-1.5 min-w-0 ${activeTab === 'orders' ? 'border-stone-800 text-stone-900 font-bold bg-stone-50' : 'border-stone-200 text-stone-500 hover:text-stone-700 hover:bg-stone-50'}`}
           >
             <ShoppingBag size={16} /> Objednávky
           </button>
