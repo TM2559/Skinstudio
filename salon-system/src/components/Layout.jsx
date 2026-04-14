@@ -17,6 +17,7 @@ const VOUCHER_ROUTES = ['/darkove-poukazy', '/poukaz/success'];
 
 export default function Layout({ children, setView, hideFooter = false }) {
   const location = useLocation();
+  const errorResetKey = `${location.pathname}${location.search}${location.hash}`;
   const isHome = location.pathname === '/';
   const isVoucherCheckout = VOUCHER_ROUTES.includes(location.pathname);
   const [menuOpen, setMenuOpen] = useState(false);
