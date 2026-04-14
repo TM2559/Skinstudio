@@ -157,7 +157,7 @@ export default function ReservationApp({
     ? 'rounded-2xl overflow-hidden border border-stone-800 bg-stone-950 shadow-xl'
     : 'rounded-xl sm:rounded-2xl shadow-lg overflow-hidden';
   const cardStyle = isDark ? {} : { backgroundColor: 'var(--skin-white)', border: '1px solid var(--skin-beige-muted)' };
-  const innerClass = isDark ? 'p-3 sm:p-8 bg-stone-950' : 'p-3 sm:p-10 bg-white';
+  const innerClass = isDark ? 'p-4 sm:p-8 bg-stone-950' : 'p-4 sm:p-10 bg-white';
 
   if (widgetOnly) {
     return (
@@ -179,11 +179,11 @@ export default function ReservationApp({
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-2.5 sm:px-4 py-4 sm:py-8">
+    <div className="max-w-4xl mx-auto px-3 sm:px-4 py-8">
       <div className={cardClass} style={cardStyle}>
         {/* Banner – typografické logo */}
         <div
-          className="w-full border-b py-3 sm:py-8 cursor-default select-none active:opacity-95 transition-opacity text-center"
+          className="w-full border-b py-6 sm:py-8 cursor-default select-none active:opacity-95 transition-opacity text-center"
           style={{ borderColor: 'var(--skin-beige-muted)', backgroundColor: 'var(--skin-cream)' }}
           onClick={handleLogoClick}
           onKeyDown={(e) => e.key === 'Enter' && handleLogoClick()}
@@ -191,7 +191,7 @@ export default function ReservationApp({
           tabIndex={0}
           aria-label="Logo"
         >
-          <span className="font-display font-bold text-xl sm:text-3xl tracking-wide text-[var(--skin-charcoal)]">
+          <span className="font-display font-bold text-2xl sm:text-3xl tracking-wide text-[var(--skin-charcoal)]">
             Skin Studio
           </span>
         </div>
