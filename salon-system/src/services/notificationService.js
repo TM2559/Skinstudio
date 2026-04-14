@@ -68,7 +68,7 @@ export async function sendBookingConfirmations({ name, phone, email, date, time,
         });
       }
     } catch (err) {
-      console.warn('Resend booking emails failed, fallback to EmailJS:', err);
+      console.warn('sendBookingEmails callable failed, fallback to single-email callables:', err);
       results.email = await sendBookingConfirmationEmail({
         name, email: emailAddress, date: dateDisplay, time, serviceName, calendarIcsLink,
       });
@@ -136,7 +136,7 @@ export async function sendReminders(reservationsList) {
       const resendResult = await callSendReminderEmails({ reservations: reminderEmailPayload });
       emailSent = resendResult?.data?.sent ?? 0;
     } catch (err) {
-      console.warn('Resend reminder emails failed, fallback to EmailJS:', err);
+      console.warn('sendReminderEmails failed, fallback to per-reservation email callable:', err);
       for (const res of reminderEmailPayload) {
         const ok = await sendReminderEmail({
           name: res.name,

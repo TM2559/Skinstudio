@@ -20,9 +20,16 @@ export async function sendAdminNotificationEmail({ name, email, phone, date, tim
   }
 }
 
-export async function sendReminderEmail({ name, email, date, time, serviceName }) {
+export async function sendReminderEmail({ name, email, date, time, serviceName, calendarIcsLink }) {
   try {
-    const result = await callSendReminderEmail({ name, email, date, time, serviceName });
+    const result = await callSendReminderEmail({
+      name,
+      email,
+      date,
+      time,
+      serviceName,
+      ...(calendarIcsLink ? { calendarIcsLink } : {}),
+    });
     return result?.data?.sent ?? false;
   } catch (err) {
     console.error('sendReminderEmail failed:', err);

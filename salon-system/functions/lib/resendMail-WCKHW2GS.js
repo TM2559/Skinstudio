@@ -420,7 +420,8 @@ async function sendBookingEmailsInternal({
   time,
   serviceName,
   calendarLink,
-  calendarIcsLink
+  calendarIcsLink,
+  mode = "both"
 }) {
   const from = getFrom();
   const replyTo = getReplyTo();
@@ -435,52 +436,91 @@ async function sendBookingEmailsInternal({
   if (!resend) {
     return { clientOk: false, adminOk: false, clientError: "Nelze vytvo\u0159it Resend klienta." };
   }
-  const clientHtml = await renderBookingConfirmationHtml({
-    name,
-    date,
-    time,
-    serviceName,
-    calendarLink,
-    calendarIcsLink
-  });
-  const clientResult = await resend.emails.send({
-    from,
-    to: [email],
-    replyTo: replyTo || void 0,
-    subject: `Potvrzen\xED rezervace \u2013 ${serviceName || "Skin Studio"}`,
-    html: clientHtml
-  });
+  let clientOk = true;
   let clientError = "";
-  if (clientResult.error) {
-    clientError = resendErrText(clientResult.error);
-    console.error("Resend booking \u2192 klient:", clientResult.error);
-  }
-  const clientOk = !clientResult.error;
-  let adminOk = true;
-  let adminError = "";
-  if (adminTo) {
-    const adminHtml = await renderAdminNotificationHtml({
+  if (mode === "both" || mode === "clientOnly") {
+    const clientHtml = await renderBookingConfirmationHtml({
       name,
-      email,
-      phone,
       date,
       time,
       serviceName,
       calendarLink,
       calendarIcsLink
     });
-    const adminResult = await resend.emails.send({
+    const clientResult = await resend.emails.send({
       from,
-      to: [adminTo],
-      replyTo: email || replyTo || void 0,
-      subject: `Nov\xE1 rezervace \u2013 ${serviceName || "rezervace"}`,
-      html: adminHtml
+      to: [email],
+      replyTo: replyTo || void 0,
+      subject: `Potvrzen\xED rezervace \u2013 ${serviceName || "Skin Studio"}`,
+      html: clientHtml
     });
-    if (adminResult.error) {
-      adminError = resendErrText(adminResult.error);
-      console.error("Resend booking \u2192 admin:", adminResult.error);
+    if (clientResult.error) {
+      clientError = resendErrText(clientResult.error);
+      console.error("Resend booking \u2192 klient:", clientResult.error);
+      clientOk = false;
+    } else {
+      clientOk = true;
     }
-    adminOk = !adminResult.error;
+  }
+  let adminOk = true;
+  let adminError = "";
+  if (mode === "both") {
+    if (adminTo) {
+      const adminHtml = await renderAdminNotificationHtml({
+        name,
+        email,
+        phone,
+        date,
+        time,
+        serviceName,
+        calendarLink,
+        calendarIcsLink
+      });
+      const adminResult = await resend.emails.send({
+        from,
+        to: [adminTo],
+        replyTo: email || replyTo || void 0,
+        subject: `Nov\xE1 rezervace \u2013 ${serviceName || "rezervace"}`,
+        html: adminHtml
+      });
+      if (adminResult.error) {
+        adminError = resendErrText(adminResult.error);
+        console.error("Resend booking \u2192 admin:", adminResult.error);
+        adminOk = false;
+      } else {
+        adminOk = true;
+      }
+    }
+  } else if (mode === "adminOnly") {
+    if (!adminTo) {
+      adminOk = false;
+      adminError = "Chyb\xED RESEND_ADMIN_TO (functions / Firebase secrets).";
+    } else {
+      const adminHtml = await renderAdminNotificationHtml({
+        name,
+        email,
+        phone,
+        date,
+        time,
+        serviceName,
+        calendarLink,
+        calendarIcsLink
+      });
+      const adminResult = await resend.emails.send({
+        from,
+        to: [adminTo],
+        replyTo: email || replyTo || void 0,
+        subject: `Nov\xE1 rezervace \u2013 ${serviceName || "rezervace"}`,
+        html: adminHtml
+      });
+      if (adminResult.error) {
+        adminError = resendErrText(adminResult.error);
+        console.error("Resend booking \u2192 admin:", adminResult.error);
+        adminOk = false;
+      } else {
+        adminOk = true;
+      }
+    }
   }
   const out = { clientOk, adminOk };
   if (clientError) out.clientError = clientError;

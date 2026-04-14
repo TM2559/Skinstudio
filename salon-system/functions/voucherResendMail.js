@@ -1,21 +1,6 @@
 import { Resend } from 'resend';
 import { buildAdminVoucherOrderHtml, buildVoucherConfirmationHtml, buildVoucherReadyHtml } from './voucherEmailHtml.js';
-
-function getResendApiKey() {
-  return process.env.RESEND_API_KEY || '';
-}
-
-function getFrom() {
-  return process.env.RESEND_FROM || '';
-}
-
-function getReplyTo() {
-  return process.env.RESEND_REPLY_TO || '';
-}
-
-function getAdminTo() {
-  return process.env.RESEND_ADMIN_TO || '';
-}
+import { getResendApiKey, getFrom, getReplyTo, getAdminTo } from './lib/chunk-CAD7T5TA.js';
 
 function getResendClient() {
   const key = getResendApiKey();

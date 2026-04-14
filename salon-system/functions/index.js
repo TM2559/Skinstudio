@@ -8,10 +8,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { buildVoucherReadySms, buildVoucherOrderConfirmationSms } from './smsTemplates.js';
 import { sendVoucherOrderEmailsInternal, sendVoucherReadyEmailInternal } from './voucherResendMail.js';
-
-function isResendConfigured() {
-  return Boolean((process.env.RESEND_API_KEY || '') && (process.env.RESEND_FROM || ''));
-}
+import { isResendConfigured } from './lib/chunk-CAD7T5TA.js';
 
 async function loadResendMail() {
   return import('./lib/resendMail-WCKHW2GS.js');
@@ -350,6 +347,87 @@ export const sendBookingEmails = onCall({ region: 'europe-west1' }, async (reque
     ...(clientError ? { clientError } : {}),
     ...(adminError ? { adminError } : {}),
   };
+});
+
+/** Samostatné callable pro klienta (fallback z webu / opakování po chybě). */
+export const sendBookingConfirmationEmail = onCall({ region: 'europe-west1' }, async (request) => {
+  if (!isResendConfigured()) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Resend není nakonfigurován (RESEND_API_KEY, RESEND_FROM). Nastav v prostředí functions a znovu nasaď.'
+    );
+  }
+  const { name, email, date, time, serviceName, calendarIcsLink } = request.data || {};
+  if (!email || typeof email !== 'string' || !email.trim()) {
+    throw new HttpsError('invalid-argument', 'E-mail je povinný.');
+  }
+  if (!date || !time || !serviceName) {
+    throw new HttpsError('invalid-argument', 'Chybí datum, čas nebo služba.');
+  }
+  const { sendBookingEmailsInternal } = await loadResendMail();
+  const result = await sendBookingEmailsInternal({
+    name: typeof name === 'string' ? name : '',
+    email: email.trim(),
+    phone: '',
+    date,
+    time,
+    serviceName,
+    calendarLink: '',
+    calendarIcsLink: typeof calendarIcsLink === 'string' ? calendarIcsLink : '',
+    mode: 'clientOnly',
+  });
+  return { sent: result.clientOk };
+});
+
+/** Samostatné callable pro admin notifikaci (fallback z webu). */
+export const sendAdminNotificationEmail = onCall({ region: 'europe-west1' }, async (request) => {
+  if (!isResendConfigured()) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Resend není nakonfigurován (RESEND_API_KEY, RESEND_FROM). Nastav v prostředí functions a znovu nasaď.'
+    );
+  }
+  const { name, email, phone, date, time, serviceName, calendarLink, calendarIcsLink } = request.data || {};
+  if (!date || !time || !serviceName) {
+    throw new HttpsError('invalid-argument', 'Chybí datum, čas nebo služba.');
+  }
+  const { sendBookingEmailsInternal } = await loadResendMail();
+  const result = await sendBookingEmailsInternal({
+    name: typeof name === 'string' ? name : '',
+    email: typeof email === 'string' ? email : '',
+    phone: typeof phone === 'string' ? phone : '',
+    date,
+    time,
+    serviceName,
+    calendarLink: typeof calendarLink === 'string' ? calendarLink : '',
+    calendarIcsLink: typeof calendarIcsLink === 'string' ? calendarIcsLink : '',
+    mode: 'adminOnly',
+  });
+  return { sent: result.adminOk };
+});
+
+/** Jednotlivá připomínka e-mailem (fallback když batch sendReminderEmails selže). */
+export const sendReminderEmailCallable = onCall({ region: 'europe-west1' }, async (request) => {
+  if (!isResendConfigured()) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Resend není nakonfigurován (RESEND_API_KEY, RESEND_FROM). Nastav v prostředí functions a znovu nasaď.'
+    );
+  }
+  const { name, email, date, time, serviceName, calendarIcsLink } = request.data || {};
+  if (!email || typeof email !== 'string' || !email.trim()) {
+    throw new HttpsError('invalid-argument', 'E-mail je povinný.');
+  }
+  const { sendReminderEmailInternal } = await loadResendMail();
+  const ok = await sendReminderEmailInternal({
+    name,
+    email: email.trim(),
+    date,
+    time,
+    serviceName: serviceName || 'rezervace',
+    calendarIcsLink: typeof calendarIcsLink === 'string' ? calendarIcsLink : '',
+  });
+  return { sent: ok };
 });
 
 export const sendReminderEmails = onCall({ region: 'europe-west1' }, async (request) => {
