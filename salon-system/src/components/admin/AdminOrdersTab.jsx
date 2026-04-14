@@ -296,7 +296,7 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           placeholder="Hledat (jméno, telefon, e-mail, ID)…"
-          className="text-sm border border-stone-200 rounded-lg px-3 py-1.5 bg-white text-stone-800 placeholder:text-stone-400 min-w-[220px] flex-1"
+          className="text-sm border border-stone-200 rounded-lg px-3 py-1.5 bg-white text-stone-800 placeholder:text-stone-400 min-w-0 w-full sm:min-w-[220px] flex-1"
         />
         <select
           value={filterStatus}
@@ -329,7 +329,136 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
           Žádné objednávky neodpovídají filtru.
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm overflow-x-auto">
+        <>
+        <div className="md:hidden space-y-3">
+          {filteredOrders.map((o) => {
+            const log = normalizeActivityLog(o.activity_log);
+            const open = expandedId === o.id;
+            const editing = editingId === o.id;
+            return (
+              <div key={o.id} className="bg-white rounded-xl border border-stone-200 p-3 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-xs text-stone-500">{formatCreated(o.created_at)}</div>
+                    <div className="text-sm font-semibold text-stone-800">
+                      {o.is_custom_amount || (o.custom_amount_kc != null && !o.voucher_id)
+                        ? `Vlastní hodnota (${o.custom_amount_kc != null ? `${o.custom_amount_kc} Kč` : '—'})`
+                        : templateNameById[o.voucher_id] || o.voucher_id || '—'}
+                    </div>
+                    <div className="text-xs text-stone-500 mt-0.5">
+                      {packagingLabel(o.packaging)} • {formatDate(o.target_pickup_date)}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(open ? null : o.id)}
+                      className="p-1.5 rounded-md text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+                      aria-expanded={open}
+                    >
+                      {open ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => editing ? closeEdit() : openEdit(o)}
+                      className="p-1.5 rounded-md text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                  </div>
+                </div>
+                <div className="text-xs text-stone-600">
+                  <div>{o.contact_phone || '—'}</div>
+                  <div className="break-all">{o.contact_email || '—'}</div>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-stone-800">{o.total_price != null ? `${o.total_price} Kč` : '—'}</span>
+                  <select
+                    value={o.status || 'new'}
+                    disabled={updatingId === o.id}
+                    onChange={(e) => handleStatusChange(o.id, e.target.value)}
+                    className="text-sm border border-stone-200 rounded-lg px-2 py-1.5 bg-white text-stone-800 disabled:opacity-60"
+                  >
+                    {STATUS_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {editing && (
+                  <div className="space-y-2 pt-2 border-t border-stone-100">
+                    <input
+                      type="text"
+                      value={editForm.contactPhone}
+                      onChange={(e) => setEditForm((f) => ({ ...f, contactPhone: e.target.value }))}
+                      placeholder="Telefon"
+                      className="w-full border border-stone-200 rounded-lg px-2.5 py-1.5 text-sm bg-white text-stone-800"
+                    />
+                    <input
+                      type="text"
+                      value={editForm.contactEmail}
+                      onChange={(e) => setEditForm((f) => ({ ...f, contactEmail: e.target.value }))}
+                      placeholder="E-mail"
+                      className="w-full border border-stone-200 rounded-lg px-2.5 py-1.5 text-sm bg-white text-stone-800"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="date"
+                        value={editForm.targetPickupDate}
+                        onChange={(e) => setEditForm((f) => ({ ...f, targetPickupDate: e.target.value }))}
+                        className="border border-stone-200 rounded-lg px-2.5 py-1.5 text-sm bg-white text-stone-800"
+                      />
+                      <select
+                        value={editForm.packaging}
+                        onChange={(e) => setEditForm((f) => ({ ...f, packaging: e.target.value }))}
+                        className="border border-stone-200 rounded-lg px-2.5 py-1.5 text-sm bg-white text-stone-800"
+                      >
+                        <option value="envelope">Obálka</option>
+                        <option value="box">Krabička</option>
+                      </select>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleEditSave(o.id)}
+                        disabled={savingId === o.id}
+                        className="text-xs font-medium px-3 py-1.5 rounded-lg bg-stone-800 text-white hover:bg-stone-700 disabled:opacity-60"
+                      >
+                        {savingId === o.id ? 'Ukládám…' : 'Uložit'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeEdit}
+                        className="text-xs font-medium px-3 py-1.5 rounded-lg border border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                      >
+                        Zrušit
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {open && (
+                  <div className="text-xs text-stone-600 bg-stone-50 rounded-lg border border-stone-100 p-2">
+                    <div className="font-semibold text-stone-700 mb-2">Historie objednávky a zpráv</div>
+                    {log.length === 0 ? (
+                      <p className="text-stone-500 italic">Bez historie.</p>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {log.map((entry, idx) => (
+                          <li key={idx} className="flex gap-2">
+                            <span className="text-stone-400 shrink-0">{formatActivityAt(entry.at)}</span>
+                            <span>{describeActivity(entry) || 'Událost v systému.'}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="hidden md:block bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm overflow-x-auto">
           <table className="w-full text-left text-sm min-w-[820px]">
             <thead>
               <tr className="border-b border-stone-200 bg-stone-50/80">
@@ -507,6 +636,7 @@ export default function AdminOrdersTab({ voucherOrders = [], voucherTemplates = 
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

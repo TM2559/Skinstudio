@@ -771,7 +771,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           </div>
         </div>
 
-        <div className="mobile-carousel-strip flex gap-6 text-sm font-medium">
+        <div className="mobile-carousel-strip overflow-x-auto -mx-4 px-4 flex gap-4 text-sm font-medium">
           <button
             onClick={() => {
               setActiveTab('bookings');

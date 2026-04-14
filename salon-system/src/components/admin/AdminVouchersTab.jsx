@@ -15,7 +15,60 @@ function VoucherTable({
   if (vouchers.length === 0) return null;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
+      <div className="md:hidden space-y-2 p-3">
+        {vouchers.map((v) => (
+          <div key={v.id} className="rounded-lg border border-stone-200 bg-white p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="font-medium text-stone-800">{v.name}</div>
+                <div className="text-xs text-stone-500 mt-0.5">{typeLabel(v.type)}</div>
+                <div className="text-xs text-stone-600 mt-1">
+                  {v.is_custom_amount
+                    ? `od ${v.price ?? '—'} Kč (vlastní)`
+                    : v.price != null
+                      ? `${v.price} Kč`
+                      : '—'}
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={displayActive(v)}
+                aria-label={displayActive(v) ? 'Aktivní – vypnout' : 'Neaktivní – zapnout'}
+                onClick={() => onToggle(v.id)}
+                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-1 ${
+                  displayActive(v) ? 'bg-stone-800 border-stone-800' : 'bg-stone-200 border-stone-200'
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    displayActive(v) ? 'translate-x-5' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+            <div className="mt-2 flex justify-end gap-1">
+              <button
+                type="button"
+                onClick={() => onEdit(v)}
+                className="p-2 text-stone-400 hover:text-stone-800 rounded-lg hover:bg-stone-100"
+                aria-label={`Upravit ${v.name}`}
+              >
+                <Edit2 size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(v.id)}
+                className="p-2 text-stone-400 hover:text-red-500 rounded-lg hover:bg-red-50"
+                aria-label={`Smazat ${v.name}`}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <table className="hidden md:table w-full text-left text-sm">
         <thead>
           <tr className="border-b border-stone-200 bg-stone-50/80">
             <th className="px-4 py-3 font-semibold text-stone-700">Název</th>
