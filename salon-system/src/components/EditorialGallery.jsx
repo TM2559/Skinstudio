@@ -39,8 +39,10 @@ export default function EditorialGallery({ category, theme = 'light' }) {
         const tb = b.createdAt?.toMillis?.() ?? b.createdAt ?? 0;
         return tb - ta;
       });
+      docsByPathRef.current = [list];
+      setItems(mergeByImageUrl(docsByPathRef.current).slice(0, MAX_ITEMS));
     });
-    return () => unsubs.forEach((u) => u());
+    return () => unsub();
   }, [category]);
 
   if (items.length === 0) return null;

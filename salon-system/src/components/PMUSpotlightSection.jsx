@@ -19,7 +19,7 @@ function useSpotlightPmuImage() {
       const best = list.find((item) => item.imageAfterUrl?.trim()) || list.find((item) => item.imageBeforeUrl?.trim());
       setImageUrl(best?.imageAfterUrl?.trim() || best?.imageBeforeUrl?.trim() || null);
     });
-    return () => unsubs.forEach((u) => u());
+    return () => unsub();
   }, []);
   return imageUrl;
 }

@@ -53,7 +53,7 @@ export default function CosmeticsPage({ services = [] }) {
       list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
       setTransformations(list);
     });
-    return () => unsubs.forEach((u) => u());
+    return () => unsubT();
   }, []);
 
   // Sync pagination dot with carousel scroll position (mobile)
