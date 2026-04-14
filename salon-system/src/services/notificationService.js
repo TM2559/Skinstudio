@@ -14,22 +14,24 @@ import { Utils } from '../utils/helpers';
 export async function sendBookingConfirmations({ name, phone, email, date, time, serviceName, duration, calendarLink, calendarIcsLink }) {
   const dateDisplay = Utils.formatDateDisplay(date);
   const results = { sms: false, email: false, adminEmail: false };
+  const emailAddress = typeof email === 'string' ? email.trim() : '';
+  const phoneNumber = typeof phone === 'string' ? phone.trim() : '';
 
-  if (phone?.trim()) {
+  if (phoneNumber) {
     try {
-      await callSendConfirmationSms({ phone: phone.trim(), name, date, time, serviceName, duration });
+      await callSendConfirmationSms({ phone: phoneNumber, name, date, time, serviceName, duration });
       results.sms = true;
     } catch (err) {
       console.warn('SMS confirmation failed:', err);
     }
   }
 
-  if (email?.trim()) {
+  if (emailAddress) {
     try {
       const resendResult = await callSendBookingEmails({
         name,
-        email,
-        phone,
+        email: emailAddress,
+        phone: phoneNumber,
         date: dateDisplay,
         time,
         serviceName,
@@ -38,13 +40,40 @@ export async function sendBookingConfirmations({ name, phone, email, date, time,
       });
       results.email = Boolean(resendResult?.data?.clientOk);
       results.adminEmail = Boolean(resendResult?.data?.adminOk);
+
+      // If bulk endpoint returns partial/failed result, retry only missing parts
+      // through dedicated callables to maximize delivery reliability.
+      if (!results.email) {
+        console.warn('sendBookingEmails returned clientOk=false, trying direct fallback');
+        results.email = await sendBookingConfirmationEmail({
+          name,
+          email: emailAddress,
+          date: dateDisplay,
+          time,
+          serviceName,
+          calendarIcsLink,
+        });
+      }
+      if (!results.adminEmail) {
+        console.warn('sendBookingEmails returned adminOk=false, trying direct fallback');
+        results.adminEmail = await sendAdminNotificationEmail({
+          name,
+          email: emailAddress,
+          phone: phoneNumber,
+          date: dateDisplay,
+          time,
+          serviceName,
+          calendarLink,
+          calendarIcsLink,
+        });
+      }
     } catch (err) {
       console.warn('Resend booking emails failed, fallback to EmailJS:', err);
       results.email = await sendBookingConfirmationEmail({
-        name, email, date: dateDisplay, time, serviceName, calendarIcsLink,
+        name, email: emailAddress, date: dateDisplay, time, serviceName, calendarIcsLink,
       });
       results.adminEmail = await sendAdminNotificationEmail({
-        name, email, phone, date: dateDisplay, time, serviceName, calendarLink, calendarIcsLink,
+        name, email: emailAddress, phone: phoneNumber, date: dateDisplay, time, serviceName, calendarLink, calendarIcsLink,
       });
     }
   }

@@ -14,6 +14,12 @@ export default class ErrorBoundary extends React.Component {
     console.error('ErrorBoundary:', error, info);
   }
 
+  componentDidUpdate(prevProps) {
+    if (this.state.hasError && this.props.resetKey !== prevProps.resetKey) {
+      this.setState({ hasError: false });
+    }
+  }
+
   render() {
     if (this.state.hasError) {
       return (
@@ -28,6 +34,13 @@ export default class ErrorBoundary extends React.Component {
             <p className="text-stone-600 text-sm mb-6">
               Omlouváme se, aplikace narazila na chybu. Zkuste stránku obnovit.
             </p>
+            <button
+              type="button"
+              onClick={() => this.setState({ hasError: false })}
+              className="px-6 py-3 rounded-full font-semibold text-sm uppercase tracking-widest transition-all text-stone-700 bg-stone-100 hover:bg-stone-200 mr-2"
+            >
+              Zkusit znovu
+            </button>
             <button
               type="button"
               onClick={() => window.location.reload()}
