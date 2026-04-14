@@ -6,6 +6,7 @@ import InstagramShowcase from './InstagramShowcase';
 import { TaglineWithHeart } from './FooterTagline';
 import DeveloperSignature from './DeveloperSignature';
 import { WEB_CONTENT } from '../constants/content';
+import ErrorBoundary from './ErrorBoundary';
 
 const getNav = () => {
   return [...WEB_CONTENT.header.navItems];
@@ -164,7 +165,11 @@ export default function Layout({ children, setView, hideFooter = false }) {
       </header>
       )}
 
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 flex flex-col">
+        <ErrorBoundary resetKey={errorResetKey} layout="embedded">
+          {children}
+        </ErrorBoundary>
+      </main>
 
       {!isVoucherCheckout && <InstagramShowcase />}
 

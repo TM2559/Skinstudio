@@ -21,12 +21,16 @@ export default class ErrorBoundary extends React.Component {
   }
 
   render() {
+    const layout = this.props.layout === 'embedded' ? 'embedded' : 'fullscreen';
+
     if (this.state.hasError) {
+      const shellClass =
+        layout === 'embedded'
+          ? 'flex flex-1 items-center justify-center px-4 py-16 font-sans'
+          : 'min-h-screen flex items-center justify-center px-4 font-sans';
+
       return (
-        <div
-          className="min-h-screen flex items-center justify-center px-4 font-sans"
-          style={{ backgroundColor: 'var(--skin-cream)' }}
-        >
+        <div className={shellClass} style={{ backgroundColor: 'var(--skin-cream)' }}>
           <div className="max-w-md w-full p-8 rounded-2xl border shadow-lg bg-white border-stone-100 text-center">
             <h1 className="text-xl font-display font-semibold text-stone-800 mb-2">
               Něco se pokazilo

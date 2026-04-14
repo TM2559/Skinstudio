@@ -3,6 +3,7 @@ import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useData } from './contexts/DataContext';
 import { useAdminAuth } from './contexts/AdminAuthContext';
 
@@ -59,14 +60,23 @@ export default function App() {
         <Route
           path="/pmu"
           element={
-            <PMUPage
-              services={data.servicesWithAddons}
-              schedule={data.schedulePmu}
-              reservations={data.reservations}
-            />
+            <ErrorBoundary resetKey={location.key}>
+              <PMUPage
+                services={data.servicesWithAddons}
+                schedule={data.schedulePmu}
+                reservations={data.reservations}
+              />
+            </ErrorBoundary>
           }
         />
-        <Route path="/dekujeme" element={<ThankYouPage />} />
+        <Route
+          path="/dekujeme"
+          element={
+            <ErrorBoundary resetKey={location.key}>
+              <ThankYouPage />
+            </ErrorBoundary>
+          }
+        />
         <Route path="/darkove-poukazy" element={<Navigate to="/" replace />} />
         <Route path="/poukaz/success" element={<Navigate to="/" replace />} />
         <Route
