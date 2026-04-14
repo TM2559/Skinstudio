@@ -319,7 +319,7 @@ const AdminServicesTab = ({
             onDrop={(e) => onDrop(e, index)}
             style={{ cursor: 'move' }}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="flex flex-col gap-1 mr-1 md:hidden">
                 <button
                   onClick={() => moveService(index, -1)}
@@ -339,8 +339,8 @@ const AdminServicesTab = ({
               <div className="hidden md:block">
                 <GripVertical className="text-stone-300" size={16} />
               </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-bold text-stone-800">{s.name}</span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-bold text-stone-800 truncate">{s.name}</span>
                 <div className="flex gap-2 mt-1 flex-wrap items-center">
                   <span className="text-[10px] font-bold text-stone-500">{s.isStartingPrice ? `od ${s.price} Kč` : `${s.price} Kč`}</span>
                   <span className="text-[10px] text-stone-300">{s.duration} min</span>

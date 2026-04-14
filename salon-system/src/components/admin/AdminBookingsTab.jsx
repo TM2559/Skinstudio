@@ -271,7 +271,7 @@ const AdminBookingsTab = ({
                     className="w-full text-left p-4 bg-white border border-stone-200 rounded-xl hover:border-stone-300 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-[90px]">
+                      <div className="min-w-[72px] sm:min-w-[90px]">
                         <div className="text-2xl font-semibold text-stone-400 leading-none">{res.time}</div>
                       </div>
                       <div className="flex-1">

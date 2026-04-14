@@ -279,9 +279,9 @@ const AdminShiftsTab = ({
                     >
                       {TYPE_LABELS_UPPER[type]}
                     </span>
-                    <div className="flex items-center gap-2 shrink-0 basis-full sm:basis-auto sm:flex-initial order-3 sm:order-none">
+                    <div className="flex items-center gap-2 min-w-0 basis-full sm:basis-auto sm:flex-initial order-3 sm:order-none">
                       {periodsK.length > 0 || periodsP.length > 0 ? (
-                        <span className="text-sm text-stone-600 font-normal">
+                        <span className="text-sm text-stone-600 font-normal break-words">
                           {periodsK.length > 0 && `Kosmetika: ${periodsK.map((p) => `${p.start} — ${p.end}`).join(', ')}`}
                           {periodsK.length > 0 && periodsP.length > 0 && ' | '}
                           {periodsP.length > 0 && `PMU: ${periodsP.map((p) => `${p.start} — ${p.end}`).join(', ')}`}

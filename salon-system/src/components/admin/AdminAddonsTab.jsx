@@ -89,7 +89,7 @@ const AdminAddonsTab = ({ addons, onAddonsChange }) => {
             className="w-full p-3 border border-stone-200 rounded-lg text-sm"
           />
           <div className="space-y-2">
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pt-3">Typ ceny</span>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input

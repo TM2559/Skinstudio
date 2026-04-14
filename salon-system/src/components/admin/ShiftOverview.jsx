@@ -188,7 +188,7 @@ export default function ShiftOverview({
             >
               <ChevronLeft size={20} />
             </button>
-            <h3 className="font-display font-semibold text-stone-800 text-lg min-w-[160px] text-center">
+            <h3 className="font-display font-semibold text-stone-800 text-base sm:text-lg min-w-0 text-center">
               {MONTH_NAMES[viewMonth]} {viewYear}
             </h3>
             <button

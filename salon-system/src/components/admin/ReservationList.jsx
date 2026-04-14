@@ -35,12 +35,12 @@ const ReservationList = ({ data, emptyMsg, onSelectOrder, onAddReservation, toda
           `}
           style={isAnonymous ? { opacity: 0.85 } : undefined}
         >
-          <div className="flex justify-between items-start">
-            <div className="flex gap-4 items-center">
-              <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg ${isToday ? 'bg-stone-800 text-white' : 'bg-stone-50 text-stone-500'}`}>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+            <div className="flex gap-3 items-start sm:items-center min-w-0">
+              <div className={`flex flex-col items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-lg shrink-0 ${isToday ? 'bg-stone-800 text-white' : 'bg-stone-50 text-stone-500'}`}>
                 <span className="text-lg font-bold leading-none">{res.time}</span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <h4 className="font-bold text-stone-900 flex items-center gap-2">
                   {res.name}
                   {isAnonymous && (
@@ -52,17 +52,17 @@ const ReservationList = ({ data, emptyMsg, onSelectOrder, onAddReservation, toda
                     </span>
                   )}
                 </h4>
-                <div className="text-xs text-stone-500 flex items-center gap-2 mt-1">
+                <div className="text-xs text-stone-500 flex items-center gap-2 mt-1 min-w-0">
                   <span className="font-medium">{Utils.formatDateDisplay(res.date)}</span>
                   <span>•</span>
-                  <span>{res.serviceName}</span>
+                  <span className="truncate">{res.serviceName}</span>
                 </div>
               </div>
             </div>
-            <div className="text-right hidden sm:block">
+            <div className="text-left sm:text-right">
               <div className="text-xs font-bold text-stone-400">{res.phone || res.email || '—'}</div>
               {res.reminderSent && (
-                <div className="text-[9px] text-green-500 font-bold mt-1 flex items-center justify-end gap-1">
+                <div className="text-[9px] text-green-500 font-bold mt-1 flex items-center sm:justify-end gap-1">
                   <Mail size={10} /> Odesláno
                 </div>
               )}
