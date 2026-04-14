@@ -71,10 +71,10 @@ export default function ServiceSelector({ services, selectedService, selectedUps
               }`}
               style={!isDark && isSelected ? { borderLeftColor: 'var(--skin-gold-dark)' } : undefined}
             >
-              <div className="flex justify-between items-start gap-4 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4 min-w-0">
                 <span className={`text-sm leading-tight break-words min-w-0 ${isDark ? (isSelected ? 'font-bold text-white' : 'font-medium text-stone-200') : isSelected ? 'font-bold text-stone-900' : 'font-medium text-stone-800'}`}>{s.name}</span>
                 {!(isSelected && s.isStartingPrice) && (
-                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap ${isDark ? 'text-[#daa59c] bg-stone-800' : 'text-stone-700 bg-stone-100'}`}>
+                  <span className={`text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap self-start sm:self-auto ${isDark ? 'text-[#daa59c] bg-stone-800' : 'text-stone-700 bg-stone-100'}`}>
                     {s.isStartingPrice ? `od ${s.price} Kč` : `${s.price} Kč`}
                   </span>
                 )}
