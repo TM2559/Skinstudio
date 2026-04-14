@@ -180,6 +180,20 @@ const AdminServicesTab = ({
           rows={4}
           className="w-full p-3 border rounded-lg text-sm resize-y min-h-[80px]"
         />
+        <label className="flex items-start gap-2 mt-2 p-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-700 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!serviceForm.availableForGiftVoucher}
+            onChange={(e) => setServiceForm({ ...serviceForm, availableForGiftVoucher: e.target.checked })}
+            className="rounded border-stone-300 w-4 h-4 shrink-0 mt-0.5"
+          />
+          <span>
+            <span className="font-medium">Dárkový poukaz</span>
+            <span className="block text-xs text-stone-500 mt-0.5">
+              Po uložení služby se automaticky zveřejní jako poukaz na webu (a v administraci v Dárkové poukazy). Ruční úpravu stále najdete tam.
+            </span>
+          </span>
+        </label>
       </div>
       <div className="flex gap-2">
         <button

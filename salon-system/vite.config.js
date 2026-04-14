@@ -27,6 +27,10 @@ function sitemapPlugin() {
 
 export default defineConfig({
   server: {
+    // localhost i 127.0.0.1 jsou pro WebAuthn různé originy – výchozí odkaz v terminálu je localhost (sjednocení s běžnými návody).
+    host: 'localhost',
+    port: 5173,
+    strictPort: false,
     proxy: {
       '/api': { target: 'http://localhost:3001', changeOrigin: true },
     },
@@ -47,6 +51,9 @@ export default defineConfig({
     sitemapPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
+      devOptions: {
+        enabled: false,
+      },
       manifest: {
         name: 'Skin Studio',
         short_name: 'SkinStudio',

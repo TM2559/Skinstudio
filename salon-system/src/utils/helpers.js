@@ -207,6 +207,38 @@ export const Utils = {
     return url.toString();
   },
 
+  /**
+   * HTTPS URL na Cloud Function calendarIcs – tlačítko „Přidat do Apple Kalendáře“ v e-mailu.
+   * projectId: např. import.meta.env.VITE_FIREBASE_PROJECT_ID
+   */
+  createCalendarIcsHttpUrl: (projectId, dateStr, timeStr, durationMinutes, title, description) => {
+    if (!projectId) return '';
+    let year, month, day;
+    if (dateStr.includes('-')) {
+      const parts = dateStr.split('-');
+      if (parts[0].length === 4) {
+        [year, month, day] = parts;
+      } else {
+        [day, month, year] = parts;
+      }
+    } else {
+      return '';
+    }
+    const startDate = new Date(`${year}-${month}-${day}T${timeStr}:00`);
+    if (Number.isNaN(startDate.getTime())) return '';
+    const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
+    const compact = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const base = `https://europe-west1-${projectId}.cloudfunctions.net/calendarIcs`;
+    const params = new URLSearchParams({
+      start: compact(startDate),
+      end: compact(endDate),
+      sum: (title || 'Rezervace Skin Studio').slice(0, 500),
+    });
+    if (description) params.set('desc', String(description).slice(0, 4000));
+    params.set('loc', 'Masarykovo nám. 72, Uherský Brod');
+    return `${base}?${params.toString()}`;
+  },
+
   downloadICSFile: (dateStr, timeStr, durationMinutes, title, description) => {
     let year, month, day;
     if (dateStr.includes('-')) {

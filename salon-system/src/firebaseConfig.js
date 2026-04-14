@@ -32,13 +32,6 @@ const firebaseConfig = isCanvas
       appId: getEnv('VITE_FIREBASE_APP_ID'),
     };
 
-export const EMAILJS_CONFIG = {
-  SERVICE_ID: getEnv('VITE_EMAILJS_SERVICE_ID'),
-  CONFIRM_TEMPLATE: getEnv('VITE_EMAILJS_CONFIRM_TEMPLATE_ID'),
-  REMINDER_TEMPLATE: getEnv('VITE_EMAILJS_REMINDER_TEMPLATE_ID'),
-  PUBLIC_KEY: getEnv('VITE_EMAILJS_PUBLIC_KEY')
-};
-
 // Instagram – celá URL nebo jen username (např. skinstudio.uhb)
 const instagramUrl = getEnv('VITE_INSTAGRAM_URL');
 const instagramUsername = getEnv('VITE_INSTAGRAM_USERNAME');
@@ -83,7 +76,7 @@ export { auth, db, storage };
 // Důležité: V Canvasu se data ukládají pod artifacts/<appId>/public/data/<colName>,
 // lokálně přímo do <colName>.
 export const getCollectionPath = (colName) =>
-  isVitestNoKey
+  useFirebaseMocks
     ? {}
     : isCanvas
       ? collection(db, 'artifacts', appId, 'public', 'data', colName)
@@ -94,45 +87,11 @@ export const getCollectionPathString = (colName) =>
   isVitestNoKey ? '' : isCanvas ? `artifacts/${appId}/public/data/${colName}` : colName;
 
 export const getDocPath = (colName, docId) =>
-  isVitestNoKey
+  useFirebaseMocks
     ? {}
     : isCanvas
       ? doc(db, 'artifacts', appId, 'public', 'data', colName, docId)
       : doc(db, colName, docId);
-
-/**
- * Galerie a proměny (fotky na webu) – zápis vždy do kořene.
- * Používejte pouze pro: gallery_items, transformation_items.
- */
-export const getPublicContentCollectionPath = (colName) =>
-  isVitestNoKey ? {} : collection(db, colName);
-
-export const getPublicContentDocPath = (colName, docId) =>
-  isVitestNoKey ? {} : doc(db, colName, docId);
-
-/** Cesta k veřejnému obsahu (vždy jen název kolekce). */
-export const getPublicContentCollectionPathString = (colName) =>
-  isVitestNoKey ? '' : colName;
-
-/**
- * Pro ČTENÍ galerie a proměn: vrací pole cest (kořen + artifacts),
- * aby se zobrazila i data uložená v Canvasu pod artifacts. Zápis zůstává jen do kořene.
- * Na lokále se zkouší i artifacts (appId z VITE_FIREBASE_ARTIFACTS_APP_ID nebo default-app-id).
- */
-export const getPublicContentCollectionPathsForRead = (colName) => {
-  if (isVitestNoKey) return [];
-  const root = collection(db, colName);
-  const artifactsPath = collection(db, 'artifacts', appId, 'public', 'data', colName);
-  return [root, artifactsPath];
-};
-
-/** Dokument pro mazání podle zdroje (0 = kořen, 1 = artifacts). */
-export const getPublicContentDocPathBySourceIndex = (colName, docId, sourcePathIndex) => {
-  if (isVitestNoKey) return {};
-  return sourcePathIndex === 0
-    ? doc(db, colName, docId)
-    : doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
-};
 
 export const callSendConfirmationSms = useFirebaseMocks
   ? () => Promise.resolve({ data: {} })
@@ -141,6 +100,12 @@ export const callSendConfirmationSms = useFirebaseMocks
 export const callSendReminderSms = useFirebaseMocks
   ? () => Promise.resolve({ data: { sent: 0, errors: [] } })
   : httpsCallable(functions, 'sendReminderSms');
+export const callSendBookingEmails = useFirebaseMocks
+  ? () => Promise.resolve({ data: { clientOk: true, adminOk: true } })
+  : httpsCallable(functions, 'sendBookingEmails');
+export const callSendReminderEmails = useFirebaseMocks
+  ? () => Promise.resolve({ data: { sent: 0, errors: [] } })
+  : httpsCallable(functions, 'sendReminderEmails');
 
 // Admin password verification (server-side)
 export const callVerifyAdminPassword = useFirebaseMocks
@@ -154,9 +119,38 @@ export const getAdminWebAuthnRegistrationOptions = useFirebaseMocks
 export const verifyAdminWebAuthnRegistration = useFirebaseMocks
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'verifyAdminWebAuthnRegistration');
+export const getAdminWebAuthnConfigured = useFirebaseMocks
+  ? () => Promise.resolve({ data: { configured: false } })
+  : httpsCallable(functions, 'getAdminWebAuthnConfigured');
 export const getAdminWebAuthnLoginOptions = useFirebaseMocks
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'getAdminWebAuthnLoginOptions');
 export const verifyAdminWebAuthnLogin = useFirebaseMocks
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'verifyAdminWebAuthnLogin');
+
+export const callCreateVoucherOrder = useFirebaseMocks
+  ? () => Promise.resolve({ data: { orderId: 'test-id', total_price: 0 } })
+  : httpsCallable(functions, 'createVoucherOrder');
+export const callUpdateVoucherOrderStatus = useFirebaseMocks
+  ? () => Promise.resolve({ data: { success: true, smsSent: false } })
+  : httpsCallable(functions, 'updateVoucherOrderStatus');
+
+// Resend email callables
+export const callSendBookingConfirmationEmail = useFirebaseMocks
+  ? () => Promise.resolve({ data: { sent: true } })
+  : httpsCallable(functions, 'sendBookingConfirmationEmail');
+export const callSendAdminNotificationEmail = useFirebaseMocks
+  ? () => Promise.resolve({ data: { sent: true } })
+  : httpsCallable(functions, 'sendAdminNotificationEmail');
+export const callSendReminderEmail = useFirebaseMocks
+  ? () => Promise.resolve({ data: { sent: true } })
+  : httpsCallable(functions, 'sendReminderEmailCallable');
+
+export const callSendAdminVoucherOrderEmail = useFirebaseMocks
+  ? () => Promise.resolve({ data: { sent: true } })
+  : httpsCallable(functions, 'sendAdminVoucherOrderEmail');
+
+export const callUpdateVoucherOrder = useFirebaseMocks
+  ? () => Promise.resolve({ data: { success: true } })
+  : httpsCallable(functions, 'updateVoucherOrder');

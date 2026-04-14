@@ -1,0 +1,15 @@
+---
+description: Hero sekce (obrázek, titul) – neměnit bez souhlasu nebo zadání
+globs: salon-system/src/components/CosmeticsPage.jsx
+alwaysApply: true
+---
+
+# Hero sekce – neměnit bez souhlasu
+
+**Tyto věci nesmí být měněny bez explicitního souhlasu nebo zadání uživatele:**
+
+- **Hero fotka (portrét)** – `object-fit`, `object-position` (oříznutí), zdroj obrázku (`lucie-portrait.jpg`)
+- **Hero title** – zalamování, `max-width` kontejneru, `break-words` / `whitespace-*` na nadpisu
+- **Hero layout** – pořadí bloků (text vs. obrázek), grid/breakpointy, výška sekce
+
+**Aktuální stav je schválený – na hero sekci nesahat.** Před jakoukoli změnou hero v `CosmeticsPage.jsx` se zeptat nebo počkat na explicitní instrukci uživatele.

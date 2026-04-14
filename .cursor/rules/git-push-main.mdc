@@ -1,0 +1,11 @@
+---
+description: Git push = produkce (větev main)
+alwaysApply: true
+---
+
+# Git: push = na produkci
+
+Když uživatel řekne **push**, **pushni na produkci** nebo **deploy na produkci**, vždy mysli na větev **main** (ne dev).
+
+- **Commit a push** = commitnout změny a pushnout na **main** (produkce).
+- Po pushi na main se spustí GitHub Actions (build + deploy na Firebase).

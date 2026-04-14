@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { query, where, onSnapshot } from 'firebase/firestore';
-import { getPublicContentCollectionPathsForRead } from '../firebaseConfig';
+import { getCollectionPath, isFirebaseRuntimeConfigured } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, COSMETICS_CATEGORY } from '../constants/cosmetics';
 import { WEB_CONTENT } from '../constants/content';
 import { filterCosmeticsServices } from '../utils/helpers';
@@ -45,24 +45,13 @@ export default function CosmeticsPage({ services = [] }) {
   }, []);
 
   useEffect(() => {
-    const colRefs = getPublicContentCollectionPathsForRead(TRANSFORMATIONS_COLLECTION);
-    if (!colRefs.length) return;
-    const docsByPathRef = { current: colRefs.map(() => []) };
-    const unsubs = colRefs.map((colT, idx) => {
-      const qT = query(colT, where('category', '==', COSMETICS_CATEGORY));
-      return onSnapshot(qT, (snap) => {
-        docsByPathRef.current[idx] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        const merged = docsByPathRef.current.flat();
-        const seen = new Set();
-        const list = merged.filter((item) => {
-          const key = [item.imageBeforeUrl, item.imageAfterUrl].filter(Boolean).join('|') || item.id;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-        list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-        setTransformations(list);
-      });
+    if (!isFirebaseRuntimeConfigured) return;
+    const colT = getCollectionPath(TRANSFORMATIONS_COLLECTION);
+    const qT = query(colT, where('category', '==', COSMETICS_CATEGORY));
+    const unsubT = onSnapshot(qT, (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      setTransformations(list);
     });
     return () => unsubs.forEach((u) => u());
   }, []);

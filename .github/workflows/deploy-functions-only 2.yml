@@ -1,0 +1,35 @@
+# Nasazení pouze Cloud Functions (SMS, připomínky, format-content).
+# Spusť ručně: Actions → Deploy Functions only → Run workflow.
+# Žádný build ani testy – jen deploy funkcí na produkci.
+name: Deploy Functions only
+on:
+  workflow_dispatch:
+jobs:
+  deploy_functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Functions dependencies
+        working-directory: salon-system/functions
+        run: npm ci
+
+      - name: Create Functions .env
+        working-directory: salon-system/functions
+        run: |
+          cat > .env <<EOL
+          BULKGATE_APPLICATION_ID=${{ secrets.BULKGATE_APPLICATION_ID }}
+          BULKGATE_APPLICATION_TOKEN=${{ secrets.BULKGATE_APPLICATION_TOKEN }}
+          BULKGATE_SENDER_ID=${{ secrets.BULKGATE_SENDER_ID }}
+          BULKGATE_SENDER_ID_VALUE=${{ secrets.BULKGATE_SENDER_ID_VALUE }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          EOL
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TM_RESERVATIONS }}
+
+      - name: Deploy Cloud Functions
+        working-directory: salon-system
+        run: npx firebase-tools deploy --only functions --project tm-reservations --non-interactive

@@ -11,6 +11,7 @@ vi.mock('firebase/auth', () => ({
     authStateCallback = cb;
     return vi.fn();
   }),
+  onIdTokenChanged: vi.fn(() => vi.fn()),
   signInWithCustomToken: vi.fn(),
 }));
 
@@ -22,6 +23,7 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('../firebaseConfig', () => ({
   auth: {},
   getCollectionPath: vi.fn((name) => ({ _path: name })),
+  getDocPath: vi.fn(() => ({ id: 'voucher' })),
 }));
 
 vi.mock('../utils/helpers', () => ({
@@ -36,6 +38,8 @@ vi.mock('../constants/config', () => ({
     SERVICES: 'services',
     ADDONS: 'addons',
     SERVICE_ADDON_LINKS: 'service_addon_links',
+    VOUCHER_TEMPLATES: 'voucher_templates',
+    VOUCHER_ORDERS: 'voucher_orders',
   },
 }));
 
@@ -60,6 +64,7 @@ describe('DataContext', () => {
     expect(result.current.reservations).toEqual([]);
     expect(result.current.services).toEqual([]);
     expect(result.current.addons).toEqual([]);
+    expect(result.current.voucherTemplates).toEqual([]);
     expect(result.current.schedule).toEqual({});
   });
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { query, where, onSnapshot } from 'firebase/firestore';
-import { getPublicContentCollectionPathsForRead } from '../firebaseConfig';
+import { getCollectionPath, isFirebaseRuntimeConfigured } from '../firebaseConfig';
 import { GALLERY_COLLECTION } from '../constants/cosmetics';
 
 const MAX_ITEMS = 6;
@@ -29,15 +29,15 @@ export default function EditorialGallery({ category, theme = 'light' }) {
   const docsByPathRef = useRef([]);
 
   useEffect(() => {
-    const colRefs = getPublicContentCollectionPathsForRead(GALLERY_COLLECTION);
-    if (!colRefs.length) return;
-    docsByPathRef.current = colRefs.map(() => []);
-    const unsubs = colRefs.map((col, idx) => {
-      const q = query(col, where('category', '==', category));
-      return onSnapshot(q, (snap) => {
-        docsByPathRef.current[idx] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        const merged = mergeByImageUrl(docsByPathRef.current);
-        setItems(merged.filter((i) => i.imageUrl?.trim()).slice(0, MAX_ITEMS));
+    if (!isFirebaseRuntimeConfigured) return;
+    const col = getCollectionPath(GALLERY_COLLECTION);
+    const q = query(col, where('category', '==', category));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => {
+        const ta = a.createdAt?.toMillis?.() ?? a.createdAt ?? 0;
+        const tb = b.createdAt?.toMillis?.() ?? b.createdAt ?? 0;
+        return tb - ta;
       });
     });
     return () => unsubs.forEach((u) => u());

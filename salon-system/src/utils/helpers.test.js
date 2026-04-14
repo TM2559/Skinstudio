@@ -245,3 +245,24 @@ describe('Utils createGoogleCalendarLink', () => {
     expect(url).toContain('text=Rezervace');
   });
 });
+
+describe('Utils createCalendarIcsHttpUrl', () => {
+  it('returns empty string without project id', () => {
+    expect(Utils.createCalendarIcsHttpUrl('', '26-01-2026', '10:00', 60, 'T', 'D')).toBe('');
+  });
+
+  it('builds HTTPS URL to calendarIcs with start, end, sum', () => {
+    const url = Utils.createCalendarIcsHttpUrl(
+      'my-project',
+      '26-01-2026',
+      '10:00',
+      60,
+      'REZERVACE: Test',
+      'Klient: A'
+    );
+    expect(url).toContain('https://europe-west1-my-project.cloudfunctions.net/calendarIcs');
+    expect(url).toContain('start=');
+    expect(url).toContain('end=');
+    expect(url).toContain('sum=');
+  });
+});

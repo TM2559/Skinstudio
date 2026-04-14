@@ -16,7 +16,15 @@ const noop = () => {};
 const defaultProps = {
   services: defaultServices,
   editingServiceId: null,
-  serviceForm: { name: '', price: '', duration: '60', description: '', category: 'STANDARD', isStartingPrice: false },
+  serviceForm: {
+    name: '',
+    price: '',
+    duration: '60',
+    description: '',
+    category: 'STANDARD',
+    isStartingPrice: false,
+    availableForGiftVoucher: false,
+  },
   setServiceForm: vi.fn(),
   onService: vi.fn(),
   onDeleteService: vi.fn(),
@@ -53,6 +61,7 @@ describe('AdminServicesTab', () => {
           description: 'Popis masáže',
           category: 'STANDARD',
           isStartingPrice: false,
+          availableForGiftVoucher: false,
         }}
       />
     );
@@ -69,7 +78,15 @@ describe('AdminServicesTab', () => {
       <AdminServicesTab
         {...defaultProps}
         editingServiceId="s1"
-        serviceForm={{ name: 'Masáž', price: 800, duration: '60', description: '', category: 'STANDARD', isStartingPrice: false }}
+        serviceForm={{
+          name: 'Masáž',
+          price: 800,
+          duration: '60',
+          description: '',
+          category: 'STANDARD',
+          isStartingPrice: false,
+          availableForGiftVoucher: false,
+        }}
         onCancelEdit={onCancelEdit}
       />
     );
@@ -151,7 +168,15 @@ describe('AdminServicesTab', () => {
       });
 
       const setServiceForm = vi.fn();
-      const serviceForm = { name: 'Masáž', price: 800, duration: '60', description: 'hrubý text', category: 'STANDARD' };
+      const serviceForm = {
+        name: 'Masáž',
+        price: 800,
+        duration: '60',
+        description: 'hrubý text',
+        category: 'STANDARD',
+        isStartingPrice: false,
+        availableForGiftVoucher: false,
+      };
       render(<AdminServicesTab {...defaultProps} setServiceForm={setServiceForm} serviceForm={serviceForm} />);
       fireEvent.click(screen.getByRole('button', { name: /AI Vylepšit/i }));
 

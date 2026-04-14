@@ -103,9 +103,19 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
     setIsSending(true);
 
     try {
+      const calendarTitle = `REZERVACE: ${selectedService.name} (${formData.name})`;
+      const calendarDesc = `Klient: ${formData.name}, Tel: ${formData.phone}`;
       const calendarLink = Utils.createGoogleCalendarLink(
         activeDateStr, selectedTime, parseInt(selectedService.duration),
-        `REZERVACE: ${selectedService.name} (${formData.name})`, `Klient: ${formData.name}, Tel: ${formData.phone}`
+        calendarTitle, calendarDesc
+      );
+      const calendarIcsLink = Utils.createCalendarIcsHttpUrl(
+        import.meta.env.VITE_FIREBASE_PROJECT_ID,
+        activeDateStr,
+        selectedTime,
+        parseInt(selectedService.duration),
+        calendarTitle,
+        calendarDesc
       );
 
       await addDoc(getCollectionPath(COLLECTIONS.RESERVATIONS), {
@@ -131,6 +141,7 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
         serviceName: selectedService.name,
         duration: parseInt(selectedService.duration),
         calendarLink,
+        calendarIcsLink,
       });
 
       if (onBookingSuccess) onBookingSuccess();

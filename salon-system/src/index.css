@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Konfigurátor poukazu – krátký „shake“ při zaměření na chybu */
+@keyframes voucher-form-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+@layer utilities {
+  .animate-voucher-form-shake {
+    animation: voucher-form-shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+}
+
 /* Skin Studio – paleta z titulky: teplý krém, zlatý akcent, uhlově černá */
 :root {
   --skin-cream: #f7f4ec;
