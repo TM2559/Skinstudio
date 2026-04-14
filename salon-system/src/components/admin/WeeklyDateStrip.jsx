@@ -3,6 +3,7 @@ import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Utils } from '../../utils/helpers';
 
 const STRIP_DAYS = 14;
+const STRIP_BACK_DAYS = 4;
 
 const MONTH_NAMES = [
   'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
@@ -25,26 +26,18 @@ const addMonthsISO = (iso, delta) => {
  * Aktivní den = adminDateInput (ISO). Šipky mění měsíc; kalendář (label) pro libovolné datum.
  * Pruh je ukotěný kolem vybraného dne (ne vždy od „dnes“).
  */
-const WeeklyDateStrip = ({ adminDateInput, setAdminDateInput, reservations, dateInputId }) => {
+const WeeklyDateStrip = ({ adminDateInput, setAdminDateInput, reservations, schedule = {}, onOpenDatePicker }) => {
   const activeDateKey = Utils.getDateKeyFromISO(adminDateInput);
+  const todayIso = Utils.getLocalISODate();
+  const todayKey = Utils.getDateKeyFromISO(todayIso);
 
-  const { dates, countByDate, monthLabel } = useMemo(() => {
-    const today = new Date();
-    const fallbackY = today.getFullYear();
-    const fallbackM = today.getMonth() + 1;
-    const fallbackD = today.getDate();
-    const parts = adminDateInput ? adminDateInput.split('-').map(Number) : [];
-    const valid = parts.length === 3 && !parts.some(Number.isNaN);
-    const [y, m, d] = valid ? parts : [fallbackY, fallbackM, fallbackD];
-
-    const start = new Date(y, m - 1, d);
-    start.setDate(start.getDate() - 3);
-
+  const { dates, countByDate, shiftByDate } = useMemo(() => {
+    const baseDate = adminDateInput ? new Date(`${adminDateInput}T00:00:00`) : new Date();
     const dates = [];
-    for (let i = 0; i < STRIP_DAYS; i++) {
-      const dObj = new Date(start);
-      dObj.setDate(start.getDate() + i);
-      const dateKey = Utils.formatDateKey(dObj);
+    for (let i = -STRIP_BACK_DAYS; i < STRIP_DAYS - STRIP_BACK_DAYS; i++) {
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() + i);
+      const dateKey = Utils.formatDateKey(d);
       dates.push({
         dateKey,
         iso: Utils.getISOFromDateKey(dateKey),
@@ -52,83 +45,97 @@ const WeeklyDateStrip = ({ adminDateInput, setAdminDateInput, reservations, date
         dayShort: Utils.getDayOfWeekShort(dateKey),
       });
     }
+    const shiftByDate = {};
+    Object.entries(schedule || {}).forEach(([dateKey, day]) => {
+      shiftByDate[dateKey] = !!(day && (day.periods?.length > 0 || day.start));
+    });
 
     const countByDate = {};
     (reservations || []).forEach((r) => {
-      if (r.date) countByDate[r.date] = (countByDate[r.date] || 0) + 1;
+      if (r?.date) countByDate[r.date] = (countByDate[r.date] || 0) + 1;
     });
 
-    const monthLabel = `${MONTH_NAMES[m - 1]} ${y}`;
-    return { dates, countByDate, monthLabel };
-  }, [adminDateInput, reservations]);
+    return { dates, countByDate, shiftByDate };
+  }, [adminDateInput, reservations, schedule, todayIso]);
+
+  const activeLabel = Utils.formatDateWithDayLong(activeDateKey);
 
   return (
-    <div className="flex flex-col gap-2 w-full">
-      <div className="flex items-center gap-2 w-full">
-        <div className="flex items-center flex-1 min-w-0 gap-1">
+    <div className="w-full space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Vybrané datum</p>
+          <p className="text-sm font-semibold text-stone-800 truncate">{activeLabel}</p>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            onClick={() => setAdminDateInput(addMonthsISO(adminDateInput, -1))}
-            className="flex-shrink-0 p-2.5 rounded-lg text-stone-600 hover:bg-stone-100 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Předchozí měsíc"
-            title="Předchozí měsíc"
+            onClick={() => setAdminDateInput(todayIso)}
+            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-colors ${
+              activeDateKey === todayKey
+                ? 'bg-stone-800 text-white'
+                : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+            }`}
+            title="Přejít na dnešek"
           >
-            <ChevronLeft size={20} />
+            Dnes
           </button>
-          <span className="flex-1 text-center text-sm font-semibold text-stone-800 truncate px-1">
-            {monthLabel}
-          </span>
           <button
             type="button"
-            onClick={() => setAdminDateInput(addMonthsISO(adminDateInput, 1))}
-            className="flex-shrink-0 p-2.5 rounded-lg text-stone-600 hover:bg-stone-100 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Další měsíc"
-            title="Další měsíc"
+            onClick={onOpenDatePicker}
+            className="flex-shrink-0 p-2 rounded-lg text-gray-500 hover:bg-stone-100 hover:text-gray-700 transition-colors border border-transparent"
+            title="Vybrat datum"
+            aria-label="Otevřít kalendář"
           >
-            <ChevronRight size={20} />
+            <Calendar size={18} />
           </button>
         </div>
-        <label
-          htmlFor={dateInputId}
-          className="flex-shrink-0 p-2.5 rounded-lg text-gray-500 hover:bg-stone-100 hover:text-gray-700 transition-colors cursor-pointer touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
-          title="Vybrat datum"
-          aria-label="Otevřít kalendář"
-        >
-          <Calendar size={18} />
-        </label>
       </div>
-      <div className="flex items-center gap-2 w-full">
-        <div
-          className="flex flex-1 overflow-x-auto gap-1 pb-1 scrollbar-hide min-w-0"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {dates.map(({ dateKey, iso, dayNum, dayShort }) => {
-            const isActive = dateKey === activeDateKey;
-            const count = countByDate[dateKey] || 0;
-            return (
-              <button
-                key={dateKey}
-                type="button"
-                onClick={() => setAdminDateInput(iso)}
-                className={`flex-shrink-0 flex flex-col items-center justify-center min-w-[3rem] py-2 px-1 rounded-lg transition-all
+
+      <div className="flex overflow-x-auto gap-1 pb-1 scrollbar-hide min-w-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {dates.map(({ dateKey, iso, dayNum, dayShort }) => {
+          const isActive = dateKey === activeDateKey;
+          const isToday = dateKey === todayKey;
+          const count = countByDate[dateKey] || 0;
+          const hasShift = !!shiftByDate[dateKey];
+          return (
+            <button
+              key={dateKey}
+              type="button"
+              onClick={() => setAdminDateInput(iso)}
+              className={`flex-shrink-0 flex flex-col items-center justify-center min-w-[3.25rem] py-2 px-1 rounded-lg border transition-all
                 ${isActive
-                  ? 'bg-[#1A1A1A] text-white font-semibold'
-                  : 'bg-transparent text-gray-500 hover:text-gray-700 hover:bg-stone-100'
+                  ? 'bg-[#1A1A1A] text-white font-semibold border-[#1A1A1A]'
+                  : isToday
+                    ? 'bg-white text-stone-700 border-stone-300'
+                    : 'bg-transparent text-gray-500 border-transparent hover:text-gray-700 hover:bg-stone-100'
                 }`}
-                title={Utils.formatDateDisplay(dateKey)}
-              >
-                <span className="text-[10px] uppercase tracking-wide">{dayShort}</span>
-                <span className="text-base font-bold leading-tight">{dayNum}</span>
+              title={Utils.formatDateDisplay(dateKey)}
+            >
+              <span className="text-[10px] uppercase tracking-wide">{dayShort}</span>
+              <span className="text-base font-bold leading-tight">{dayNum}</span>
+              <span className="mt-0.5 flex items-center gap-1">
+                {hasShift && (
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full border ${isActive ? 'border-white' : 'border-stone-500'}`}
+                    aria-label="Vypsaná směna"
+                  />
+                )}
                 {count > 0 && (
                   <span
-                    className={`mt-0.5 w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : 'bg-black'}`}
+                    className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : 'bg-black'}`}
                     aria-label={`${count} rezervací`}
                   />
                 )}
-              </button>
-            );
-          })}
-        </div>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center gap-3 text-[11px] text-stone-500">
+        <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full border border-stone-500" /> směna</span>
+        <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-black" /> rezervace</span>
       </div>
     </div>
   );

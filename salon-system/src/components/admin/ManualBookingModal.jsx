@@ -14,6 +14,7 @@ const ManualBookingModal = ({
   manualForm,
   setManualForm,
   manualAvailableSlots,
+  manualPrefillSlot,
   hasShifts,
   onSubmit,
   isSubmitting,
@@ -27,6 +28,13 @@ const ManualBookingModal = ({
         (s) => (s.category || SERVICE_CATEGORY_STANDARD) === (isPmu ? SERVICE_CATEGORY_PMU : SERVICE_CATEGORY_STANDARD)
       )
     : [];
+  const selectedService = services.find((s) => s.id === manualForm.serviceId);
+  const selectedServiceDuration = Number(selectedService?.duration || 0);
+  const selectedSlotDuration = Number(manualPrefillSlot?.duration || 0);
+  const selectedSlotTooShort =
+    selectedSlotDuration > 0 &&
+    selectedServiceDuration > 0 &&
+    selectedServiceDuration > selectedSlotDuration;
 
   const handleCategoryChange = (cat) => {
     setManualForm({ ...manualForm, category: cat, serviceId: '', time: '' });
@@ -82,7 +90,7 @@ const ManualBookingModal = ({
               disabled={!selectedCategory}
               className="w-full p-3 border rounded-lg text-sm bg-white disabled:opacity-60 disabled:cursor-not-allowed"
               value={manualForm.serviceId}
-              onChange={(e) => setManualForm({ ...manualForm, serviceId: e.target.value, time: '' })}
+              onChange={(e) => setManualForm({ ...manualForm, serviceId: e.target.value })}
             >
               <option value="">
                 {selectedCategory ? 'Vyberte službu...' : 'Nejdříve zvolte kategorii'}
@@ -91,6 +99,12 @@ const ManualBookingModal = ({
                 <option key={s.id} value={s.id}>{s.name} ({s.duration} min)</option>
               ))}
             </select>
+            {selectedSlotTooShort && (
+              <p className="mt-1.5 text-xs text-amber-700">
+                Vybraná procedura ({selectedServiceDuration} min) je delší než zvolený volný slot (
+                {selectedSlotDuration} min). Zvolte kratší proceduru nebo jiný čas.
+              </p>
+            )}
           </div>
 
           <div>
@@ -117,6 +131,9 @@ const ManualBookingModal = ({
                 disabled={!manualForm.serviceId}
               >
                 <option value="">Vyberte čas...</option>
+                {manualForm.time && !manualAvailableSlots.includes(manualForm.time) && (
+                  <option value={manualForm.time}>{manualForm.time}</option>
+                )}
                 {manualAvailableSlots.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
