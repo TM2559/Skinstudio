@@ -18,6 +18,9 @@ dist-ssr
 .idea
 .DS_Store
 .env
+.env.*
+functions/.env*
+!functions/.env.example
 *.suo
 *.ntvs*
 *.njsproj

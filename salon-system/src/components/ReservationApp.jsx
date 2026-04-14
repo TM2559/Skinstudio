@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { Loader2, Lock, ScanFace } from 'lucide-react';
-import { startAuthentication } from '@simplewebauthn/browser';
-import { platformAuthenticatorIsAvailable } from '@simplewebauthn/browser';
 import CustomerView from './CustomerView';
 import AdminView from './AdminView';
 import useSEO from '../hooks/useSEO';
@@ -14,11 +12,18 @@ import {
   getAdminWebAuthnRegistrationOptions,
   verifyAdminWebAuthnRegistration,
 } from '../firebaseConfig';
-import { startRegistration } from '@simplewebauthn/browser';
 import { ensureAnonymousAuthForCallable, packWebAuthnCredentialForCallable } from '../utils/webAuthnCallable';
 
 /** Kratší než server CHALLENGE_TTL (5 min) – po expiraci znovu načíst options. */
 const WEBAUTHN_LOGIN_OPTIONS_MAX_AGE_MS = 4 * 60 * 1000;
+let webAuthnBrowserModulePromise = null;
+
+async function loadWebAuthnBrowserModule() {
+  if (!webAuthnBrowserModulePromise) {
+    webAuthnBrowserModulePromise = import('@simplewebauthn/browser');
+  }
+  return webAuthnBrowserModulePromise;
+}
 
 export default function ReservationApp({
   loading,
@@ -60,9 +65,15 @@ export default function ReservationApp({
 
   useEffect(() => {
     let cancelled = false;
-    platformAuthenticatorIsAvailable().then((ok) => {
-      if (!cancelled) setFaceIdAvailable(!!ok);
-    });
+    (async () => {
+      try {
+        const { platformAuthenticatorIsAvailable } = await loadWebAuthnBrowserModule();
+        const ok = await platformAuthenticatorIsAvailable();
+        if (!cancelled) setFaceIdAvailable(!!ok);
+      } catch {
+        if (!cancelled) setFaceIdAvailable(false);
+      }
+    })();
     return () => { cancelled = true; };
   }, []);
 
@@ -244,6 +255,7 @@ export default function ReservationApp({
                           options = data;
                           webAuthnLoginOptionsRef.current = { options: data, fetchedAt: Date.now() };
                         }
+                        const { startAuthentication } = await loadWebAuthnBrowserModule();
                         const assertion = await startAuthentication({ optionsJSON: options });
                         await ensureAnonymousAuthForCallable();
                         const assertionPayload = packWebAuthnCredentialForCallable(assertion);
@@ -349,6 +361,7 @@ export default function ReservationApp({
                         const origin = window.location.origin;
                         const { data: options } = await getAdminWebAuthnRegistrationOptions({ password: adminPassword, origin });
                         if (!options) throw new Error('Nepodařilo načíst možnosti.');
+                        const { startRegistration } = await loadWebAuthnBrowserModule();
                         const credential = await startRegistration({ optionsJSON: options });
                         const { data } = await verifyAdminWebAuthnRegistration({
                           password: adminPassword,
