@@ -86,6 +86,25 @@ export const getCollectionPath = (colName) =>
 export const getCollectionPathString = (colName) =>
   isVitestNoKey ? '' : isCanvas ? `artifacts/${appId}/public/data/${colName}` : colName;
 
+// Public content helpers (galerie + proměny): support both root and artifacts for read compatibility.
+export const getPublicContentCollectionPath = (colName) => getCollectionPath(colName);
+
+export const getPublicContentCollectionPathString = (colName) => getCollectionPathString(colName);
+
+export const getPublicContentCollectionPathsForRead = (colName) => {
+  if (useFirebaseMocks) return [{}];
+  if (isCanvas) return [collection(db, 'artifacts', appId, 'public', 'data', colName)];
+  return [collection(db, colName), collection(db, 'artifacts', appId, 'public', 'data', colName)];
+};
+
+export const getPublicContentDocPathBySourceIndex = (colName, docId, sourcePathIndex = 0) => {
+  if (useFirebaseMocks) return {};
+  if (isCanvas) return doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
+  return sourcePathIndex === 1
+    ? doc(db, 'artifacts', appId, 'public', 'data', colName, docId)
+    : doc(db, colName, docId);
+};
+
 export const getDocPath = (colName, docId) =>
   useFirebaseMocks
     ? {}
