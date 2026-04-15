@@ -113,7 +113,7 @@ const AdminAddonsTab = ({ addons, onAddonsChange }) => {
               </label>
             </div>
             <div className="flex gap-3 flex-wrap">
-              <div className="flex-1 min-w-[120px]">
+              <div className="flex-1 min-w-0 sm:min-w-[120px]">
                 <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Výchozí cena (Kč)</label>
                 <input
                   type="number"

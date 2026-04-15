@@ -179,7 +179,7 @@ export default function ReservationApp({
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-0 sm:px-4 py-0 sm:py-8">
+    <div className="max-w-4xl mx-auto px-2 sm:px-4 py-0 sm:py-8">
       <div className={cardClass} style={cardStyle}>
         {/* Banner – typografické logo */}
         <div

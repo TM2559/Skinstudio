@@ -238,7 +238,7 @@ const AdminServicesTab = ({
                         i === index ? { ...r, addon_id: e.target.value } : r
                       )
                     )}
-                  className="flex-1 min-w-[140px] p-2 border border-stone-200 rounded-lg text-sm bg-white"
+                  className="flex-1 min-w-0 sm:min-w-[140px] p-2 border border-stone-200 rounded-lg text-sm bg-white"
                 >
                   <option value="">Vyberte add-on...</option>
                   {addons
