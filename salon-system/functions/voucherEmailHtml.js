@@ -238,7 +238,7 @@ export function buildVoucherReadyHtml({
         ${detailRow('Adresa', escapeHtml(BRAND.addressLine))}
       </div>
       <p style="${confirmMuted}">
-        Napište nám, kdy vám to vyhovuje přijít — odpovíme co nejdříve.
+        Napište nám, kdy si chcete poukaz vyzvednout — odpovíme co nejdříve.
         Kontakt: <a href="mailto:${BRAND.emailReservations}" style="${confirmLink}">${BRAND.emailReservations}</a>
         nebo <a href="${BRAND.phoneTel}" style="${confirmLink}">${BRAND.phone}</a>.
       </p>

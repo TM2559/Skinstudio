@@ -12,6 +12,8 @@ const CosmeticsPage = lazy(() => import('./components/CosmeticsPage'));
 const PMUPage = lazy(() => import('./components/PMUPage'));
 const ThankYouPage = lazy(() => import('./components/ThankYouPage'));
 const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
+const GiftVoucherCheckoutPage = lazy(() => import('./components/voucher/GiftVoucherCheckoutPage'));
+const VoucherSuccessPage = lazy(() => import('./components/voucher/VoucherSuccessPage'));
 
 function PageLoader() {
   return (
@@ -77,8 +79,22 @@ export default function App() {
             </ErrorBoundary>
           }
         />
-        <Route path="/darkove-poukazy" element={<Navigate to="/" replace />} />
-        <Route path="/poukaz/success" element={<Navigate to="/" replace />} />
+        <Route
+          path="/darkove-poukazy"
+          element={
+            <ErrorBoundary resetKey={location.key}>
+              <GiftVoucherCheckoutPage />
+            </ErrorBoundary>
+          }
+        />
+        <Route
+          path="/poukaz/success"
+          element={
+            <ErrorBoundary resetKey={location.key}>
+              <VoucherSuccessPage />
+            </ErrorBoundary>
+          }
+        />
         <Route
           path="/zpracovani-osobnich-udaju"
           element={

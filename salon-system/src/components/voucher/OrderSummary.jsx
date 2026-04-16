@@ -11,6 +11,7 @@ export default function OrderSummary({
   isSubmitting,
   onSubmit,
   canSubmit,
+  ctaClassName = '',
 }) {
   const voucherLabel = selectedVoucher
     ? selectedVoucher.is_custom_amount
@@ -81,12 +82,12 @@ export default function OrderSummary({
           type="button"
           onClick={onSubmit}
           disabled={isSubmitting}
-          className="w-full bg-[#171717] text-white font-medium py-4 text-[15px] tracking-wide hover:bg-black transition-colors disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A880]"
+          className={`w-full bg-[#171717] text-white font-medium py-4 text-[15px] tracking-wide hover:bg-black transition-colors disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A880] ${ctaClassName}`.trim()}
         >
-          {isSubmitting ? 'Odesílám…' : 'Závazně objednat'}
+          {isSubmitting ? 'Odesílám…' : 'Dokončit objednávku poukazu'}
         </button>
         <p className="text-[12px] text-[#737373] text-center mt-3">
-          Po odeslání vás budeme kontaktovat telefonicky.
+          Potvrzení objednávky posíláme do 30 minut v pracovní době.
         </p>
       </div>
     </div>
