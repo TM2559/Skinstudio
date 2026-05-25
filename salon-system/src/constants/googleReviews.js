@@ -2,7 +2,7 @@ export const GOOGLE_REVIEWS = [
   {
     "id": "g1",
     "name": "Simeona Jedlička",
-    "roleOrDate": "před 3 týdny",
+    "roleOrDate": "před měsícem",
     "rating": 5,
     "text": "Skin Studio paní Metelkové navštěvuju pravidelně a její služby jsou jednoduše top. Svědomitá péče, stoprocentní soustředění na potřeby klientky, přátelský přístup, ale i naprosto úžasná masáž dekoltu a obličeje, hlavy či zábal rukou, to vše v příjemném prostředí na pohodlném lůžku, jsou pro mě zárukou tolik potřebného odpočinku a času pro sebe sama. Krásně ošetřená pleť či skvěle upravené obočí jsou navíc u paní Metelkové naprostý standard."
   },
@@ -30,7 +30,7 @@ export const GOOGLE_REVIEWS = [
   {
     "id": "g5",
     "name": "Jana Toralová",
-    "roleOrDate": "před měsícem",
+    "roleOrDate": "před 2 měsíci",
     "rating": 5,
     "text": "Zlaté ručičky, klid, relax, pohoda, odpočinek a tak bych mohla pokračovat. 🙂\nKdyž jdu k Lucince, okolní svět přestane existovat a já si naprosto užívám její péči. Poradila si s mou problematickou pletí, díky ní mám vždy krásné obočí a u jejích masáží pravidelně usínám. Pokaždé odcházím jako znovuzrozená a těším se na další návštěvu.\nDěkuji za vše ❤️"
   }
