@@ -23,7 +23,7 @@ export const GOOGLE_REVIEWS = [
   {
     "id": "g4",
     "name": "Anna Kolarikova",
-    "roleOrDate": "před měsícem",
+    "roleOrDate": "před 2 měsíci",
     "rating": 5,
     "text": "K Lucii chodím na lash lifting a úpravu + barvení obočí  a jsem maximálně spokojená! :) Upřímně – trvalo mi víc než dva roky, než jsem ve Zlínském kraji našla někoho takhle šikovného, po tom, co jsem se přestěhovala z Prahy.\n\nLucie pracuje velmi pečlivě, má cit pro detail a výsledek je vždy přirozený. Lucie je moc příjemná, takže se k ní člověk rád vrací. 🤗\n\nPokud hledáte opravdu kvalitní lash lifting a úpravu obočí, právě jste je našli. 🤍"
   },
