@@ -1,31 +1,31 @@
 export const GOOGLE_REVIEWS = [
   {
     "id": "g1",
-    "name": "Simeona Jedlička",
-    "roleOrDate": "před měsícem",
+    "name": "Aneta Zelová",
+    "roleOrDate": "před 2 měsíci",
     "rating": 5,
-    "text": "Skin Studio paní Metelkové navštěvuju pravidelně a její služby jsou jednoduše top. Svědomitá péče, stoprocentní soustředění na potřeby klientky, přátelský přístup, ale i naprosto úžasná masáž dekoltu a obličeje, hlavy či zábal rukou, to vše v příjemném prostředí na pohodlném lůžku, jsou pro mě zárukou tolik potřebného odpočinku a času pro sebe sama. Krásně ošetřená pleť či skvěle upravené obočí jsou navíc u paní Metelkové naprostý standard."
+    "text": "K Lucce jsem přišla s rozjetým hormonálním akné, které mě trápilo už delší dobu. Nastavily jsme spolu péči včetně chemického peelingu a doporučené kosmetiky, kterou jsem zakoupila přímo v salónu.🌸\n\nMoje pleť se postupně výrazně zlepšila. Není to o zázracích přes noc – chce to čas a trpělivost, a právě tu se mnou Paní Lucka má, za což jsem jí opravdu vděčná.\n\nChodím i na lash lift a vždy odcházím spokojená. Velmi oceňuji individuální přístup, pečlivost a to, že vše navrhuje podle aktuálních potřeb pleti. Je vidět, že jí na klientech záleží.☺️\n\nMůžu jen doporučit – nejen kvůli výsledkům, ale i kvůli celkovému přístupu a příjemné atmosféře.✨🤍"
   },
   {
     "id": "g2",
-    "name": "Lenka Horalíková",
-    "roleOrDate": "před měsícem",
+    "name": "Marcela Soukenikova",
+    "roleOrDate": "před 2 měsíci",
     "rating": 5,
-    "text": "Moc děkuju Luci za skvělou chvíli péče a dozvídaní se více o mé pleti. Jde prostě vidět, citit i slyšet, že děláš to, co tě naplňuje a že to děláš srdíčkem❤️😘určitě dám na tvé rady a určitě jsem u tebe nebyla naposled♥️děkuju! Určitě doporučuju všema deseti!"
+    "text": "Dnes jsem si dopřála chvilku pro sebe a nemohla jsem si vybrat lépe. Tento salon je pro mě opravdovou oázou klidu. Hned po příchodu vás okouzlí nádherné a vkusné prostředí, ve kterém se člověk okamžitě cítí příjemně. Oceňuji ale především profesionální přístup Lucky, která vždy volí péči dle aktuálního stavu pleti a umí dobře poradit. Ráda bych vyzdvihla i velmi uvolňující masáž, kterou po náročném týdnu potřebuje každá žena. Je to jedno z mála míst, kde si opravdu odpočinu v naprostém klidu. Pokud hledáte relaxaci, spojenou s kvalitní péčí, určitě se nespletete. Vždy se sem ráda vracím."
   },
   {
     "id": "g3",
-    "name": "Hana Janíková",
-    "roleOrDate": "před měsícem",
+    "name": "Aneta Šimková",
+    "roleOrDate": "před 2 měsíci",
     "rating": 5,
-    "text": "Do Skin Studia si chodím odpočinout. Je to čas jen pro mě, kdy nic nedělám, na nic nemyslím a nechávám se opečovávat. Relaxace, kterou si zaslouží každá žena. Výsledek jde vidět hned po ošetření. Pleť je vždy krásná, projasněná, hydratovaná, uvolněná. Kosmetika Medik8 mi opravdu vyhovuje. Nejvíc oceňuji důkladnou masáž obličeje, dekoltu i šíje. Lucka je moc milá a příjemná. I proto k ní chodím ráda a pravidelně. Vždy se mnou i vše zkonzultuje a poradí, co používat. Doporučuji Skin Studio všem ženám, které si chtějí odpočinout a zároveň udělat něco pro svou pleť. ❤️"
+    "text": "Strašně mě mrzí, že jsem studio objevila až poté, co jsem se odstěhovala z rodné vesnice. Nicméně mě zaujala nabídka permanentního make-upu, se kterým paní Metelková začínala. Zpočátku jsem měla trochu obavy, ale můj vnitřní pocit mi říkal, že výsledek bude boží. A opravdu – už nějakou dobu mám permanent a rty jsou naprosto krásné. Vybrali jsme skvělý odstín, který mi perfektně sedí – rty jsou výrazné, ale přitom přirozené a nic přehnaného. Celé prostředí a atmosféra studia jsou naprosto bezchybné. Člověk se tam cítí opravdu skvěle a to i přesto, že jde na permanent a ví, že to nebude bez bolesti. Už teď vím, že s procedurou budu určitě pokračovat, protože ta péče a výsledky jsou naprosto úžasné. Dekuji a všem moc doporučuji!!!"
   },
   {
     "id": "g4",
-    "name": "Anna Kolarikova",
+    "name": "Hana Janíková",
     "roleOrDate": "před 2 měsíci",
     "rating": 5,
-    "text": "K Lucii chodím na lash lifting a úpravu + barvení obočí  a jsem maximálně spokojená! :) Upřímně – trvalo mi víc než dva roky, než jsem ve Zlínském kraji našla někoho takhle šikovného, po tom, co jsem se přestěhovala z Prahy.\n\nLucie pracuje velmi pečlivě, má cit pro detail a výsledek je vždy přirozený. Lucie je moc příjemná, takže se k ní člověk rád vrací. 🤗\n\nPokud hledáte opravdu kvalitní lash lifting a úpravu obočí, právě jste je našli. 🤍"
+    "text": "Do Skin Studia si chodím odpočinout. Je to čas jen pro mě, kdy nic nedělám, na nic nemyslím a nechávám se opečovávat. Relaxace, kterou si zaslouží každá žena. Výsledek jde vidět hned po ošetření. Pleť je vždy krásná, projasněná, hydratovaná, uvolněná. Kosmetika Medik8 mi opravdu vyhovuje. Nejvíc oceňuji důkladnou masáž obličeje, dekoltu i šíje. Lucka je moc milá a příjemná. I proto k ní chodím ráda a pravidelně. Vždy se mnou i vše zkonzultuje a poradí, co používat. Doporučuji Skin Studio všem ženám, které si chtějí odpočinout a zároveň udělat něco pro svou pleť. ❤️"
   },
   {
     "id": "g5",
