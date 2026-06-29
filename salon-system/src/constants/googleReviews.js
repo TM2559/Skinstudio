@@ -16,14 +16,14 @@ export const GOOGLE_REVIEWS = [
   {
     "id": "g3",
     "name": "Marcela Soukenikova",
-    "roleOrDate": "před 2 měsíci",
+    "roleOrDate": "před 3 měsíci",
     "rating": 5,
     "text": "Dnes jsem si dopřála chvilku pro sebe a nemohla jsem si vybrat lépe. Tento salon je pro mě opravdovou oázou klidu. Hned po příchodu vás okouzlí nádherné a vkusné prostředí, ve kterém se člověk okamžitě cítí příjemně. Oceňuji ale především profesionální přístup Lucky, která vždy volí péči dle aktuálního stavu pleti a umí dobře poradit. Ráda bych vyzdvihla i velmi uvolňující masáž, kterou po náročném týdnu potřebuje každá žena. Je to jedno z mála míst, kde si opravdu odpočinu v naprostém klidu. Pokud hledáte relaxaci, spojenou s kvalitní péčí, určitě se nespletete. Vždy se sem ráda vracím."
   },
   {
     "id": "g4",
     "name": "Aneta Šimková",
-    "roleOrDate": "před 2 měsíci",
+    "roleOrDate": "před 3 měsíci",
     "rating": 5,
     "text": "Strašně mě mrzí, že jsem studio objevila až poté, co jsem se odstěhovala z rodné vesnice. Nicméně mě zaujala nabídka permanentního make-upu, se kterým paní Metelková začínala. Zpočátku jsem měla trochu obavy, ale můj vnitřní pocit mi říkal, že výsledek bude boží. A opravdu – už nějakou dobu mám permanent a rty jsou naprosto krásné. Vybrali jsme skvělý odstín, který mi perfektně sedí – rty jsou výrazné, ale přitom přirozené a nic přehnaného. Celé prostředí a atmosféra studia jsou naprosto bezchybné. Člověk se tam cítí opravdu skvěle a to i přesto, že jde na permanent a ví, že to nebude bez bolesti. Už teď vím, že s procedurou budu určitě pokračovat, protože ta péče a výsledky jsou naprosto úžasné. Dekuji a všem moc doporučuji!!!"
   },
