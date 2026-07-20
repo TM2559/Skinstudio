@@ -9,7 +9,7 @@ export const GOOGLE_REVIEWS = [
   {
     "id": "g2",
     "name": "Aneta Zelová",
-    "roleOrDate": "před 3 měsíci",
+    "roleOrDate": "před 4 měsíci",
     "rating": 5,
     "text": "K Lucce jsem přišla s rozjetým hormonálním akné, které mě trápilo už delší dobu. Nastavily jsme spolu péči včetně chemického peelingu a doporučené kosmetiky, kterou jsem zakoupila přímo v salónu.🌸\n\nMoje pleť se postupně výrazně zlepšila. Není to o zázracích přes noc – chce to čas a trpělivost, a právě tu se mnou Paní Lucka má, za což jsem jí opravdu vděčná.\n\nChodím i na lash lift a vždy odcházím spokojená. Velmi oceňuji individuální přístup, pečlivost a to, že vše navrhuje podle aktuálních potřeb pleti. Je vidět, že jí na klientech záleží.☺️\n\nMůžu jen doporučit – nejen kvůli výsledkům, ale i kvůli celkovému přístupu a příjemné atmosféře.✨🤍"
   },
