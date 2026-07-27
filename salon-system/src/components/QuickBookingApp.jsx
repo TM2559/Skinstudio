@@ -13,7 +13,7 @@ import {
 import { ensureAnonymousAuthForCallable, packWebAuthnCredentialForCallable } from '../utils/webAuthnCallable';
 import { COLLECTIONS } from '../constants/config';
 import { useData } from '../contexts/DataContext';
-import { Utils } from '../utils/helpers';
+import { Utils, isPmuService } from '../utils/helpers';
 import { sendBookingConfirmations } from '../services/notificationService';
 
 /**
@@ -23,7 +23,7 @@ import { sendBookingConfirmations } from '../services/notificationService';
  * Zapisuje do stejné kolekce `reservations` jako web/admin (source: 'app').
  */
 export default function QuickBookingApp() {
-  const { services, reservations } = useData();
+  const { services, reservations, schedule, schedulePmu } = useData();
 
   // --- Auth ---
   const [authState, setAuthState] = useState('checking'); // checking | need-login | authed
@@ -147,6 +147,34 @@ export default function QuickBookingApp() {
 
   const selectedService = bookableServices.find((s) => s.id === serviceId) || null;
   const dateKey = Utils.getDateKeyFromISO(date);
+
+  // Rozvrh podle typu služby (PMU má vlastní), volné sloty stejně jako web/admin.
+  const activeSchedule = useMemo(() => {
+    if (selectedService && isPmuService(selectedService) && schedulePmu && Object.keys(schedulePmu).length > 0) {
+      return schedulePmu;
+    }
+    return schedule || {};
+  }, [selectedService, schedule, schedulePmu]);
+
+  const dayData = activeSchedule[dateKey];
+  const hasShifts = !!(dayData && (dayData.periods?.length > 0 || dayData.start));
+
+  const availableSlots = useMemo(() => {
+    if (!selectedService || !hasShifts) return [];
+    const periods = dayData.periods || (dayData.start ? [{ start: dayData.start, end: dayData.end }] : []);
+    const booked = reservations
+      .filter((r) => r.date === dateKey)
+      .map((r) => ({
+        start: Utils.timeToMinutes(r.time),
+        end: Utils.timeToMinutes(r.time) + (Number(r.duration) || 60),
+      }));
+    return Utils.getSmartSlots(periods, parseInt(selectedService.duration, 10) || 60, booked);
+  }, [selectedService, hasShifts, dayData, reservations, dateKey]);
+
+  // Změna služby nebo data → zruš dřívější výběr času (jiné sloty).
+  useEffect(() => {
+    setTime('');
+  }, [serviceId, date]);
 
   const overlap = useMemo(() => {
     if (!selectedService || !time) return null;
@@ -325,15 +353,49 @@ export default function QuickBookingApp() {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelCls}>Datum</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} required />
-          </div>
-          <div>
-            <label className={labelCls}>Čas</label>
-            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} step="900" className={inputCls} required />
-          </div>
+        <div>
+          <label className={labelCls}>Datum</label>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} required />
+        </div>
+
+        <div>
+          <label className={labelCls}>Volný termín</label>
+          {!serviceId ? (
+            <p className="text-sm text-stone-400 py-2">Nejdřív vyber službu.</p>
+          ) : availableSlots.length > 0 ? (
+            <div className="grid grid-cols-4 gap-2">
+              {availableSlots.map((s) => (
+                <button
+                  type="button"
+                  key={s}
+                  onClick={() => setTime(s)}
+                  className={`py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                    time === s
+                      ? 'bg-stone-800 text-white border-stone-800'
+                      : 'bg-white text-stone-700 border-stone-200 hover:border-stone-400'
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm text-amber-700">
+                {hasShifts
+                  ? 'Žádný volný slot pro tuto službu (den je obsazený).'
+                  : 'Tento den nejsou nastavené směny.'}{' '}
+                Zadej čas ručně:
+              </p>
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                step="900"
+                className={inputCls}
+              />
+            </div>
+          )}
         </div>
 
         {overlap && (
