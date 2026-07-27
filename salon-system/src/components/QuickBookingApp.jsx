@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { addDoc } from 'firebase/firestore';
 import { startAuthentication } from '@simplewebauthn/browser';
-import { Loader2, ScanFace, Check, CalendarPlus, AlertTriangle } from 'lucide-react';
+import { Loader2, ScanFace, Check, CalendarPlus, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   auth,
   getCollectionPath,
@@ -175,6 +175,53 @@ export default function QuickBookingApp() {
   useEffect(() => {
     setTime('');
   }, [serviceId, date]);
+
+  // --- Měsíční kalendář se zvýrazněním dnů s volnými sloty ---
+  const [viewMonth, setViewMonth] = useState(() => {
+    const d = new Date();
+    return { y: d.getFullYear(), m: d.getMonth() };
+  });
+  const todayNum = Number(Utils.getDateKeyFromISO(Utils.getLocalISODate()).split('-').reverse().join(''));
+  const isoFromDate = (d) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  const monthGrid = useMemo(() => {
+    const first = new Date(viewMonth.y, viewMonth.m, 1);
+    const startOffset = (first.getDay() + 6) % 7; // pondělí = 0
+    const daysInMonth = new Date(viewMonth.y, viewMonth.m + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < startOffset; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(viewMonth.y, viewMonth.m, d));
+    while (cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  }, [viewMonth]);
+
+  // Map dateKey → počet volných slotů (-1 = žádná směna). Bez vybrané služby: 1 = den má směnu.
+  const monthSlotCounts = useMemo(() => {
+    const map = new Map();
+    monthGrid.forEach((d) => {
+      if (!d) return;
+      const key = Utils.formatDateKey(d);
+      const dd = activeSchedule[key];
+      const inShift = !!(dd && (dd.periods?.length > 0 || dd.start));
+      if (!inShift) { map.set(key, -1); return; }
+      if (!selectedService) { map.set(key, 1); return; }
+      const periods = dd.periods || (dd.start ? [{ start: dd.start, end: dd.end }] : []);
+      const booked = reservations
+        .filter((r) => r.date === key)
+        .map((r) => ({ start: Utils.timeToMinutes(r.time), end: Utils.timeToMinutes(r.time) + (Number(r.duration) || 60) }));
+      map.set(key, Utils.getSmartSlots(periods, parseInt(selectedService.duration, 10) || 60, booked).length);
+    });
+    return map;
+  }, [monthGrid, activeSchedule, selectedService, reservations]);
+
+  const now = new Date();
+  const canGoPrev = viewMonth.y > now.getFullYear() || (viewMonth.y === now.getFullYear() && viewMonth.m > now.getMonth());
+  const shiftMonth = (delta) => setViewMonth((v) => {
+    const d = new Date(v.y, v.m + delta, 1);
+    return { y: d.getFullYear(), m: d.getMonth() };
+  });
+  const monthLabel = new Date(viewMonth.y, viewMonth.m, 1).toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' });
 
   const overlap = useMemo(() => {
     if (!selectedService || !time) return null;
@@ -355,7 +402,64 @@ export default function QuickBookingApp() {
 
         <div>
           <label className={labelCls}>Datum</label>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} required />
+          <div className="rounded-2xl border border-stone-200 bg-white p-3">
+            <div className="flex items-center justify-between mb-2">
+              <button
+                type="button"
+                onClick={() => canGoPrev && shiftMonth(-1)}
+                disabled={!canGoPrev}
+                aria-label="Předchozí měsíc"
+                className="p-1.5 rounded-lg hover:bg-stone-100 disabled:opacity-30"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <span className="text-sm font-semibold capitalize">{monthLabel}</span>
+              <button
+                type="button"
+                onClick={() => shiftMonth(1)}
+                aria-label="Další měsíc"
+                className="p-1.5 rounded-lg hover:bg-stone-100"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-1 text-center text-[10px] uppercase tracking-wide text-stone-400 mb-1">
+              {['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'].map((d) => <div key={d}>{d}</div>)}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {monthGrid.map((d, i) => {
+                if (!d) return <div key={`e${i}`} />;
+                const key = Utils.formatDateKey(d);
+                const num = Number(key.split('-').reverse().join(''));
+                const isPast = num < todayNum;
+                const isSel = key === dateKey;
+                const count = monthSlotCounts.get(key);
+                const free = count > 0;
+                const full = count === 0;
+                let cls = 'text-stone-600';
+                if (isPast) cls = 'text-stone-300 pointer-events-none';
+                else if (isSel) cls = 'bg-stone-800 text-white';
+                else if (free) cls = 'text-stone-800 font-semibold';
+                else if (full) cls = 'text-stone-400 line-through';
+                return (
+                  <button
+                    type="button"
+                    key={key}
+                    disabled={isPast}
+                    onClick={() => setDate(isoFromDate(d))}
+                    className={`relative aspect-square flex items-center justify-center rounded-lg text-sm ${cls} ${!isPast && !isSel ? 'hover:bg-stone-100' : ''}`}
+                  >
+                    {d.getDate()}
+                    {free && !isSel && !isPast && <span className="absolute bottom-1 w-1 h-1 rounded-full bg-emerald-500" />}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-4 mt-2.5 text-[11px] text-stone-500">
+              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> volné termíny</span>
+              {selectedService && <span className="line-through text-stone-400">plno</span>}
+            </div>
+          </div>
         </div>
 
         <div>
