@@ -18,7 +18,7 @@ describe('VoucherSuccessPage', () => {
     renderWithState({});
     expect(screen.getByRole('heading', { level: 1, name: 'Děkujeme za objednávku' })).toBeInTheDocument();
     expect(
-      screen.getByText(/Váš dárkový poukaz jsme začali připravovat\. Detaily k platbě a vyzvednutí jsme vám právě odeslali na e-mail\./)
+      screen.getByText(/Váš dárkový poukaz jsme začali připravovat\. Budeme vás brzy kontaktovat/)
     ).toBeInTheDocument();
   });
 

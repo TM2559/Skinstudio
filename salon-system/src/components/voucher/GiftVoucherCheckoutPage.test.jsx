@@ -58,54 +58,53 @@ describe('GiftVoucherCheckoutPage', () => {
     vi.clearAllMocks();
   });
 
-  it('renders category cards; lists concrete vouchers after expanding a type', () => {
+  it('renders type cards; lists nominals / services after expanding a type', () => {
     renderWithRouter();
     expect(screen.getByRole('heading', { level: 1, name: 'Dárkový poukaz' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Hodnotový poukaz/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Kosmetické ošetření/i })).toBeInTheDocument();
-    expect(screen.queryByText('Poukaz 2000 Kč')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Hodnotový poukaz/i }));
-    expect(screen.getByText('Poukaz 2000 Kč')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Zobrazit znovu všechny typy poukazů/i }));
-    expect(screen.queryByText('Poukaz 2000 Kč')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Kosmetické ošetření/i }));
+    // Typy poukazu jsou radio karty
+    expect(screen.getByRole('radio', { name: /Hodnotový poukaz/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Konkrétní ošetření/i })).toBeInTheDocument();
+    // Nominál se zobrazí až po výběru typu
+    expect(screen.queryByRole('button', { name: /2\s*000\s*Kč/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: /Hodnotový poukaz/i }));
+    expect(screen.getByRole('button', { name: /2\s*000\s*Kč/ })).toBeInTheDocument();
+    // Přepnutí na konkrétní ošetření zobrazí seznam služeb
+    fireEvent.click(screen.getByRole('radio', { name: /Konkrétní ošetření/i }));
     expect(screen.getByText('Me time')).toBeInTheDocument();
   });
 
-  it('does not show footer CTA before voucher is selected', () => {
+  it('shows empty summary state and CTA before a voucher is selected', () => {
     renderWithRouter();
-    expect(screen.queryByRole('button', { name: 'Závazně objednat' })).not.toBeInTheDocument();
+    expect(screen.getByText('Zatím nevybráno.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Závazně objednat/i })).toBeInTheDocument();
   });
 
-  it('shows footer and CTA after selecting a voucher', () => {
+  it('shows summary total after selecting a voucher', () => {
     renderWithRouter();
-    fireEvent.click(screen.getByRole('button', { name: /Hodnotový poukaz/i }));
-    fireEvent.click(screen.getByText('Poukaz 2000 Kč'));
-    expect(screen.getByRole('button', { name: 'Pokračovat' })).toBeInTheDocument();
-    const footer = screen.getByRole('contentinfo');
-    expect(footer).toHaveTextContent(/Celkem/);
-    expect(footer).toHaveTextContent(/2\s*000 Kč/);
+    fireEvent.click(screen.getByRole('radio', { name: /Hodnotový poukaz/i }));
+    fireEvent.click(screen.getByRole('button', { name: /2\s*000\s*Kč/ }));
+    expect(screen.getByText('Celkem')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Závazně objednat/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/2\s*000\s*Kč/).length).toBeGreaterThan(0);
   });
 
   it('adds 100 Kč for box packaging', () => {
     renderWithRouter();
-    fireEvent.click(screen.getByRole('button', { name: /Hodnotový poukaz/i }));
-    fireEvent.click(screen.getByText('Poukaz 2000 Kč'));
-    const footer = screen.getByRole('contentinfo');
-    expect(footer).toHaveTextContent(/2\s*000 Kč/);
-    fireEvent.click(screen.getByText('Luxusní dárková krabička'));
-    expect(footer).toHaveTextContent(/2\s*100 Kč/);
+    fireEvent.click(screen.getByRole('radio', { name: /Hodnotový poukaz/i }));
+    fireEvent.click(screen.getByRole('button', { name: /2\s*000\s*Kč/ }));
+    expect(screen.getByText('Celkem')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: /Luxusní dárková krabička/i }));
+    expect(screen.getByText(/2\s*100\s*Kč/)).toBeInTheDocument();
   });
 
   it('submits order and navigates to success when form valid', async () => {
     mockCallCreateVoucherOrder.mockResolvedValueOnce({ data: { orderId: 'ord-1', total_price: 2000 } });
     renderWithRouter();
-    fireEvent.click(screen.getByRole('button', { name: /Hodnotový poukaz/i }));
-    fireEvent.click(screen.getByText('Poukaz 2000 Kč'));
+    fireEvent.click(screen.getByRole('radio', { name: /Hodnotový poukaz/i }));
+    fireEvent.click(screen.getByRole('button', { name: /2\s*000\s*Kč/ }));
     fireEvent.change(screen.getByPlaceholderText(/vas@email/), { target: { value: 'test@example.cz' } });
-    const phoneInput = screen.getByPlaceholderText(/\+420/);
-    fireEvent.change(phoneInput, { target: { value: '+420 123 456 789' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Pokračovat' }));
+    fireEvent.change(screen.getByPlaceholderText(/\+420/), { target: { value: '+420 123 456 789' } });
+    fireEvent.click(screen.getByRole('button', { name: /Závazně objednat/i }));
     await waitFor(() => {
       expect(mockCallCreateVoucherOrder).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -121,16 +120,15 @@ describe('GiftVoucherCheckoutPage', () => {
   });
 
   it('submits custom amount template with voucherId and customAmountKc', async () => {
-    mockCallCreateVoucherOrder.mockResolvedValueOnce({ data: { orderId: 'ord-2', total_price: 600 } });
+    mockCallCreateVoucherOrder.mockResolvedValueOnce({ data: { orderId: 'ord-2', total_price: 1500 } });
     renderWithRouter();
-    fireEvent.click(screen.getByRole('button', { name: /Hodnotový poukaz/i }));
-    fireEvent.click(screen.getByRole('radio', { name: /Poukaz na … Kč/ }));
-    const amountInput = screen.getByRole('textbox', { name: /minimálně 500/i });
+    // Karta "Vlastní hodnota" auto-vybere custom voucher a zobrazí input
+    fireEvent.click(screen.getByRole('radio', { name: /Vlastní hodnota/i }));
+    const amountInput = screen.getByLabelText('Vlastní částka v korunách');
     fireEvent.change(amountInput, { target: { value: '1500' } });
     fireEvent.change(screen.getByPlaceholderText(/vas@email/), { target: { value: 'a@b.cz' } });
-    const phoneInput = screen.getByPlaceholderText(/\+420/);
-    fireEvent.change(phoneInput, { target: { value: '+420 123 456 789' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Pokračovat' }));
+    fireEvent.change(screen.getByPlaceholderText(/\+420/), { target: { value: '+420 123 456 789' } });
+    fireEvent.click(screen.getByRole('button', { name: /Závazně objednat/i }));
     await waitFor(() => {
       expect(mockCallCreateVoucherOrder).toHaveBeenCalledWith(
         expect.objectContaining({
