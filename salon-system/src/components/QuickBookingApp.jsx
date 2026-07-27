@@ -34,18 +34,26 @@ export default function QuickBookingApp() {
   const [password, setPassword] = useState('');
   const optionsRef = useRef(null);
 
+  // Face ID / heslo se vyžaduje při KAŽDÉM otevření – nespoléháme na trvalý admin claim.
   useEffect(() => {
     (async () => {
       try {
         await ensureAnonymousAuthForCallable();
-        const res = await auth.currentUser?.getIdTokenResult();
-        if (res?.claims?.admin) {
-          setAuthState('authed');
-          return;
-        }
       } catch { /* ignore */ }
       setAuthState('need-login');
     })();
+  }, []);
+
+  // Odchod z appky (přepnutí na jinou appku / zamknutí telefonu) → zamknout;
+  // po návratu se znovu vyžádá Face ID. Formulář zůstává vyplněný.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === 'hidden') {
+        setAuthState((s) => (s === 'authed' ? 'need-login' : s));
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
 
   // Přednačtení Face ID options (kvůli Safari musí být první await po kliknutí = startAuthentication).
