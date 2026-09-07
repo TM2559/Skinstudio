@@ -23,7 +23,7 @@ export const GOOGLE_REVIEWS = [
   {
     "id": "g4",
     "name": "Hana Janíková",
-    "roleOrDate": "před 4 měsíci",
+    "roleOrDate": "před 5 měsíci",
     "rating": 5,
     "text": "Do Skin Studia si chodím odpočinout. Je to čas jen pro mě, kdy nic nedělám, na nic nemyslím a nechávám se opečovávat. Relaxace, kterou si zaslouží každá žena. Výsledek jde vidět hned po ošetření. Pleť je vždy krásná, projasněná, hydratovaná, uvolněná. Kosmetika Medik8 mi opravdu vyhovuje. Nejvíc oceňuji důkladnou masáž obličeje, dekoltu i šíje. Lucka je moc milá a příjemná. I proto k ní chodím ráda a pravidelně. Vždy se mnou i vše zkonzultuje a poradí, co používat. Doporučuji Skin Studio všem ženám, které si chtějí odpočinout a zároveň udělat něco pro svou pleť. ❤️"
   },
