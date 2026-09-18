@@ -1,8 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import { Search, Send } from 'lucide-react';
 import { Utils } from '../../utils/helpers';
 import ReservationList from './ReservationList';
 import WeeklyDateStrip from './WeeklyDateStrip';
+import DateJumpPicker from './DateJumpPicker';
 
 const AdminBookingsTab = ({
   adminDateInput,
@@ -16,8 +17,10 @@ const AdminBookingsTab = ({
   todayKey,
   reservations = [],
   isGlobalSearchMode,
+  schedule = {},
+  schedulePmu = {},
 }) => {
-  const dateInputRef = useRef(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
   <div className="max-w-2xl mx-auto space-y-6">
@@ -26,17 +29,20 @@ const AdminBookingsTab = ({
         adminDateInput={adminDateInput}
         setAdminDateInput={setAdminDateInput}
         reservations={reservations}
-        onOpenDatePicker={() => dateInputRef.current?.showPicker?.()}
-      />
-      <input
-        ref={dateInputRef}
-        type="date"
-        value={adminDateInput}
-        onChange={(e) => setAdminDateInput(e.target.value)}
-        className="sr-only absolute opacity-0 pointer-events-none w-0 h-0"
-        aria-hidden
+        onOpenDatePicker={() => setPickerOpen(true)}
       />
     </div>
+    {pickerOpen && (
+      <DateJumpPicker
+        value={adminDateInput}
+        onChange={setAdminDateInput}
+        onClose={() => setPickerOpen(false)}
+        reservations={reservations}
+        schedule={schedule}
+        schedulePmu={schedulePmu}
+        title="Přejít na den"
+      />
+    )}
     <div className="flex flex-col sm:flex-row gap-3">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-3 text-stone-400" size={16} />

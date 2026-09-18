@@ -35,6 +35,7 @@ export default function ReservationApp({
   showFaceIdSetupPrompt = false,
   onSkipFaceIdSetup,
   onFaceIdSetupDone,
+  onLogout,
   services,
   schedule,
   schedulePmu = {},
@@ -395,10 +396,10 @@ export default function ReservationApp({
               serviceAddonLinks={serviceAddonLinks}
               voucherTemplates={voucherTemplates}
               voucherOrders={voucherOrders}
-              onLogout={() => {
+              onLogout={onLogout || (() => {
                 setView('customer');
                 setAdminPassword('');
-              }}
+              })}
             />
           )}
         </div>

@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import Layout from './components/Layout';
 import { useData } from './contexts/DataContext';
 import { useAdminAuth } from './contexts/AdminAuthContext';
+import { ADMIN } from './constants/config';
 
 const ReservationApp = lazy(() => import('./components/ReservationApp'));
 const CosmeticsPage = lazy(() => import('./components/CosmeticsPage'));
@@ -39,6 +40,37 @@ export default function App() {
       </div>
     );
   }
+
+  // Stejná stránka pro veřejné /rezervace i skrytou adresu admina (ADMIN.HIDDEN_PATH).
+  const reservationPage = (
+    <Layout setView={adminAuth.setView}>
+      <ReservationApp
+        loading={false}
+        view={adminAuth.view}
+        setView={adminAuth.setView}
+        adminPassword={adminAuth.adminPassword}
+        setAdminPassword={adminAuth.setAdminPassword}
+        loginError={adminAuth.loginError}
+        setLoginError={adminAuth.setLoginError}
+        handleLogoClick={adminAuth.handleLogoClick}
+        handleLogin={adminAuth.handleLogin}
+        isLoggingIn={adminAuth.isLoggingIn}
+        onWebAuthnLoginSuccess={adminAuth.handleWebAuthnLoginSuccess}
+        showFaceIdSetupPrompt={adminAuth.showFaceIdSetupPrompt}
+        onSkipFaceIdSetup={adminAuth.handleSkipFaceIdSetup}
+        onFaceIdSetupDone={adminAuth.handleFaceIdSetupDone}
+        onLogout={adminAuth.handleLogout}
+        services={data.servicesWithAddons}
+        schedule={data.schedule}
+        schedulePmu={data.schedulePmu}
+        reservations={data.reservations}
+        addons={data.addons}
+        serviceAddonLinks={data.serviceAddonLinks}
+        voucherTemplates={data.voucherTemplates}
+        voucherOrders={data.voucherOrders}
+      />
+    </Layout>
+  );
 
   return (
     <Suspense fallback={<PageLoader />}>
@@ -96,37 +128,8 @@ export default function App() {
         />
         <Route path="/app" element={<QuickBookingApp />} />
         <Route path="/cenik" element={<Navigate to="/#cenik" replace />} />
-        <Route
-          path="/rezervace"
-          element={
-            <Layout setView={adminAuth.setView}>
-              <ReservationApp
-                loading={false}
-                view={adminAuth.view}
-                setView={adminAuth.setView}
-                adminPassword={adminAuth.adminPassword}
-                setAdminPassword={adminAuth.setAdminPassword}
-                loginError={adminAuth.loginError}
-                setLoginError={adminAuth.setLoginError}
-                handleLogoClick={adminAuth.handleLogoClick}
-                handleLogin={adminAuth.handleLogin}
-                isLoggingIn={adminAuth.isLoggingIn}
-                onWebAuthnLoginSuccess={adminAuth.handleWebAuthnLoginSuccess}
-                showFaceIdSetupPrompt={adminAuth.showFaceIdSetupPrompt}
-                onSkipFaceIdSetup={adminAuth.handleSkipFaceIdSetup}
-                onFaceIdSetupDone={adminAuth.handleFaceIdSetupDone}
-                services={data.servicesWithAddons}
-                schedule={data.schedule}
-                schedulePmu={data.schedulePmu}
-                reservations={data.reservations}
-                addons={data.addons}
-                serviceAddonLinks={data.serviceAddonLinks}
-                voucherTemplates={data.voucherTemplates}
-                voucherOrders={data.voucherOrders}
-              />
-            </Layout>
-          }
-        />
+        <Route path="/rezervace" element={reservationPage} />
+        <Route path={ADMIN.HIDDEN_PATH} element={reservationPage} />
       </Routes>
     </Suspense>
   );

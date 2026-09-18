@@ -1,8 +1,9 @@
 import React from 'react';
-import { X, Phone, Mail, CalendarDays, CalendarPlus, Trash2 } from 'lucide-react';
+import { X, Phone, Mail, CalendarDays, CalendarPlus, Trash2, Repeat } from 'lucide-react';
 import { Utils } from '../../utils/helpers';
+import { REBOOK_WEEK_JUMPS } from '../../utils/dateJumps';
 
-const OrderDetailModal = ({ order, onClose, onExportCalendar, onDelete }) => {
+const OrderDetailModal = ({ order, onClose, onExportCalendar, onDelete, onRebook }) => {
   if (!order) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
@@ -48,6 +49,26 @@ const OrderDetailModal = ({ order, onClose, onExportCalendar, onDelete }) => {
             </a>
           )}
         </div>
+
+        {onRebook && (
+          <div className="mb-3">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1.5 flex items-center gap-1.5">
+              <Repeat size={12} /> Objednat znovu za
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {REBOOK_WEEK_JUMPS.map((w) => (
+                <button
+                  key={w}
+                  type="button"
+                  onClick={() => onRebook(order, w)}
+                  className="py-2.5 rounded-lg border border-stone-200 text-stone-800 text-xs font-bold hover:border-stone-800 transition-colors"
+                >
+                  {w} týd.
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <button
           onClick={() => onExportCalendar(order)}

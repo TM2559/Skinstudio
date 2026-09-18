@@ -1,6 +1,8 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, CalendarDays, Repeat } from 'lucide-react';
 import { Utils } from '../../utils/helpers';
+import DateJumpPicker from './DateJumpPicker';
+import { REBOOK_WEEK_JUMPS, addWeeksISO, longDateCs, shortDateCs } from '../../utils/dateJumps';
 
 const CATEGORY_KOSMETIKA = 'kosmetika';
 const CATEGORY_PMU = 'pmu';
@@ -17,8 +19,17 @@ const ManualBookingModal = ({
   hasShifts,
   onSubmit,
   isSubmitting,
+  reservations = [],
+  schedule = {},
+  schedulePmu = {},
 }) => {
+  const [pickerOpen, setPickerOpen] = useState(false);
   if (!open) return null;
+
+  // „Objednat znovu“ z detailu rezervace nastaví rebookBaseISO = datum návštěvy;
+  // skoky „za N týdnů“ se pak počítají od něj, jinak od dneška.
+  const jumpBase = manualForm.rebookBaseISO || Utils.getLocalISODate();
+  const setDate = (iso) => setManualForm({ ...manualForm, date: iso, time: '' });
 
   const selectedCategory = manualForm.category ?? null;
   const isPmu = selectedCategory === CATEGORY_PMU;
@@ -40,7 +51,10 @@ const ManualBookingModal = ({
         }`}
       >
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-display text-xl font-bold text-stone-900">Manuální rezervace</h3>
+          <h3 className="font-display text-xl font-bold text-stone-900 flex items-center gap-2">
+            {manualForm.rebookBaseISO && <Repeat size={18} className="text-stone-400" />}
+            {manualForm.rebookBaseISO ? 'Objednat znovu' : 'Manuální rezervace'}
+          </h3>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-800">
             <X size={20} />
           </button>
@@ -95,13 +109,48 @@ const ManualBookingModal = ({
 
           <div>
             <label className="text-[10px] font-bold uppercase text-stone-400">Datum</label>
-            <input
-              type="date"
-              required
-              className="w-full p-3 border rounded-lg text-sm"
-              value={manualForm.date}
-              onChange={(e) => setManualForm({ ...manualForm, date: e.target.value, time: '' })}
-            />
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="w-full p-3 border rounded-lg text-sm text-left flex items-center justify-between bg-white hover:border-stone-400"
+            >
+              <span className="font-semibold text-stone-800">{longDateCs(manualForm.date)}</span>
+              <CalendarDays size={16} className="text-stone-400" />
+            </button>
+            <div className="mt-2 text-[10px] text-stone-400">
+              Za kolik týdnů {manualForm.rebookBaseISO ? `od ${shortDateCs(jumpBase)}` : 'od dneška'}:
+            </div>
+            <div className="grid grid-cols-4 gap-2 mt-1">
+              {REBOOK_WEEK_JUMPS.map((w) => {
+                const iso = addWeeksISO(jumpBase, w);
+                const active = iso === manualForm.date;
+                return (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() => setDate(iso)}
+                    className={`py-1.5 rounded-lg border text-xs font-bold ${
+                      active ? 'bg-stone-800 text-white border-stone-800' : 'border-stone-200 text-stone-700 hover:border-stone-400'
+                    }`}
+                  >
+                    +{w} t.
+                    <span className={`block text-[10px] font-normal ${active ? 'text-stone-300' : 'text-stone-400'}`}>{shortDateCs(iso)}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {pickerOpen && (
+              <DateJumpPicker
+                value={manualForm.date}
+                onChange={setDate}
+                onClose={() => setPickerOpen(false)}
+                baseISO={jumpBase}
+                reservations={reservations}
+                schedule={schedule}
+                schedulePmu={schedulePmu}
+                title="Datum rezervace"
+              />
+            )}
           </div>
 
           <div>

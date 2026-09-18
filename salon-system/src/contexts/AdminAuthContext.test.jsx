@@ -11,8 +11,18 @@ vi.mock('../firebaseConfig', () => ({
   callVerifyAdminPassword: (...args) => mockCallVerify(...args),
 }));
 
+const mockLocation = { pathname: '/rezervace' };
 vi.mock('react-router-dom', () => ({
-  useLocation: () => ({ pathname: '/rezervace' }),
+  useLocation: () => mockLocation,
+}));
+
+const mockHasValidSession = vi.fn(() => Promise.resolve(false));
+const mockMarkUnlocked = vi.fn();
+const mockClearUnlock = vi.fn();
+vi.mock('../utils/adminUnlock', () => ({
+  hasValidAdminSession: (...args) => mockHasValidSession(...args),
+  markAdminUnlocked: (...args) => mockMarkUnlocked(...args),
+  clearAdminUnlock: (...args) => mockClearUnlock(...args),
 }));
 
 import { AdminAuthProvider, useAdminAuth } from './AdminAuthContext';
@@ -24,6 +34,8 @@ function wrapper({ children }) {
 describe('AdminAuthContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLocation.pathname = '/rezervace';
+    mockHasValidSession.mockResolvedValue(false);
   });
 
   it('provides default values', () => {
@@ -113,5 +125,54 @@ describe('AdminAuthContext', () => {
     });
 
     expect(result.current.loginError).toBe('Přihlášení selhalo. Zkuste to znovu.');
+  });
+
+  it('hidden admin path opens the login directly', () => {
+    mockLocation.pathname = ADMIN.HIDDEN_PATH;
+    const { result } = renderHook(() => useAdminAuth(), { wrapper });
+    expect(result.current.view).toBe('login');
+  });
+
+  it('skips the login on a recently unlocked device', async () => {
+    mockLocation.pathname = ADMIN.HIDDEN_PATH;
+    mockHasValidSession.mockResolvedValue(true);
+    const { result } = renderHook(() => useAdminAuth(), { wrapper });
+    await act(async () => {});
+    expect(result.current.view).toBe('admin');
+  });
+
+  it('stays on login when the device is not unlocked', async () => {
+    mockLocation.pathname = ADMIN.HIDDEN_PATH;
+    const { result } = renderHook(() => useAdminAuth(), { wrapper });
+    await act(async () => {});
+    expect(result.current.view).toBe('login');
+  });
+
+  it('marks the device unlocked after a successful login', async () => {
+    mockCallVerify.mockResolvedValueOnce({ data: { verified: true } });
+    const { result } = renderHook(() => useAdminAuth(), { wrapper });
+    act(() => result.current.setAdminPassword('correct'));
+    await act(async () => {
+      await result.current.handleLogin({ preventDefault: vi.fn() });
+    });
+    expect(mockMarkUnlocked).toHaveBeenCalled();
+  });
+
+  it('does not mark the device unlocked after a wrong password', async () => {
+    mockCallVerify.mockRejectedValueOnce(new Error('permission-denied'));
+    const { result } = renderHook(() => useAdminAuth(), { wrapper });
+    act(() => result.current.setAdminPassword('wrong'));
+    await act(async () => {
+      await result.current.handleLogin({ preventDefault: vi.fn() });
+    });
+    expect(mockMarkUnlocked).not.toHaveBeenCalled();
+  });
+
+  it('handleLogout locks the device and returns to the web', () => {
+    const { result } = renderHook(() => useAdminAuth(), { wrapper });
+    act(() => result.current.handleSkipFaceIdSetup());
+    act(() => result.current.handleLogout());
+    expect(mockClearUnlock).toHaveBeenCalled();
+    expect(result.current.view).toBe('customer');
   });
 });

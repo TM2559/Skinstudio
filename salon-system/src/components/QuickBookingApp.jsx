@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { addDoc } from 'firebase/firestore';
 import { startAuthentication } from '@simplewebauthn/browser';
-import { Loader2, ScanFace, Check, CalendarPlus, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ScanFace, Check, CalendarPlus, AlertTriangle, ChevronLeft, ChevronRight, CalendarRange, Repeat } from 'lucide-react';
 import {
   auth,
   getCollectionPath,
@@ -15,6 +15,9 @@ import { COLLECTIONS } from '../constants/config';
 import { useData } from '../contexts/DataContext';
 import { Utils, isPmuService } from '../utils/helpers';
 import { sendBookingConfirmations } from '../services/notificationService';
+import { markAdminUnlocked, isAdminUnlockFresh, hasValidAdminSession } from '../utils/adminUnlock';
+import { REBOOK_WEEK_JUMPS, addWeeksISO, dateFromISO, laterISO, shortDateCs } from '../utils/dateJumps';
+import AgendaView from './quickapp/AgendaView';
 
 /**
  * Jednoduchá „appka pro admina" (manželku) – jedna obrazovka pro rychlé zadání rezervace.
@@ -34,21 +37,21 @@ export default function QuickBookingApp() {
   const [password, setPassword] = useState('');
   const optionsRef = useRef(null);
 
-  // Face ID / heslo se vyžaduje při KAŽDÉM otevření – nespoléháme na trvalý admin claim.
+  // Face ID / heslo jednou za ADMIN.UNLOCK_TTL_MS na tomto zařízení (viz utils/adminUnlock).
+  // Nespoléháme jen na trvalý admin claim – jiný telefon se vždy musí přihlásit sám.
   useEffect(() => {
     (async () => {
       try {
         await ensureAnonymousAuthForCallable();
       } catch { /* ignore */ }
-      setAuthState('need-login');
+      setAuthState((await hasValidAdminSession()) ? 'authed' : 'need-login');
     })();
   }, []);
 
-  // Odchod z appky (přepnutí na jinou appku / zamknutí telefonu) → zamknout;
-  // po návratu se znovu vyžádá Face ID. Formulář zůstává vyplněný.
+  // Návrat do appky (třeba ze SMS s klientkou) nezamyká; zamkne se až po vypršení odemčení.
   useEffect(() => {
     const onVis = () => {
-      if (document.visibilityState === 'hidden') {
+      if (document.visibilityState === 'visible' && !isAdminUnlockFresh()) {
         setAuthState((s) => (s === 'authed' ? 'need-login' : s));
       }
     };
@@ -101,6 +104,7 @@ export default function QuickBookingApp() {
       });
       if (data?.verified) {
         await auth.currentUser?.getIdToken(true);
+        markAdminUnlocked();
         setAuthState('authed');
       } else {
         setAuthError('Přihlášení Face ID selhalo.');
@@ -125,6 +129,7 @@ export default function QuickBookingApp() {
       const { data } = await callVerifyAdminPassword({ password });
       if (data?.verified) {
         await auth.currentUser?.getIdToken(true);
+        markAdminUnlocked();
         setPassword('');
         setAuthState('authed');
       } else {
@@ -153,6 +158,49 @@ export default function QuickBookingApp() {
   const [formError, setFormError] = useState('');
   const [done, setDone] = useState(null);
 
+  // --- Záložky: přehled (výchozí) / nová rezervace ---
+  const [tab, setTab] = useState('overview');
+  const [agendaISO, setAgendaISO] = useState(Utils.getLocalISODate());
+  /** Od kdy se počítají skoky „za N týdnů“ ve formuláři (u „Objednat znovu“ = datum návštěvy). */
+  const [jumpBaseISO, setJumpBaseISO] = useState(null);
+  /** Předvyplněný čas (z volného okna) nesmí smazat efekt „změna data → zruš čas“. */
+  const keepTimeRef = useRef(false);
+
+  const startBooking = ({ date: d, time: t = '', client = null, serviceName = null, baseISO = null } = {}) => {
+    keepTimeRef.current = !!t;
+    setDone(null);
+    setFormError('');
+    if (d) setDate(d);
+    setTime(t);
+    setJumpBaseISO(baseISO);
+    // Nová rezervace z přehledu = čistý formulář; „Objednat znovu“ = předvyplněná klientka.
+    setName(client?.name || '');
+    setPhone(client?.phone || '');
+    setEmail(client?.email || '');
+    if (serviceName) {
+      const srv = services.find((s) => s.name === serviceName && s.duration);
+      if (srv) setServiceId(srv.id);
+    }
+    setTab('new');
+    window.scrollTo?.(0, 0);
+  };
+
+  /** Ruční změna data ve formuláři → předvyplněný čas už neplatí. */
+  const pickFormDate = (iso) => {
+    keepTimeRef.current = false;
+    setDate(iso);
+  };
+
+  const rebook = (r, weeks) => {
+    const base = laterISO(Utils.getISOFromDateKey(r.date), Utils.getLocalISODate());
+    startBooking({
+      date: addWeeksISO(base, weeks),
+      client: { name: r.name, phone: r.phone, email: r.email },
+      serviceName: r.serviceName,
+      baseISO: base,
+    });
+  };
+
   const selectedService = bookableServices.find((s) => s.id === serviceId) || null;
   const dateKey = Utils.getDateKeyFromISO(date);
 
@@ -179,10 +227,17 @@ export default function QuickBookingApp() {
     return Utils.getSmartSlots(periods, parseInt(selectedService.duration, 10) || 60, booked);
   }, [selectedService, hasShifts, dayData, reservations, dateKey]);
 
-  // Změna služby nebo data → zruš dřívější výběr času (jiné sloty).
+  // Změna služby nebo data → zruš dřívější výběr času (jiné sloty),
+  // kromě času předvyplněného z volného okna, který platí i pro nově vybranou službu.
   useEffect(() => {
+    if (keepTimeRef.current) return;
     setTime('');
   }, [serviceId, date]);
+
+  // Čas musí být jeden z nabízených slotů (když nějaké jsou) – jinak by se uložil „neviditelný“ čas.
+  useEffect(() => {
+    if (serviceId && time && availableSlots.length > 0 && !availableSlots.includes(time)) setTime('');
+  }, [serviceId, time, availableSlots]);
 
   // --- Měsíční kalendář se zvýrazněním dnů s volnými sloty ---
   const [viewMonth, setViewMonth] = useState(() => {
@@ -222,6 +277,12 @@ export default function QuickBookingApp() {
     });
     return map;
   }, [monthGrid, activeSchedule, selectedService, reservations]);
+
+  // Datum nastavené zvenku (skok o týdny, předvyplnění) → ukaž jeho měsíc.
+  useEffect(() => {
+    const d = dateFromISO(date);
+    setViewMonth((v) => (v.y === d.getFullYear() && v.m === d.getMonth() ? v : { y: d.getFullYear(), m: d.getMonth() }));
+  }, [date]);
 
   const now = new Date();
   const canGoPrev = viewMonth.y > now.getFullYear() || (viewMonth.y === now.getFullYear() && viewMonth.m > now.getMonth());
@@ -298,20 +359,43 @@ export default function QuickBookingApp() {
   };
 
   // --- Render ---
-  const shell = (children) => (
+  const shell = (children, withTabs = false) => (
     <div className="min-h-screen bg-[var(--skin-cream,#faf7f2)] text-[var(--skin-charcoal,#2b2b2b)] flex flex-col"
       style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-      <header className="px-5 pt-6 pb-4 text-center border-b" style={{ borderColor: 'var(--skin-beige-muted,#e7ded2)' }}>
+      <header className="px-5 pt-5 pb-3 text-center border-b" style={{ borderColor: 'var(--skin-beige-muted,#e7ded2)' }}>
         <div className="font-display font-bold text-xl tracking-wide">Skin Studio</div>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-stone-500 mt-1">Rychlá rezervace</div>
+        {withTabs ? (
+          <div className="mt-3 grid grid-cols-2 gap-1 p-1 rounded-2xl bg-white border border-stone-200 max-w-md mx-auto">
+            {[
+              { id: 'overview', label: 'Přehled', icon: <CalendarRange size={16} /> },
+              { id: 'new', label: 'Nová rezervace', icon: <CalendarPlus size={16} /> },
+            ].map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => {
+                  if (t.id === 'new' && tab !== 'new') { setDone(null); setJumpBaseISO(null); }
+                  setTab(t.id);
+                }}
+                className={`py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+                  tab === t.id ? 'bg-stone-800 text-white' : 'text-stone-600'
+                }`}
+              >
+                {t.icon} {t.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="text-[11px] uppercase tracking-[0.2em] text-stone-500 mt-1">Rezervace</div>
+        )}
       </header>
-      <main className="flex-1 w-full max-w-md mx-auto px-5 py-6">{children}</main>
+      <main className="flex-1 w-full max-w-md mx-auto px-5 pb-6">{children}</main>
     </div>
   );
 
   if (authState === 'checking') {
     return shell(
-      <div className="flex items-center justify-center py-24 text-stone-400">
+      <div className="flex items-center justify-center py-24 text-stone-400 mt-6">
         <Loader2 className="animate-spin" size={28} />
       </div>
     );
@@ -319,7 +403,7 @@ export default function QuickBookingApp() {
 
   if (authState === 'need-login') {
     return shell(
-      <div className="max-w-sm mx-auto py-10 text-center">
+      <div className="max-w-sm mx-auto py-10 mt-6 text-center">
         <h2 className="font-display text-2xl font-bold mb-6">Přihlášení</h2>
         {authError && <p className="text-sm text-red-600 mb-4">{authError}</p>}
 
@@ -376,8 +460,25 @@ export default function QuickBookingApp() {
   const inputCls = 'w-full p-3.5 rounded-2xl border border-stone-200 bg-white text-base outline-none focus:ring-1 focus:ring-stone-400';
   const labelCls = 'block text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-1.5';
 
+  if (tab === 'overview') {
+    return shell(
+      <AgendaView
+        reservations={reservations}
+        schedule={schedule || {}}
+        schedulePmu={schedulePmu || {}}
+        selectedISO={agendaISO}
+        setSelectedISO={setAgendaISO}
+        onNewBooking={startBooking}
+        onRebook={rebook}
+      />,
+      true
+    );
+  }
+
+  const formJumpBase = jumpBaseISO || Utils.getLocalISODate();
+
   return shell(
-    <>
+    <div className="pt-6">
       {done && (
         <div className="mb-5 rounded-2xl bg-emerald-50 border border-emerald-200 p-4 flex items-start gap-3">
           <Check className="text-emerald-600 shrink-0 mt-0.5" size={20} />
@@ -386,7 +487,20 @@ export default function QuickBookingApp() {
             <div className="text-emerald-800">
               {done.name} · {Utils.formatDateDisplay(done.dateKey)} v {done.time} · {done.serviceName}
             </div>
+            <button
+              type="button"
+              onClick={() => { setAgendaISO(Utils.getISOFromDateKey(done.dateKey)); setTab('overview'); }}
+              className="mt-1 text-emerald-900 underline font-semibold"
+            >
+              Ukázat v přehledu
+            </button>
           </div>
+        </div>
+      )}
+
+      {jumpBaseISO && (
+        <div className="mb-4 flex items-center gap-2 text-sm text-stone-600">
+          <Repeat size={16} className="text-stone-400" /> Objednat znovu – od návštěvy {shortDateCs(jumpBaseISO)}
         </div>
       )}
 
@@ -410,6 +524,25 @@ export default function QuickBookingApp() {
 
         <div>
           <label className={labelCls}>Datum</label>
+          <div className="grid grid-cols-4 gap-2 mb-2">
+            {REBOOK_WEEK_JUMPS.map((w) => {
+              const iso = addWeeksISO(formJumpBase, w);
+              const active = iso === date;
+              return (
+                <button
+                  key={w}
+                  type="button"
+                  onClick={() => pickFormDate(iso)}
+                  className={`py-2 rounded-xl border text-sm font-semibold ${
+                    active ? 'bg-stone-800 text-white border-stone-800' : 'bg-white border-stone-200 text-stone-700'
+                  }`}
+                >
+                  +{w} týd.
+                  <span className={`block text-[11px] font-normal ${active ? 'text-stone-300' : 'text-stone-500'}`}>{shortDateCs(iso)}</span>
+                </button>
+              );
+            })}
+          </div>
           <div className="rounded-2xl border border-stone-200 bg-white p-3">
             <div className="flex items-center justify-between mb-2">
               <button
@@ -454,7 +587,7 @@ export default function QuickBookingApp() {
                     type="button"
                     key={key}
                     disabled={isPast}
-                    onClick={() => setDate(isoFromDate(d))}
+                    onClick={() => pickFormDate(isoFromDate(d))}
                     className={`relative aspect-square flex items-center justify-center rounded-lg text-sm ${cls} ${!isPast && !isSel ? 'hover:bg-stone-100' : ''}`}
                   >
                     {d.getDate()}
@@ -552,6 +685,7 @@ export default function QuickBookingApp() {
           {saving ? 'Ukládám…' : 'Uložit rezervaci'}
         </button>
       </form>
-    </>
+    </div>,
+    true
   );
 }
