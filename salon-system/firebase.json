@@ -6,6 +6,9 @@
     "headers": [
       { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] }
     ],
+    "redirects": [
+      { "source": "/recenze", "destination": "https://g.page/r/CWkt9xHMgMjqEAE/review", "type": 302 }
+    ],
     "rewrites": [
       { "source": "/api/format-content", "function": { "functionId": "formatContent", "region": "europe-west1" } },
       { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
