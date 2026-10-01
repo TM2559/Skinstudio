@@ -31,8 +31,9 @@ describe('AdminVouchersTab', () => {
       { id: 'v2', name: 'PMU obočí', type: 'service', price: 3500, is_active: true, sort_order: 1 },
     ];
     render(<AdminVouchersTab {...defaultProps} voucherTemplates={vouchers} />);
-    expect(screen.getByText('Poukaz 2000 Kč')).toBeInTheDocument();
-    expect(screen.getByText('PMU obočí')).toBeInTheDocument();
+    // Každý poukaz se renderuje dvakrát: mobilní karta (md:hidden) + desktopová tabulka (hidden md:table)
+    expect(screen.getAllByText('Poukaz 2000 Kč')).toHaveLength(2);
+    expect(screen.getAllByText('PMU obočí')).toHaveLength(2);
     expect(screen.getAllByText('Hodnota').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Produkt').length).toBeGreaterThanOrEqual(1);
   });
@@ -47,23 +48,27 @@ describe('AdminVouchersTab', () => {
   it('calls onDelete when delete is clicked and confirmed', () => {
     const vouchers = [{ id: 'v1', name: 'Poukaz', type: 'value', price: 1000, is_active: true }];
     render(<AdminVouchersTab {...defaultProps} voucherTemplates={vouchers} />);
-    const deleteBtn = screen.getByLabelText(/Smazat Poukaz/i);
-    fireEvent.click(deleteBtn);
+    const deleteBtns = screen.getAllByLabelText(/Smazat Poukaz/i);
+    expect(deleteBtns).toHaveLength(2);
+    fireEvent.click(deleteBtns[0]);
     expect(defaultProps.onDelete).toHaveBeenCalledWith('v1');
   });
 
   it('calls onToggleActive when toggle is clicked', () => {
     const vouchers = [{ id: 'v1', name: 'Poukaz', type: 'value', price: 1000, is_active: true }];
     render(<AdminVouchersTab {...defaultProps} voucherTemplates={vouchers} />);
-    const toggle = screen.getByRole('switch', { name: /Aktivní/i });
-    fireEvent.click(toggle);
+    const toggles = screen.getAllByRole('switch', { name: /Aktivní/i });
+    expect(toggles).toHaveLength(2);
+    fireEvent.click(toggles[0]);
     expect(defaultProps.onToggleActive).toHaveBeenCalledWith('v1', false);
   });
 
   it('opens modal in edit mode when Edit is clicked', () => {
     const vouchers = [{ id: 'v1', name: 'Poukaz 5k', type: 'value', price: 5000, is_active: true }];
     render(<AdminVouchersTab {...defaultProps} voucherTemplates={vouchers} />);
-    fireEvent.click(screen.getByLabelText(/Upravit Poukaz 5k/i));
+    const editBtns = screen.getAllByLabelText(/Upravit Poukaz 5k/i);
+    expect(editBtns).toHaveLength(2);
+    fireEvent.click(editBtns[0]);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Poukaz 5k')).toBeInTheDocument();
     expect(screen.getByDisplayValue('5000')).toBeInTheDocument();
