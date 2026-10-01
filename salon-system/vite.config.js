@@ -54,6 +54,10 @@ export default defineConfig({
       devOptions: {
         enabled: false,
       },
+      workbox: {
+        // Krátké odkazy řeší přesměrování ve firebase.json – SW je nesmí obsloužit z cache
+        navigateFallbackDenylist: [/^\/recenze/],
+      },
       manifest: {
         name: 'Skin Studio',
         short_name: 'SkinStudio',

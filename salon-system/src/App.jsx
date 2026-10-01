@@ -6,6 +6,7 @@ import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useData } from './contexts/DataContext';
 import { useAdminAuth } from './contexts/AdminAuthContext';
+import { GOOGLE_REVIEW_URL } from './firebaseConfig';
 
 const ReservationApp = lazy(() => import('./components/ReservationApp'));
 const CosmeticsPage = lazy(() => import('./components/CosmeticsPage'));
@@ -19,6 +20,14 @@ function PageLoader() {
       <Loader2 className="animate-spin text-stone-400" size={24} />
     </div>
   );
+}
+
+// Záloha pro krátké odkazy, když stránku obslouží service worker místo přesměrování ve firebase.json
+function ExternalRedirect({ to }) {
+  useEffect(() => {
+    window.location.replace(to);
+  }, [to]);
+  return <PageLoader />;
 }
 
 export default function App() {
@@ -88,6 +97,7 @@ export default function App() {
           }
         />
         <Route path="/cenik" element={<Navigate to="/#cenik" replace />} />
+        <Route path="/recenze" element={<ExternalRedirect to={GOOGLE_REVIEW_URL} />} />
         <Route
           path="/rezervace"
           element={
