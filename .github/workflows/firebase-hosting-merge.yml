@@ -63,7 +63,10 @@ jobs:
       - name: Deploy Functions
         if: env.HAS_RESEND == 'true'
         working-directory: salon-system
-        run: npx firebase-tools deploy --only functions --project tm-reservations --non-interactive
+        run: |
+          # Jen funkce z kódu – funkce, které existují pouze v projektu (např. calendarFeed), deploy nemaže
+          TARGETS=$(node --input-type=module -e "const m = await import('./functions/index.js'); console.log(Object.keys(m).map((k) => 'functions:' + k).join(','))")
+          npx firebase-tools deploy --only "$TARGETS" --project tm-reservations --non-interactive
 
       - name: Skip Functions (chybí Resend secrets)
         if: env.HAS_RESEND != 'true'
