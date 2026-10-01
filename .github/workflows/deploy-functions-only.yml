@@ -7,8 +7,16 @@ on:
 jobs:
   deploy_functions:
     runs-on: ubuntu-latest
+    env:
+      HAS_RESEND: ${{ secrets.RESEND_API_KEY != '' && secrets.RESEND_FROM != '' }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check Resend secrets
+        if: env.HAS_RESEND != 'true'
+        run: |
+          echo "::error::V GitHub Secrets chybí RESEND_API_KEY nebo RESEND_FROM – deploy by přepsal e-mailovou konfiguraci Functions prázdnou."
+          exit 1
 
       - name: Install Functions dependencies
         working-directory: salon-system/functions
@@ -18,11 +26,16 @@ jobs:
         working-directory: salon-system/functions
         run: |
           cat > .env <<EOL
+          ADMIN_PASSWORD=${{ secrets.VITE_ADMIN_PASSWORD }}
           BULKGATE_APPLICATION_ID=${{ secrets.BULKGATE_APPLICATION_ID }}
           BULKGATE_APPLICATION_TOKEN=${{ secrets.BULKGATE_APPLICATION_TOKEN }}
           BULKGATE_SENDER_ID=${{ secrets.BULKGATE_SENDER_ID }}
           BULKGATE_SENDER_ID_VALUE=${{ secrets.BULKGATE_SENDER_ID_VALUE }}
           GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM=${{ secrets.RESEND_FROM }}
+          RESEND_REPLY_TO=${{ secrets.RESEND_REPLY_TO }}
+          RESEND_ADMIN_TO=${{ secrets.RESEND_ADMIN_TO }}
           EOL
 
       - name: Authenticate to Google Cloud
