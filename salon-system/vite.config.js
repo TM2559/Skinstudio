@@ -3,6 +3,7 @@ import { writeFileSync } from 'fs'
 import { join } from 'path'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { seoPagesPlugin } from './scripts/seoPagesPlugin.mjs'
 
 const BASE = 'https://www.skinstudio.cz'
 const today = () => new Date().toISOString().slice(0, 10)
@@ -49,6 +50,7 @@ export default defineConfig({
   plugins: [
     react(),
     sitemapPlugin(),
+    seoPagesPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: {
