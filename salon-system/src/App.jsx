@@ -7,12 +7,14 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { useData } from './contexts/DataContext';
 import { useAdminAuth } from './contexts/AdminAuthContext';
 import { GOOGLE_REVIEW_URL } from './firebaseConfig';
+import { ADMIN } from './constants/config';
 
 const ReservationApp = lazy(() => import('./components/ReservationApp'));
 const CosmeticsPage = lazy(() => import('./components/CosmeticsPage'));
 const PMUPage = lazy(() => import('./components/PMUPage'));
 const ThankYouPage = lazy(() => import('./components/ThankYouPage'));
 const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
+const QuickBookingApp = lazy(() => import('./components/QuickBookingApp'));
 
 function PageLoader() {
   return (
@@ -46,6 +48,42 @@ export default function App() {
       </div>
     );
   }
+
+  // Stejná stránka pro veřejné /rezervace i skrytou adresu admina (ADMIN.HIDDEN_PATH).
+  const reservationPage = (
+    <Layout
+      setView={adminAuth.setView}
+      hideFooter={adminAuth.view === 'admin'}
+      hideHeader={adminAuth.view === 'admin'}
+      hideInstagram={adminAuth.view === 'admin'}
+    >
+      <ReservationApp
+        loading={false}
+        view={adminAuth.view}
+        setView={adminAuth.setView}
+        adminPassword={adminAuth.adminPassword}
+        setAdminPassword={adminAuth.setAdminPassword}
+        loginError={adminAuth.loginError}
+        setLoginError={adminAuth.setLoginError}
+        handleLogoClick={adminAuth.handleLogoClick}
+        handleLogin={adminAuth.handleLogin}
+        isLoggingIn={adminAuth.isLoggingIn}
+        onWebAuthnLoginSuccess={adminAuth.handleWebAuthnLoginSuccess}
+        showFaceIdSetupPrompt={adminAuth.showFaceIdSetupPrompt}
+        onSkipFaceIdSetup={adminAuth.handleSkipFaceIdSetup}
+        onFaceIdSetupDone={adminAuth.handleFaceIdSetupDone}
+        onLogout={adminAuth.handleLogout}
+        services={data.servicesWithAddons}
+        schedule={data.schedule}
+        schedulePmu={data.schedulePmu}
+        reservations={data.reservations}
+        addons={data.addons}
+        serviceAddonLinks={data.serviceAddonLinks}
+        voucherTemplates={data.voucherTemplates}
+        voucherOrders={data.voucherOrders}
+      />
+    </Layout>
+  );
 
   return (
     <Suspense fallback={<PageLoader />}>
@@ -96,44 +134,11 @@ export default function App() {
             </Layout>
           }
         />
+        <Route path="/app" element={<QuickBookingApp />} />
         <Route path="/cenik" element={<Navigate to="/#cenik" replace />} />
         <Route path="/recenze" element={<ExternalRedirect to={GOOGLE_REVIEW_URL} />} />
-        <Route
-          path="/rezervace"
-          element={
-            <Layout
-              setView={adminAuth.setView}
-              hideFooter={adminAuth.view === 'admin'}
-              hideHeader={adminAuth.view === 'admin'}
-              hideInstagram={adminAuth.view === 'admin'}
-            >
-              <ReservationApp
-                loading={false}
-                view={adminAuth.view}
-                setView={adminAuth.setView}
-                adminPassword={adminAuth.adminPassword}
-                setAdminPassword={adminAuth.setAdminPassword}
-                loginError={adminAuth.loginError}
-                setLoginError={adminAuth.setLoginError}
-                handleLogoClick={adminAuth.handleLogoClick}
-                handleLogin={adminAuth.handleLogin}
-                isLoggingIn={adminAuth.isLoggingIn}
-                onWebAuthnLoginSuccess={adminAuth.handleWebAuthnLoginSuccess}
-                showFaceIdSetupPrompt={adminAuth.showFaceIdSetupPrompt}
-                onSkipFaceIdSetup={adminAuth.handleSkipFaceIdSetup}
-                onFaceIdSetupDone={adminAuth.handleFaceIdSetupDone}
-                services={data.servicesWithAddons}
-                schedule={data.schedule}
-                schedulePmu={data.schedulePmu}
-                reservations={data.reservations}
-                addons={data.addons}
-                serviceAddonLinks={data.serviceAddonLinks}
-                voucherTemplates={data.voucherTemplates}
-                voucherOrders={data.voucherOrders}
-              />
-            </Layout>
-          }
-        />
+        <Route path="/rezervace" element={reservationPage} />
+        <Route path={ADMIN.HIDDEN_PATH} element={reservationPage} />
       </Routes>
     </Suspense>
   );

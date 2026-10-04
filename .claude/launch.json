@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "skinstudio-dev",
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": ["node_modules/.bin/vite", "--port", "5173"],
+      "cwd": "salon-system",
+      "port": 5173
+    }
+  ]
+}

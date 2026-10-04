@@ -12,6 +12,10 @@ export const BOOKING = {
 export const ADMIN = {
   LOGIN_CLICK_COUNT: 7,
   LOGIN_CLICK_TIMEOUT_MS: 2000,
+  /** Jak dlouho po přihlášení se na stejném zařízení znovu neptáme na Face ID / heslo. */
+  UNLOCK_TTL_MS: 12 * 60 * 60 * 1000,
+  /** Skrytá adresa admina (není nikde odkázaná) – k uložení na plochu telefonu. */
+  HIDDEN_PATH: '/sprava',
 };
 
 export const CONTACT = {

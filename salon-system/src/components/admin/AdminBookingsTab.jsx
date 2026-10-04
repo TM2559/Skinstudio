@@ -1,8 +1,9 @@
-import React, { useRef, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Search, Send } from 'lucide-react';
 import { Utils } from '../../utils/helpers';
 import ReservationList from './ReservationList';
 import WeeklyDateStrip from './WeeklyDateStrip';
+import DateJumpPicker from './DateJumpPicker';
 import DailyView from './daily/DailyView';
 import DailyDigest from './daily/DailyDigest';
 import ChronologicalSchedule from './daily/ChronologicalSchedule';
@@ -22,12 +23,13 @@ const AdminBookingsTab = ({
   onManualBookingFromSlot,
   onCreateShiftForDay,
   schedule = {},
+  schedulePmu = {},
   todayKey,
   reservations = [],
   upcomingReservations = [],
   isGlobalSearchMode,
 }) => {
-  const dateInputRef = useRef(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [viewMode, setViewMode] = useState('future');
   const dateKey = Utils.getDateKeyFromISO(adminDateInput);
   const safeSchedule = schedule == null ? {} : schedule;
@@ -183,17 +185,20 @@ const AdminBookingsTab = ({
           setAdminDateInput={setAdminDateInput}
           reservations={reservations}
           schedule={safeSchedule}
-          onOpenDatePicker={() => dateInputRef.current?.showPicker?.()}
-        />
-        <input
-          ref={dateInputRef}
-          type="date"
-          value={adminDateInput}
-          onChange={(e) => setAdminDateInput(e.target.value)}
-          className="sr-only absolute opacity-0 pointer-events-none w-0 h-0"
-          aria-hidden
+          onOpenDatePicker={() => setPickerOpen(true)}
         />
       </div>
+    )}
+    {pickerOpen && (
+      <DateJumpPicker
+        value={adminDateInput}
+        onChange={setAdminDateInput}
+        onClose={() => setPickerOpen(false)}
+        reservations={reservations}
+        schedule={schedule}
+        schedulePmu={schedulePmu}
+        title="Přejít na den"
+      />
     )}
     <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
       <div className="relative flex-1">

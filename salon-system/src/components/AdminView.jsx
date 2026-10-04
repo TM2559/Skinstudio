@@ -4,6 +4,7 @@ import { addDoc, deleteDoc, updateDoc, setDoc, getDocs, query, where } from 'fir
 import { startRegistration } from '@simplewebauthn/browser';
 import { platformAuthenticatorIsAvailable } from '@simplewebauthn/browser';
 import { Utils } from '../utils/helpers';
+import { addWeeksISO, laterISO } from '../utils/dateJumps';
 import { ensureAnonymousAuthForCallable, packWebAuthnCredentialForCallable } from '../utils/webAuthnCallable';
 import {
   auth,
@@ -651,6 +652,44 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     await setDoc(getDocPath(targetCollection, dateKey), { periods });
   };
 
+  const emptyManualForm = () => ({
+    category: null,
+    serviceId: '',
+    date: Utils.getLocalISODate(),
+    time: '',
+    name: '',
+    phone: '',
+    email: '',
+    sendNotification: true,
+  });
+
+  /** „Objednat znovu za N týdnů“: předvyplní klientku a službu, datum = návštěva (nebo dnešek) + N týdnů. */
+  const handleRebook = (order, weeks) => {
+    const base = laterISO(Utils.getISOFromDateKey(order.date), Utils.getLocalISODate());
+    const srv = services.find((s) => s.name === order.serviceName);
+    setManualForm({
+      ...emptyManualForm(),
+      // stejné třídění jako ManualBookingModal (category 'PMU' vs. ostatní)
+      category: srv ? ((srv.category || 'STANDARD') === 'PMU' ? 'pmu' : 'kosmetika') : null,
+      serviceId: srv?.id || '',
+      date: addWeeksISO(base, weeks),
+      name: order.name || '',
+      phone: order.phone || '',
+      email: order.email || '',
+      rebookBaseISO: base,
+    });
+    setSelectedOrder(null);
+    setShowManualBooking(true);
+  };
+
+  const closeManualBooking = () => {
+    setShowManualBooking(false);
+    setManualPrefillTime(null);
+    setManualPrefillSlot(null);
+    // Předvyplněná klientka z „Objednat znovu“ nesmí zůstat v příští nové rezervaci.
+    if (manualForm.rebookBaseISO) setManualForm(emptyManualForm());
+  };
+
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     if (!manualForm.serviceId || !manualForm.time || !manualForm.name) return;
@@ -717,16 +756,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
       setShowManualBooking(false);
       setManualPrefillTime(null);
       setManualPrefillSlot(null);
-      setManualForm({
-        category: null,
-        serviceId: '',
-        date: Utils.getLocalISODate(),
-        time: '',
-        name: '',
-        phone: '',
-        email: '',
-        sendNotification: true,
-      });
+      setManualForm(emptyManualForm());
       setActiveTab('bookings');
       if (manualForm.date !== adminDateInput) {
         setAdminDateInput(manualForm.date);
@@ -874,6 +904,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
             reservations={reservations}
             upcomingReservations={upcomingReservations}
             isGlobalSearchMode={isGlobalSearchMode}
+            schedulePmu={schedulePmu}
           />
         )}
         {activeTab === 'history' && (
@@ -947,11 +978,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
 
       <ManualBookingModal
         open={showManualBooking}
-        onClose={() => {
-          setShowManualBooking(false);
-          setManualPrefillTime(null);
-          setManualPrefillSlot(null);
-        }}
+        onClose={closeManualBooking}
         services={services}
         manualForm={manualForm}
         setManualForm={setManualForm}
@@ -960,6 +987,9 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
         hasShifts={hasShifts}
         onSubmit={handleManualSubmit}
         isSubmitting={isManualSubmitting}
+        reservations={reservations}
+        schedule={schedule}
+        schedulePmu={schedulePmu}
       />
 
       <RemindersModal
@@ -1028,6 +1058,7 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
           onClose={() => setSelectedOrder(null)}
           onExportCalendar={handleExportCalendar}
           onDelete={handleDeleteRes}
+          onRebook={handleRebook}
         />
       )}
 
