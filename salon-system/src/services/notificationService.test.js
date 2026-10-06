@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockCallSendConfirmationSms = vi.fn(() => Promise.resolve());
+const mockCallSendAdminBookingSms = vi.fn(() => Promise.resolve({ data: { sent: true } }));
 const mockCallSendReminderSms = vi.fn(() => Promise.resolve({ data: { sent: 2 } }));
 const mockCallSendBookingEmails = vi.fn(() => Promise.resolve({ data: { clientOk: true, adminOk: true } }));
 const mockCallSendReminderEmails = vi.fn(() => Promise.resolve({ data: { sent: 2, errors: [] } }));
 
 vi.mock('../firebaseConfig', () => ({
   callSendConfirmationSms: (...args) => mockCallSendConfirmationSms(...args),
+  callSendAdminBookingSms: (...args) => mockCallSendAdminBookingSms(...args),
   callSendReminderSms: (...args) => mockCallSendReminderSms(...args),
   callSendBookingEmails: (...args) => mockCallSendBookingEmails(...args),
   callSendReminderEmails: (...args) => mockCallSendReminderEmails(...args),
@@ -37,6 +39,27 @@ describe('notificationService', () => {
       const results = await sendBookingConfirmations(baseParams);
       expect(mockCallSendConfirmationSms).toHaveBeenCalledTimes(1);
       expect(results.sms).toBe(true);
+    });
+
+    it('sends admin SMS only when notifyAdminSms is set', async () => {
+      const without = await sendBookingConfirmations(baseParams);
+      expect(mockCallSendAdminBookingSms).not.toHaveBeenCalled();
+      expect(without.adminSms).toBe(false);
+
+      const withSms = await sendBookingConfirmations({ ...baseParams, notifyAdminSms: true });
+      expect(mockCallSendAdminBookingSms).toHaveBeenCalledTimes(1);
+      expect(mockCallSendAdminBookingSms).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Jan', phone: '723456789', date: '01-03-2026', time: '10:00', serviceName: 'Masáž' })
+      );
+      expect(withSms.adminSms).toBe(true);
+    });
+
+    it('admin SMS failure does not block customer notifications', async () => {
+      mockCallSendAdminBookingSms.mockRejectedValueOnce(new Error('fail'));
+      const results = await sendBookingConfirmations({ ...baseParams, notifyAdminSms: true });
+      expect(results.adminSms).toBe(false);
+      expect(results.sms).toBe(true);
+      expect(results.email).toBe(true);
     });
 
     it('skips SMS when phone is empty', async () => {

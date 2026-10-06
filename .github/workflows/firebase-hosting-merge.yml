@@ -44,6 +44,7 @@ jobs:
           BULKGATE_APPLICATION_TOKEN=${{ secrets.BULKGATE_APPLICATION_TOKEN }}
           BULKGATE_SENDER_ID=${{ secrets.BULKGATE_SENDER_ID }}
           BULKGATE_SENDER_ID_VALUE=${{ secrets.BULKGATE_SENDER_ID_VALUE }}
+          ADMIN_SMS_PHONE=${{ secrets.ADMIN_SMS_PHONE }}
           GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
           RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
           RESEND_FROM=${{ secrets.RESEND_FROM }}

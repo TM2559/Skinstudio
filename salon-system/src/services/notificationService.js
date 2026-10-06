@@ -1,4 +1,5 @@
 import {
+  callSendAdminBookingSms,
   callSendBookingEmails,
   callSendConfirmationSms,
   callSendReminderEmails,
@@ -8,14 +9,24 @@ import { sendBookingConfirmationEmail, sendAdminNotificationEmail, sendReminderE
 import { Utils } from '../utils/helpers';
 
 /**
- * Send all booking confirmation notifications (SMS + email to client + email to admin).
+ * Send all booking confirmation notifications (SMS + email to client + email to admin,
+ * plus SMS to the salon when notifyAdminSms is set – only for bookings made by customers).
  * Failures are logged but don't throw – booking is already saved at this point.
  */
-export async function sendBookingConfirmations({ name, phone, email, date, time, serviceName, duration, calendarLink, calendarIcsLink }) {
+export async function sendBookingConfirmations({ name, phone, email, date, time, serviceName, duration, calendarLink, calendarIcsLink, notifyAdminSms = false }) {
   const dateDisplay = Utils.formatDateDisplay(date);
-  const results = { sms: false, email: false, adminEmail: false };
+  const results = { sms: false, email: false, adminEmail: false, adminSms: false };
   const emailAddress = typeof email === 'string' ? email.trim() : '';
   const phoneNumber = typeof phone === 'string' ? phone.trim() : '';
+
+  if (notifyAdminSms) {
+    try {
+      await callSendAdminBookingSms({ name, phone: phoneNumber, date, time, serviceName });
+      results.adminSms = true;
+    } catch (err) {
+      console.warn('Admin SMS failed:', err);
+    }
+  }
 
   if (phoneNumber) {
     try {

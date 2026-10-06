@@ -142,6 +142,7 @@ const CustomerView = ({ services, schedule, schedulePmu = {}, reservations, onBo
         duration: parseInt(selectedService.duration),
         calendarLink,
         calendarIcsLink,
+        notifyAdminSms: true,
       });
 
       if (onBookingSuccess) onBookingSuccess();

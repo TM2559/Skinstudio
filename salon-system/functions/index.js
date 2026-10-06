@@ -133,6 +133,8 @@ const applicationToken = defineString('BULKGATE_APPLICATION_TOKEN', { default: '
 const senderId = defineString('BULKGATE_SENDER_ID', { default: '' });
 const senderIdValue = defineString('BULKGATE_SENDER_ID_VALUE', { default: '' });
 const geminiApiKey = defineString('GEMINI_API_KEY', { default: '' });
+/** Telefon salonu pro SMS o nové rezervaci z webu (prázdné = SMS se neposílá). */
+const adminSmsPhone = defineString('ADMIN_SMS_PHONE', { default: '' });
 
 const BULKGATE_URL = 'https://portal.bulkgate.com/api/1.0/simple/transactional';
 
@@ -193,6 +195,14 @@ function buildConfirmationSmsMessage(serviceName, date, time, duration) {
   const t = formatTimeForSms(time);
   const dur = duration ? ` (${duration} min)` : '';
   return `Skin Studio: Váš termín je potvrzen\nSlužba: ${service}${dur}\nKdy: ${d} v ${t}\nKde: Masarykovo nám. 72, Uherský Brod\n\nTěším se na vás, Lucie.`;
+}
+
+/** SMS pro salon o nové rezervaci z webu. Bez diakritiky, aby se vešla do jedné SMS. */
+function buildAdminBookingSmsMessage(name, phone, serviceName, date, time) {
+  const d = formatDateForSmsCzech(date).replace('\u00A0', ' ');
+  const t = formatTimeForSms(time);
+  const who = [name, phone].filter((v) => typeof v === 'string' && v.trim()).map((v) => v.trim()).join(', ');
+  return removeDiacritics(`Nova rezervace: ${(serviceName || '').trim()}, ${d} v ${t}. ${who}`.trim()).slice(0, 160);
 }
 
 /** Build reminder SMS text (Czech, short). Bez jména – nelze spolehlivě skloňovat. */
@@ -499,6 +509,43 @@ export const sendConfirmationSms = onCall(
     }
 
     return { sent: true, message: 'SMS potvrzení odeslána.' };
+  }
+);
+
+/**
+ * Callable: sendAdminBookingSms
+ * Body: { name, phone, date, time, serviceName } – SMS salonu (ADMIN_SMS_PHONE) o nové rezervaci z webu.
+ */
+export const sendAdminBookingSms = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const appId = applicationId.value();
+    const appToken = applicationToken.value();
+    if (!appId || !appToken) {
+      throw new HttpsError('failed-precondition', 'BulkGate není nakonfigurován (BULKGATE_APPLICATION_ID / BULKGATE_APPLICATION_TOKEN).');
+    }
+    const number = toE164(adminSmsPhone.value());
+    if (!number) {
+      console.error('sendAdminBookingSms: chybí nebo je neplatné ADMIN_SMS_PHONE v prostředí functions.');
+      throw new HttpsError('failed-precondition', 'Chybí ADMIN_SMS_PHONE.');
+    }
+
+    const { name, phone, date, time, serviceName } = request.data || {};
+    if (!date || !time || !serviceName) {
+      throw new HttpsError('invalid-argument', 'Chybí datum, čas nebo služba.');
+    }
+
+    const text = buildAdminBookingSmsMessage(name, phone, serviceName, date, time);
+    const sid = senderId.value();
+    const sidVal = senderIdValue.value();
+
+    const { ok, data } = await sendOneSms(appId, appToken, number, text, false, sid || undefined, sidVal || undefined);
+    if (!ok) {
+      console.warn('BulkGate sendAdminBookingSms:', data);
+      throw new HttpsError('internal', data.error || data.message || 'BulkGate API chyba.');
+    }
+
+    return { sent: true };
   }
 );
 

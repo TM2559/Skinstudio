@@ -116,6 +116,10 @@ export const callSendConfirmationSms = useFirebaseMocks
   ? () => Promise.resolve({ data: {} })
   : httpsCallable(functions, 'sendConfirmationSms');
 
+export const callSendAdminBookingSms = useFirebaseMocks
+  ? () => Promise.resolve({ data: { sent: true } })
+  : httpsCallable(functions, 'sendAdminBookingSms');
+
 export const callSendReminderSms = useFirebaseMocks
   ? () => Promise.resolve({ data: { sent: 0, errors: [] } })
   : httpsCallable(functions, 'sendReminderSms');
