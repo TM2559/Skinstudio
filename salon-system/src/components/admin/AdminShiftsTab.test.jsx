@@ -70,4 +70,14 @@ describe('AdminShiftsTab', () => {
       pmu: [],
     });
   });
+
+  it('shows an error and keeps the editor open when saving fails', async () => {
+    const onSaveDay = vi.fn(() => Promise.reject(Object.assign(new Error('denied'), { code: 'permission-denied' })));
+    openTodayEditor({ onSaveDay });
+    fireEvent.click(screen.getByRole('button', { name: 'Označit den jako zavřeno' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Uložit změny' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/chybí oprávnění/);
+    expect(screen.getByRole('button', { name: 'Uložit změny' })).toBeInTheDocument();
+  });
 });

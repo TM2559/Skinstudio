@@ -2,9 +2,19 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useLocation } from 'react-router-dom';
 import { auth, callVerifyAdminPassword } from '../firebaseConfig';
 import { ADMIN } from '../constants/config';
-import { markAdminUnlocked, clearAdminUnlock, hasValidAdminSession } from '../utils/adminUnlock';
+import { markAdminUnlocked, clearAdminUnlock, hasValidAdminSession, isAdminUnlockFresh } from '../utils/adminUnlock';
 
 const AdminAuthContext = createContext(null);
+
+/** Po ověření na serveru obnovit token; bez admin claimu by zápisy (směny, rezervace) Firestore odmítl. */
+async function hasAdminClaimAfterLogin() {
+  try {
+    const res = await auth.currentUser?.getIdTokenResult(true);
+    return !!res?.claims?.admin;
+  } catch {
+    return false;
+  }
+}
 
 export function AdminAuthProvider({ children }) {
   const location = useLocation();
@@ -22,6 +32,17 @@ export function AdminAuthProvider({ children }) {
       // Skrytá adresa (ikona na ploše telefonu) → rovnou přihlášení, bez klikání na logo.
       setView('login');
     }
+  }, [location.pathname]);
+
+  // Refresh na /rezervace (admin přihlášený přes logo): na odemčeném zařízení obnovit admina,
+  // jinak by F5 vždy odhlásil. Zákazníkům (bez lokálního odemčení) se nic nemění.
+  useEffect(() => {
+    if (location.pathname !== '/rezervace' || !isAdminUnlockFresh()) return;
+    let cancelled = false;
+    hasValidAdminSession().then((ok) => {
+      if (ok && !cancelled) setView('admin');
+    });
+    return () => { cancelled = true; };
   }, [location.pathname]);
 
   // Na zařízení odemčeném v posledních ADMIN.UNLOCK_TTL_MS přeskočit přihlášení.
@@ -60,7 +81,10 @@ export function AdminAuthProvider({ children }) {
     try {
       const { data } = await callVerifyAdminPassword({ password: adminPassword });
       if (data?.verified) {
-        await auth.currentUser?.getIdToken(true);
+        if (!(await hasAdminClaimAfterLogin())) {
+          setLoginError('Přihlášení se nepropsalo do oprávnění. Zkuste to znovu.');
+          return;
+        }
         markAdminUnlocked();
         setShowFaceIdSetupPrompt(true);
       } else {
@@ -79,7 +103,10 @@ export function AdminAuthProvider({ children }) {
   }, [adminPassword]);
 
   const handleWebAuthnLoginSuccess = useCallback(async () => {
-    await auth.currentUser?.getIdToken(true);
+    if (!(await hasAdminClaimAfterLogin())) {
+      setLoginError('Přihlášení se nepropsalo do oprávnění. Zkuste to znovu.');
+      return;
+    }
     markAdminUnlocked();
     setView('admin');
     setLoginError('');

@@ -178,10 +178,10 @@ const AdminView = ({ services, schedule, schedulePmu = {}, reservations, addons 
     const pmuPeriods = Array.isArray(payload?.pmu) ? payload.pmu : [];
     const saveStandard = kosmetikaPeriods.length > 0
       ? setDoc(scheduleRef, { periods: kosmetikaPeriods })
-      : deleteDoc(scheduleRef).catch(() => {});
+      : deleteDoc(scheduleRef);
     const savePmu = pmuPeriods.length > 0
       ? setDoc(schedulePmuRef, { periods: pmuPeriods })
-      : deleteDoc(schedulePmuRef).catch(() => {});
+      : deleteDoc(schedulePmuRef);
     await Promise.all([saveStandard, savePmu]);
   };
 

@@ -3,11 +3,11 @@ import { renderHook, act } from '@testing-library/react';
 import React from 'react';
 import { ADMIN } from '../constants/config';
 
-const mockGetIdToken = vi.fn(() => Promise.resolve('token'));
+const mockGetIdTokenResult = vi.fn(() => Promise.resolve({ claims: { admin: true } }));
 const mockCallVerify = vi.fn();
 
 vi.mock('../firebaseConfig', () => ({
-  auth: { currentUser: { getIdToken: (...args) => mockGetIdToken(...args) } },
+  auth: { currentUser: { getIdTokenResult: (...args) => mockGetIdTokenResult(...args) } },
   callVerifyAdminPassword: (...args) => mockCallVerify(...args),
 }));
 
@@ -19,10 +19,12 @@ vi.mock('react-router-dom', () => ({
 const mockHasValidSession = vi.fn(() => Promise.resolve(false));
 const mockMarkUnlocked = vi.fn();
 const mockClearUnlock = vi.fn();
+const mockUnlockFresh = vi.fn(() => false);
 vi.mock('../utils/adminUnlock', () => ({
   hasValidAdminSession: (...args) => mockHasValidSession(...args),
   markAdminUnlocked: (...args) => mockMarkUnlocked(...args),
   clearAdminUnlock: (...args) => mockClearUnlock(...args),
+  isAdminUnlockFresh: (...args) => mockUnlockFresh(...args),
 }));
 
 import { AdminAuthProvider, useAdminAuth } from './AdminAuthContext';
@@ -36,6 +38,8 @@ describe('AdminAuthContext', () => {
     vi.clearAllMocks();
     mockLocation.pathname = '/rezervace';
     mockHasValidSession.mockResolvedValue(false);
+    mockUnlockFresh.mockReturnValue(false);
+    mockGetIdTokenResult.mockResolvedValue({ claims: { admin: true } });
   });
 
   it('provides default values', () => {
@@ -82,7 +86,7 @@ describe('AdminAuthContext', () => {
     });
 
     expect(result.current.showFaceIdSetupPrompt).toBe(true);
-    expect(mockGetIdToken).toHaveBeenCalledWith(true);
+    expect(mockGetIdTokenResult).toHaveBeenCalledWith(true);
   });
 
   it('handleLogin does nothing with empty password', async () => {
@@ -111,7 +115,7 @@ describe('AdminAuthContext', () => {
     await act(async () => {
       await result.current.handleWebAuthnLoginSuccess();
     });
-    expect(mockGetIdToken).toHaveBeenCalledWith(true);
+    expect(mockGetIdTokenResult).toHaveBeenCalledWith(true);
     expect(result.current.view).toBe('admin');
   });
 
@@ -174,5 +178,33 @@ describe('AdminAuthContext', () => {
     act(() => result.current.handleLogout());
     expect(mockClearUnlock).toHaveBeenCalled();
     expect(result.current.view).toBe('customer');
+  });
+
+  it('restores admin after refresh on /rezervace on an unlocked device', async () => {
+    mockUnlockFresh.mockReturnValue(true);
+    mockHasValidSession.mockResolvedValue(true);
+    const { result } = renderHook(() => useAdminAuth(), { wrapper });
+    await act(async () => {});
+    expect(result.current.view).toBe('admin');
+  });
+
+  it('keeps customers on /rezervace without checking the admin session', async () => {
+    const { result } = renderHook(() => useAdminAuth(), { wrapper });
+    await act(async () => {});
+    expect(result.current.view).toBe('customer');
+    expect(mockHasValidSession).not.toHaveBeenCalled();
+  });
+
+  it('does not enter admin when the token has no admin claim after login', async () => {
+    mockCallVerify.mockResolvedValueOnce({ data: { verified: true } });
+    mockGetIdTokenResult.mockResolvedValue({ claims: {} });
+    const { result } = renderHook(() => useAdminAuth(), { wrapper });
+    act(() => result.current.setAdminPassword('correct'));
+    await act(async () => {
+      await result.current.handleLogin({ preventDefault: vi.fn() });
+    });
+    expect(result.current.showFaceIdSetupPrompt).toBe(false);
+    expect(mockMarkUnlocked).not.toHaveBeenCalled();
+    expect(result.current.loginError).toMatch(/oprávnění/);
   });
 });

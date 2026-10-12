@@ -191,10 +191,20 @@ const AdminShiftsTab = ({
       return;
     }
     setTimeError('');
-    await onSaveDay(editingDateKey, {
-      kosmetika: editKosmetikaPeriods.filter((p) => isValidTimeRange(p.start, p.end)),
-      pmu: editPmuPeriods.filter((p) => isValidTimeRange(p.start, p.end)),
-    });
+    try {
+      await onSaveDay(editingDateKey, {
+        kosmetika: editKosmetikaPeriods.filter((p) => isValidTimeRange(p.start, p.end)),
+        pmu: editPmuPeriods.filter((p) => isValidTimeRange(p.start, p.end)),
+      });
+    } catch (err) {
+      console.error('Uložení směny selhalo:', err);
+      setTimeError(
+        err?.code === 'permission-denied'
+          ? 'Uložení se nepovedlo – chybí oprávnění. Odhlaste se a přihlaste znovu.'
+          : 'Uložení se nepovedlo. Zkuste to znovu.'
+      );
+      return;
+    }
     closeDrawer();
   };
 
