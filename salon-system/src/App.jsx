@@ -13,6 +13,7 @@ const ThankYouPage = lazy(() => import('./components/ThankYouPage'));
 const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
 const GiftVoucherCheckoutPage = lazy(() => import('./components/voucher/GiftVoucherCheckoutPage'));
 const VoucherSuccessPage = lazy(() => import('./components/voucher/VoucherSuccessPage'));
+const QuickBookingApp = lazy(() => import('./components/QuickBookingApp'));
 
 function PageLoader() {
   return (
@@ -93,6 +94,7 @@ export default function App() {
             </Layout>
           }
         />
+        <Route path="/app" element={<QuickBookingApp />} />
         <Route path="/cenik" element={<Navigate to="/#cenik" replace />} />
         <Route
           path="/rezervace"
