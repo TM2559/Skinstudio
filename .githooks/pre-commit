@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""Pre-commit: zdrojový soubor nad 5 000 tokenů (bajty/4) neprojde.
+
+Agent pak drží malé moduly, které se dají přečíst celé. Kontrolují se jen staged
+soubory s kódem; data, obrázky, lockfiles a generovaný výstup ne.
+Soubory, které byly velké už při zavedení, jsou v .githooks/velke-soubory.txt:
+projdou, jen s varováním – při větší úpravě je rozděl a z výjimek smaž.
+Obejití v nouzi: git commit --no-verify.
+"""
+import os
+import subprocess
+import sys
+
+LIMIT = 5000
+KOD = (".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".py", ".css", ".vue", ".svelte", ".astro")
+VYNECHAT = ("node_modules/", "dist/", "build/", "lib/", "public/", "vendor/")
+
+koren = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
+try:
+    vyjimky = {l.strip() for l in open(os.path.join(koren, ".githooks/velke-soubory.txt"), encoding="utf-8")
+               if l.strip() and not l.startswith("#")}
+except OSError:
+    vyjimky = set()
+
+staged = subprocess.run(["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z"],
+                        capture_output=True, text=True).stdout.split("\0")
+chyby, varovani = [], []
+for cesta in filter(None, staged):
+    if not cesta.endswith(KOD) or ".min." in cesta or any(f"/{v}" in f"/{cesta}" for v in VYNECHAT):
+        continue
+    obsah = subprocess.run(["git", "show", f":{cesta}"], capture_output=True).stdout
+    tokeny = len(obsah) // 4
+    if tokeny > LIMIT:
+        (varovani if cesta in vyjimky else chyby).append(f"  {cesta}: ~{tokeny} tokenů")
+
+if varovani:
+    print("Varování: velké soubory z výjimek (při větší úpravě rozděl a smaž z .githooks/velke-soubory.txt):",
+          *varovani, sep="\n", file=sys.stderr)
+if chyby:
+    print(f"Commit zastaven: soubor nad {LIMIT} tokenů (~{LIMIT * 4 // 1000} kB).", *chyby, sep="\n", file=sys.stderr)
+    print("""
+Jak rozdělit:
+  - Najdi samostatné celky (komponenty, záložky, pomocné funkce, konstanty, styly) a přesuň je do vlastních souborů vedle.
+  - Původní soubor nech jako tenké složení, které je importuje; veřejné exporty a chování se nemění.
+  - Každý nový soubor má mít jednu odpovědnost a pod limitem rezervu.
+  - Po rozdělení spusť build/testy projektu a commitni znovu.""", file=sys.stderr)
+    sys.exit(1)

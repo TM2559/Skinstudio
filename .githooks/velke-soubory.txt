@@ -1,0 +1,6 @@
+# Zdrojové soubory nad 5 000 tokenů při zavedení hooku (2026-10-19). Při větší úpravě rozdělit a smazat odsud.
+salon-system/functions/index.js
+salon-system/src/components/AdminView.jsx
+salon-system/src/components/QuickBookingApp.jsx
+salon-system/src/components/admin/AdminOrdersTab.jsx
+salon-system/src/components/admin/AdminShiftsTab.jsx
