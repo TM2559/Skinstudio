@@ -30,7 +30,7 @@
   --skin-vein: #d8cfc5;
   --skin-nude: #e8d6c8;
   --skin-gold: #c5aa80;
-  --skin-gold-dark: #a3803d;
+  --skin-gold-dark: #7a5c28; /* bílý text na vybraném dni/čase ≥ 4,5:1 (dřív #a3803d = 3,7) */
   --skin-gold-from: #dec89a;
   --skin-gold-to: #b08d55;
   --skin-charcoal: #2e2925;

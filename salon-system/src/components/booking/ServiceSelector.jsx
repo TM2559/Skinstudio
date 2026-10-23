@@ -12,7 +12,7 @@ function UpsellRow({ upsell, isActive, isDark, onToggle }) {
           {upsell.name}
         </span>
         {hasPrice && (
-          <span className={`text-[10px] font-light tracking-wide uppercase mt-0.5 ${isDark ? 'text-stone-400' : 'text-stone-400'}`}>
+          <span className={`text-[10px] font-light tracking-wide uppercase mt-0.5 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>
             zvýhodněná cena k ošetření
           </span>
         )}

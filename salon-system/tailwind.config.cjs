@@ -1,3 +1,8 @@
+const WARM_GRAY = {
+  50: '#F7F4F0', 100: '#EEE8E1', 200: '#E2DAD1', 300: '#D8CFC5', 400: '#B3A79C',
+  500: '#6B615A', 600: '#5C534D', 700: '#4D4540', 800: '#2E2925', 900: '#1F1B18', 950: '#14110F',
+};
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
@@ -8,28 +13,8 @@ module.exports = {
         display: ['"EB Garamond"', 'Georgia', 'serif'],
       },
       colors: {
-      // Identita Skin Studio (IDENTITA.md): teplé „mramorové“ šedé místo studené Tailwind palety
-      stone: {
-        50: '#F7F4F0', 100: '#EEE8E1', 200: '#E2DAD1', 300: '#D8CFC5', 400: '#B3A79C',
-        500: '#6B615A', 600: '#5C534D', 700: '#4D4540', 800: '#2E2925', 900: '#1F1B18', 950: '#14110F',
-      },
-      zinc: {
-        50: '#F7F4F0', 100: '#EEE8E1', 200: '#E2DAD1', 300: '#D8CFC5', 400: '#B3A79C',
-        500: '#6B615A', 600: '#5C534D', 700: '#4D4540', 800: '#2E2925', 900: '#1F1B18', 950: '#14110F',
-      },
-      neutral: {
-        50: '#F7F4F0', 100: '#EEE8E1', 200: '#E2DAD1', 300: '#D8CFC5', 400: '#B3A79C',
-        500: '#6B615A', 600: '#5C534D', 700: '#4D4540', 800: '#2E2925', 900: '#1F1B18', 950: '#14110F',
-      },
-      slate: {
-        50: '#F7F4F0', 100: '#EEE8E1', 200: '#E2DAD1', 300: '#D8CFC5', 400: '#B3A79C',
-        500: '#6B615A', 600: '#5C534D', 700: '#4D4540', 800: '#2E2925', 900: '#1F1B18', 950: '#14110F',
-      },
-      gray: {
-        50: '#F7F4F0', 100: '#EEE8E1', 200: '#E2DAD1', 300: '#D8CFC5', 400: '#B3A79C',
-        500: '#6B615A', 600: '#5C534D', 700: '#4D4540', 800: '#2E2925', 900: '#1F1B18', 950: '#14110F',
-      },
-
+        // Identita Skin Studio (IDENTITA.md): teplé „mramorové“ šedé místo studené Tailwind palety
+        stone: WARM_GRAY, zinc: WARM_GRAY, neutral: WARM_GRAY, slate: WARM_GRAY, gray: WARM_GRAY,
         'skin-gold-from': '#D9B56B',
         'skin-gold-to': '#8C6A2E',
         'skin-rose-from': '#CDA09A',

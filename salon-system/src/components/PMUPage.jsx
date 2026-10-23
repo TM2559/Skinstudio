@@ -13,7 +13,6 @@ import DeveloperSignature from './DeveloperSignature';
 import ServiceSchema from './ServiceSchema';
 import GiftTipLink from './GiftTipLink';
 import { GOOGLE_RATING } from '../constants/googleReviews';
-import { GOOGLE_REVIEW_URL } from '../firebaseConfig';
 import useGiftVoucherServiceIds from '../hooks/useGiftVoucherServiceIds';
 import BreadcrumbSchema from './BreadcrumbSchema';
 import useSEO from '../hooks/useSEO';
@@ -251,12 +250,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                 Objednat konzultaci
               </button>
               {GOOGLE_RATING && (
-                <a
-                  href={GOOGLE_REVIEW_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-6 flex items-center gap-2 text-sm text-[#A1A1AA] hover:text-white transition-colors justify-center md:justify-start"
-                >
+                <p className="mt-6 flex items-center gap-2 text-sm text-[#A1A1AA] justify-center md:justify-start">
                   <Star size={16} fill="#C48F83" stroke="#C48F83" aria-hidden />
                   <span>
                     <strong className="font-semibold text-white">
@@ -264,7 +258,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                     </strong>{' '}
                     z {GOOGLE_RATING.count} hodnocení na Google
                   </span>
-                </a>
+                </p>
               )}
             </div>
             <figure className="w-full max-w-md mx-auto md:ml-auto md:mr-0">
