@@ -31,7 +31,7 @@ describe('Public content path (galerie a proměny nesmí z webu zmizet)', () => 
       join(srcRoot, 'components/EditorialGallery.jsx'),
       join(srcRoot, 'components/CosmeticsPage.jsx'),
       join(srcRoot, 'components/PMUPage.jsx'),
-      join(srcRoot, 'components/PMUSpotlightSection.jsx'),
+      // PMUSpotlightSection od 23. 10. 2026 používá pevně vybranou fotku, z Firestore nečte
     ];
     for (const file of files) {
       const src = readFileSync(file, 'utf-8');

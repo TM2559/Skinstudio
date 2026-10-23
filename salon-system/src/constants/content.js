@@ -67,8 +67,8 @@ export const WEB_CONTENT = {
     headlineItalic: 'Jen dokonalejší.',
     body: 'Mým cílem není vytvořit make-up, ale podtrhnout vaše rysy tak jemně, že si okolí všimne jen toho, jak skvěle vypadáte. Neviditelná práce, viditelný rozdíl.',
     cta: 'Více o permanentním make-upu',
-    /** Optional: path to PMU Spotlight image (e.g. /pmu-spotlight.jpg). Falls back to placeholder. */
-    spotlightImage: '/pmu-spotlight.jpg',
+    /** Fotka sekce PMU na úvodu (meziřasová linka + obočí, vybráno 23. 10. 2026). */
+    spotlightImage: '/pmu-spotlight.webp',
   },
 
   promeny: {

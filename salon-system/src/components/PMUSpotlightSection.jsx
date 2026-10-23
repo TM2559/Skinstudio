@@ -1,33 +1,7 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { query, where, onSnapshot } from 'firebase/firestore';
 import { motion, useInView } from 'framer-motion';
-import { getPublicContentCollectionPathsForRead, isFirebaseRuntimeConfigured } from '../firebaseConfig';
-import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
 import { WEB_CONTENT } from '../constants/content';
-
-/** Pick best PMU transformation for spotlight: newest with a valid after image. */
-function useSpotlightPmuImage() {
-  const [imageUrl, setImageUrl] = useState(null);
-  useEffect(() => {
-    if (!isFirebaseRuntimeConfigured) return;
-    const colRefs = getPublicContentCollectionPathsForRead(TRANSFORMATIONS_COLLECTION);
-    if (!colRefs.length) return;
-    const docsByPathRef = { current: colRefs.map(() => []) };
-    const unsubs = colRefs.map((col, idx) => {
-      const q = query(col, where('category', '==', PMU_CATEGORY));
-      return onSnapshot(q, (snap) => {
-        docsByPathRef.current[idx] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        const list = docsByPathRef.current.flat();
-        list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-        const best = list.find((item) => item.imageAfterUrl?.trim()) || list.find((item) => item.imageBeforeUrl?.trim());
-        setImageUrl(best?.imageAfterUrl?.trim() || best?.imageBeforeUrl?.trim() || null);
-      });
-    });
-    return () => unsubs.forEach((u) => u());
-  }, []);
-  return imageUrl;
-}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -53,8 +27,8 @@ export default function PMUSpotlightSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
   const { pmu } = WEB_CONTENT;
-  const dbImageUrl = useSpotlightPmuImage();
-  const imageSrc = dbImageUrl || pmu.spotlightImage || '/pmu-spotlight.jpg';
+  // Záměrně vybraná fotka (meziřasová linka + obočí, 23. 10. 2026), ne „nejnovější z adminu“
+  const imageSrc = pmu.spotlightImage;
 
   return (
     <section
