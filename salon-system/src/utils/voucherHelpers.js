@@ -16,3 +16,8 @@ export function voucherDisplayCategory(v) {
   if (normalizeVoucherType(v.type) === VOUCHER_TYPES.VALUE) return 'value';
   return 'cosmetics';
 }
+
+/** Odkaz na objednávku dárkového poukazu s předvybranou službou (štítek „Tip na dárek“ v ceníku). */
+export function giftVoucherHref(serviceId) {
+  return `/darkove-poukazy?sluzba=${encodeURIComponent(serviceId)}`;
+}

@@ -22,7 +22,7 @@ vi.mock('../../contexts/DataContext', () => ({
         category: 'value',
         is_custom_amount: true,
       },
-      { id: 'v2', name: 'Me time', type: 'service', price: 1500, is_active: true, category: 'cosmetics' },
+      { id: 'v2', name: 'Me time', type: 'service', price: 1500, is_active: true, category: 'cosmetics', service_id: 'svc-me-time' },
     ],
   }),
 }));
@@ -42,9 +42,9 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }) => <>{children}</>,
 }));
 
-function renderWithRouter() {
+function renderWithRouter(entry = '/darkove-poukazy') {
   return render(
-    <MemoryRouter initialEntries={['/darkove-poukazy']}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/darkove-poukazy" element={<GiftVoucherCheckoutPage />} />
         <Route path="/poukaz/success" element={<VoucherSuccessPage />} />
@@ -90,6 +90,18 @@ describe('GiftVoucherCheckoutPage', () => {
     expect(screen.getByRole('button', { name: 'Závazně objednat' })).toBeInTheDocument();
     const total = screen.getByText('Celkem').nextElementSibling;
     expect(total).toHaveTextContent(/2\s*000 Kč/);
+  });
+
+  it('preselects the service voucher from ?sluzba= (Tip na dárek in the price list)', () => {
+    renderWithRouter('/darkove-poukazy?sluzba=svc-me-time');
+    expect(screen.queryByText('Zatím nevybráno.')).not.toBeInTheDocument();
+    const total = screen.getByText('Celkem').nextElementSibling;
+    expect(total).toHaveTextContent(/1\s*500 Kč/);
+  });
+
+  it('ignores unknown ?sluzba= and keeps nothing selected', () => {
+    renderWithRouter('/darkove-poukazy?sluzba=neexistuje');
+    expect(screen.getByText('Zatím nevybráno.')).toBeInTheDocument();
   });
 
   it('adds 100 Kč for box packaging', () => {

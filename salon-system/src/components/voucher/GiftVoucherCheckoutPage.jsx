@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import CheckoutHeader from './CheckoutHeader';
 import VoucherTypeSection from './VoucherTypeSection';
 import PackagingOptions from './configurator/PackagingOptions';
@@ -63,6 +63,19 @@ export default function GiftVoucherCheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const customAmountInputRef = useRef(null);
+
+  // Odkaz „Tip na dárek“ z ceníku: /darkove-poukazy?sluzba=<id služby> předvybere poukaz na tu proceduru
+  const { search } = useLocation();
+  const preselectServiceId = new URLSearchParams(search || '').get('sluzba');
+  const preselectDone = useRef(false);
+  useEffect(() => {
+    if (preselectDone.current || !preselectServiceId) return;
+    const voucher = activeVouchers.find((v) => v.service_id === preselectServiceId);
+    if (!voucher) return;
+    preselectDone.current = true;
+    setActiveMode('service');
+    setSelectedVoucher(voucher);
+  }, [activeVouchers, preselectServiceId]);
 
   const minLaterDate = getMinLaterDate();
   const tomorrowLabel = useMemo(() => {

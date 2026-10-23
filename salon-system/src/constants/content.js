@@ -85,6 +85,9 @@ export const WEB_CONTENT = {
     loading: 'Načítání procedur a ceníku…',
     ctaReservovat: 'Rezervovat termín',
     ctaRezervovatShort: 'Rezervovat',
+    giftTip: 'Tip na dárek',
+    giftTipAria: 'Tip na dárek – objednat dárkový poukaz na tuto proceduru',
+    ctaDarovat: 'Darovat jako poukaz',
   },
 
   footer: {

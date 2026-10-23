@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, Gift } from 'lucide-react';
 import ServiceDescriptionMarkdown from './ServiceDescriptionMarkdown';
+import GiftTipLink from './GiftTipLink';
+import { giftVoucherHref } from '../utils/voucherHelpers';
+import useGiftVoucherServiceIds from '../hooks/useGiftVoucherServiceIds';
+import { WEB_CONTENT } from '../constants/content';
 
 /** Remove parenthetical meta-commentary from description text. */
 function cleanDescription(text) {
@@ -38,6 +42,7 @@ export default function ServiceListAccordion({
   footerHref,
 }) {
   const [expandedServiceId, setExpandedServiceId] = useState(null);
+  const giftServiceIds = useGiftVoucherServiceIds();
   const isDark = variant === 'dark';
 
   const borderColor = isDark ? BORDER_DARK : '#E5E5E5';
@@ -66,6 +71,8 @@ export default function ServiceListAccordion({
       <ul className="space-y-0" style={{ borderColor }}>
         {services.map((s) => {
           const hasDescription = !!(s.description && cleanDescription(s.description));
+          const isGift = giftServiceIds.has(s.id);
+          const isExpandable = hasDescription || isGift;
           const isExpanded = expandedServiceId === s.id;
           const priceText =
             s.price != null && s.price !== 0
@@ -82,12 +89,19 @@ export default function ServiceListAccordion({
                 onClick={() => setExpandedServiceId((id) => (id === s.id ? null : s.id))}
                 className={`w-full flex justify-between items-center text-left transition-colors py-[20px] ${rowHoverClass} ${isDark ? 'px-0' : ''}`}
               >
-                <span className={titleClass}>{s.name}</span>
+                <span className={titleClass}>
+                  {s.name}
+                  {isGift && (
+                    <span className="block mt-1.5">
+                      <GiftTipLink variant={variant} />
+                    </span>
+                  )}
+                </span>
                 <div className="flex items-center shrink-0">
                   <span className={priceClass} style={priceStyle}>
                     {priceText}
                   </span>
-                  {hasDescription && (
+                  {isExpandable && (
                     <span className={`ml-4 flex items-center justify-center shrink-0 ${chevronClass}`}>
                       {isExpanded ? <ChevronUp size={20} aria-hidden /> : <ChevronDown size={20} aria-hidden />}
                     </span>
@@ -97,18 +111,21 @@ export default function ServiceListAccordion({
               <div
                 className="grid ease-out"
                 style={{
-                  gridTemplateRows: isExpanded && hasDescription ? '1fr' : '0fr',
+                  gridTemplateRows: isExpanded && isExpandable ? '1fr' : '0fr',
                   transition: 'grid-template-rows 0.3s ease, opacity 0.3s ease',
                 }}
               >
                 <div className="min-h-0 overflow-hidden">
                   <div
                     className="pb-6 pt-0 px-0 transition-opacity duration-300 ease-out"
-                    style={{ opacity: isExpanded && hasDescription ? 1 : 0 }}
+                    style={{ opacity: isExpanded && isExpandable ? 1 : 0 }}
                   >
-                    {hasDescription && (
+                    {isExpandable && (
                       <>
-                        <ServiceDescriptionMarkdown text={s.description} theme={isDark ? 'dark' : 'light'} />
+                        {hasDescription && (
+                          <ServiceDescriptionMarkdown text={s.description} theme={isDark ? 'dark' : 'light'} />
+                        )}
+                        <div className="flex flex-wrap items-center gap-x-6">
                         {getReserveHref ? (
                           <Link
                             to={getReserveHref(s)}
@@ -129,6 +146,17 @@ export default function ServiceListAccordion({
                             <Calendar size={16} /> {ctaReservovat}
                           </Link>
                         ) : null}
+                        {isGift && (
+                          <Link
+                            to={giftVoucherHref(s.id)}
+                            className={`mt-6 inline-flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-widest underline-offset-4 hover:underline ${
+                              isDark ? 'text-[#daa59c]' : 'text-[#9a7b4f]'
+                            }`}
+                          >
+                            <Gift size={16} aria-hidden /> {WEB_CONTENT.cenik.ctaDarovat}
+                          </Link>
+                        )}
+                        </div>
                       </>
                     )}
                   </div>

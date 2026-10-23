@@ -7,9 +7,11 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 const RouterContext = createContext(null);
 
 function MemoryRouter({ initialEntries = ['/'], initialIndex = 0, children }) {
-  const entries = initialEntries.map((e) =>
-    typeof e === 'string' ? { pathname: e, state: null } : { pathname: e.pathname || '/', state: e.state ?? null }
-  );
+  const entries = initialEntries.map((e) => {
+    if (typeof e !== 'string') return { pathname: e.pathname || '/', search: e.search || '', state: e.state ?? null };
+    const [pathname, query] = e.split('?');
+    return { pathname, search: query ? `?${query}` : '', state: null };
+  });
   const [state, setState] = useState({ entries, index: initialIndex });
   const location = state.entries[state.index] || { pathname: '/', state: null };
   const navigate = useCallback((path, opts) => {

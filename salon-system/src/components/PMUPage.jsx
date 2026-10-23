@@ -11,6 +11,8 @@ import ReservationApp from './ReservationApp';
 import { TaglineWithHeart } from './FooterTagline';
 import DeveloperSignature from './DeveloperSignature';
 import ServiceSchema from './ServiceSchema';
+import GiftTipLink from './GiftTipLink';
+import useGiftVoucherServiceIds from '../hooks/useGiftVoucherServiceIds';
 import BreadcrumbSchema from './BreadcrumbSchema';
 import useSEO from '../hooks/useSEO';
 import { SEO } from '../constants/seo';
@@ -24,6 +26,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
   const pmuCarouselRef = useRef(null);
   const [pmuActiveIndex, setPmuActiveIndex] = useState(0);
 
+  const giftServiceIds = useGiftVoucherServiceIds();
   const pmuServices = useMemo(
     () =>
       services
@@ -341,7 +344,14 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                         key={service.id}
                         className={`flex justify-between items-baseline py-4 px-3 -mx-3 rounded-lg transition-colors duration-300 hover:bg-white/5 ${!isLast ? 'border-b border-white/5' : ''}`}
                       >
-                        <span>{service.name}</span>
+                        <span className="min-w-0 pr-4">
+                          {service.name}
+                          {giftServiceIds.has(service.id) && (
+                            <span className="block mt-1.5">
+                              <GiftTipLink variant="dark" serviceId={service.id} />
+                            </span>
+                          )}
+                        </span>
                         <span className="font-display text-[#C48F83] font-medium">{priceText}</span>
                       </li>
                     );
