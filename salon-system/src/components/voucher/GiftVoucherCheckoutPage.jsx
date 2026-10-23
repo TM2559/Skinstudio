@@ -7,6 +7,8 @@ import DateSelector from './configurator/DateSelector';
 import ContactInputs from './configurator/ContactInputs';
 import OrderSummary from './OrderSummary';
 import { useData } from '../../contexts/DataContext';
+import useSEO from '../../hooks/useSEO';
+import { SEO } from '../../constants/seo';
 import { voucherDisplayCategory } from '../../utils/voucherHelpers';
 import { callCreateVoucherOrder } from '../../firebaseConfig';
 import {
@@ -21,6 +23,7 @@ import {
 
 export default function GiftVoucherCheckoutPage() {
   const navigate = useNavigate();
+  useSEO(SEO.darkovePoukazy);
   const { voucherTemplates } = useData();
   const activeVouchers = useMemo(
     () => (voucherTemplates || []).filter((v) => v.is_active !== false),

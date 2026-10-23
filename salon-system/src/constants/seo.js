@@ -13,6 +13,8 @@ export const SEO = {
   },
 
   kosmetika: {
+    /** Stejný obsah jako úvod – kanonická adresa je úvod, ať si Google nevybírá mezi dvěma kopiemi. */
+    canonicalPath: '/',
     title: 'Kosmetika Uherský Brod | Ošetření pleti, laminace obočí – Skin Studio',
     description:
       'Kosmetika Uherský Brod – čištění pleti, anti-aging, chemický peeling, laminace obočí a lashlifting. Ceník služeb a online rezervace u Lucie Metelkové.',
@@ -34,6 +36,14 @@ export const SEO = {
       'Rezervujte si termín v Skin Studiu online. Vyberte službu, datum a čas – potvrzení obdržíte ihned na e-mail.',
     ogTitle: 'Rezervace termínu | Skin Studio',
     ogDescription: 'Rezervujte si kosmetické ošetření nebo permanentní make-up v Skin Studiu Uherský Brod.',
+  },
+
+  darkovePoukazy: {
+    title: 'Dárkový poukaz na kosmetiku a permanentní make-up | Skin Studio Uherský Brod',
+    description:
+      'Dárkový poukaz do Skin Studia v Uherském Brodě – na konkrétní ošetření, PMU nebo libovolnou částku. Objednejte online, platba a vyzvednutí osobně v salonu.',
+    ogTitle: 'Dárkový poukaz | Skin Studio Uherský Brod',
+    ogDescription: 'Darujte péči o pleť, laminaci obočí nebo permanentní make-up. Poukaz na proceduru i libovolnou částku.',
   },
 
   privacy: {

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, MapPin, Mail, Phone } from 'lucide-react';
 import { INSTAGRAM_URL } from '../firebaseConfig';
-import InstagramShowcase from './InstagramShowcase';
 import { TaglineWithHeart } from './FooterTagline';
 import DeveloperSignature from './DeveloperSignature';
 import { WEB_CONTENT } from '../constants/content';
@@ -15,7 +14,7 @@ const NAV = getNav();
 
 const VOUCHER_ROUTES = ['/darkove-poukazy', '/poukaz/success'];
 
-export default function Layout({ children, setView, hideFooter = false, hideHeader = false, hideInstagram = false }) {
+export default function Layout({ children, setView, hideFooter = false, hideHeader = false }) {
   const location = useLocation();
   const errorResetKey = `${location.pathname}${location.search}${location.hash}`;
   const isHome = location.pathname === '/';
@@ -172,7 +171,6 @@ export default function Layout({ children, setView, hideFooter = false, hideHead
         </ErrorBoundary>
       </main>
 
-      {!isVoucherCheckout && !hideInstagram && <InstagramShowcase />}
 
       {!isVoucherCheckout && !hideFooter && (
       <footer id="kontakt" className="mt-auto bg-[#1c1c1c] font-sans font-light text-gray-200">

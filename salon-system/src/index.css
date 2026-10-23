@@ -320,7 +320,7 @@
 
   /* Developer signature "0x9ff" – idle low-contrast, hover = #99ffff + neon glow */
   .signature-0x9ff {
-    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   }
   .signature-0x9ff:hover {
     text-shadow:

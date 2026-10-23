@@ -9,7 +9,10 @@
     <meta charset="UTF-8" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=EB+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Jost:wght@300;400;500;600&family=Sacramento&display=swap" rel="stylesheet">
+    <!-- Písma neblokují první vykreslení (Lighthouse: −2,1 s); preload hlavní fotky doplní per stránka scripts/seoPagesPlugin.mjs -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Jost:wght@300;400;500;600&family=Sacramento&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Jost:wght@300;400;500;600&family=Sacramento&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Jost:wght@300;400;500;600&family=Sacramento&display=swap"></noscript>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- Canonical URL – prevent duplicate content (www vs non-www) -->
@@ -74,6 +77,8 @@
           "closes": "16:00"
         }
       ],
+      "founder": { "@type": "Person", "name": "Mgr. Lucie Metelková", "jobTitle": "Kosmetička a specialistka na permanentní make-up" },
+      "areaServed": ["Uherský Brod", "Uherské Hradiště", "Bojkovice", "Nivnice", "Vlčnov", "Hluk", "Zlínský kraj"],
       "sameAs": [
         "https://www.instagram.com/skin_studio_lucie_metelkova"
       ],

@@ -15,7 +15,7 @@ import useIsMobile from '../hooks/useIsMobile';
  */
 
 /** @type {React.FC<ComparisonProps>} */
-export default function ComparisonSlider({ beforeImage, afterImage, altText = 'Srovnání', theme = 'dark' }) {
+export default function ComparisonSlider({ beforeImage, afterImage, altText = 'Srovnání', theme = 'dark', eager = false }) {
   const isMobile = useIsMobile();
   const hasImages = beforeImage && afterImage && beforeImage.trim() && afterImage.trim();
 
@@ -62,6 +62,8 @@ export default function ComparisonSlider({ beforeImage, afterImage, altText = 'S
             <ReactCompareSliderImage
               src={beforeImage}
               alt={`${altText} – Před`}
+              loading={eager ? 'eager' : 'lazy'}
+              decoding="async"
               style={imageStyle}
             />
           }
@@ -69,6 +71,8 @@ export default function ComparisonSlider({ beforeImage, afterImage, altText = 'S
             <ReactCompareSliderImage
               src={afterImage}
               alt={`${altText} – Po`}
+              loading={eager ? 'eager' : 'lazy'}
+              decoding="async"
               style={imageStyle}
             />
           }

@@ -3,6 +3,8 @@ import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
 import Layout from './components/Layout';
+// Úvodní stránka bez lazy načítání – jinak čeká na další soubor až po spuštění aplikace (pomalé LCP)
+import CosmeticsPage from './components/CosmeticsPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useData } from './contexts/DataContext';
 import { useAdminAuth } from './contexts/AdminAuthContext';
@@ -10,9 +12,8 @@ import { GOOGLE_REVIEW_URL } from './firebaseConfig';
 import { ADMIN } from './constants/config';
 
 const ReservationApp = lazy(() => import('./components/ReservationApp'));
-const CosmeticsPage = lazy(() => import('./components/CosmeticsPage'));
-const PMUPage = lazy(() => import('./components/PMUPage'));
 const ThankYouPage = lazy(() => import('./components/ThankYouPage'));
+const PMUPage = lazy(() => import('./components/PMUPage'));
 const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
 const GiftVoucherCheckoutPage = lazy(() => import('./components/voucher/GiftVoucherCheckoutPage'));
 const VoucherSuccessPage = lazy(() => import('./components/voucher/VoucherSuccessPage'));
@@ -43,7 +44,9 @@ export default function App() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  if (data.loading) {
+  // Úvod, kosmetika a PMU se vykreslí hned (rychlé LCP pro Google); na přihlášení k Firebase čekají jen stránky, které bez dat nedávají smysl.
+  const waitsForData = !['/', '/kosmetika', '/pmu'].includes(location.pathname);
+  if (data.loading && waitsForData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50">
         <Loader2 className="animate-spin text-stone-400" size={32} />
@@ -57,7 +60,6 @@ export default function App() {
       setView={adminAuth.setView}
       hideFooter={adminAuth.view === 'admin'}
       hideHeader={adminAuth.view === 'admin'}
-      hideInstagram={adminAuth.view === 'admin'}
     >
       <ReservationApp
         loading={false}
@@ -114,6 +116,7 @@ export default function App() {
                 services={data.servicesWithAddons}
                 schedule={data.schedulePmu}
                 reservations={data.reservations}
+                loading={data.loading}
               />
             </ErrorBoundary>
           }

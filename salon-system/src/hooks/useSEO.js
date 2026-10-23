@@ -9,11 +9,11 @@ const DEFAULT_OG_IMAGE = `${BASE_URL}/og-hero.jpg`;
  * Open Graph and Twitter Card tags. Cleans up on unmount by
  * restoring the original static values from index.html.
  *
- * @param {{ title: string, description: string, ogTitle?: string, ogDescription?: string, ogImage?: string, ogType?: string }} opts
+ * @param {{ title: string, description: string, ogTitle?: string, ogDescription?: string, ogImage?: string, ogType?: string, canonicalPath?: string }} opts
  */
-export default function useSEO({ title, description, ogTitle, ogDescription, ogImage, ogType }) {
+export default function useSEO({ title, description, ogTitle, ogDescription, ogImage, ogType, canonicalPath }) {
   const { pathname } = useLocation();
-  const canonicalUrl = `${BASE_URL}${pathname === '/' ? '/' : pathname}`;
+  const canonicalUrl = `${BASE_URL}${canonicalPath || pathname}`;
 
   useEffect(() => {
     if (!title) return;

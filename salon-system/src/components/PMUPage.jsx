@@ -21,10 +21,17 @@ import { SEO } from '../constants/seo';
 
 const CATEGORY_PMU = 'PMU';
 
-/** Název proměny PMU, která se ukáže v úvodu stránky (vybráno 23. 10. 2026). */
-const HERO_TRANSFORMATION_TITLE = 'PMU rtů před a ihned po';
+/**
+ * Proměna v úvodu PMU („PMU rtů před a ihned po“, vybráno 23. 10. 2026) jako malé soubory přímo na webu,
+ * ať se úvod nečeká na Firestore a 500kB fotky ze Storage (Lighthouse LCP).
+ */
+const HERO_TRANSFORMATION = {
+  beforeImage: '/pmu-hero-before.webp',
+  afterImage: '/pmu-hero-after.webp',
+  altText: 'PMU rtů před a ihned po',
+};
 
-export default function PMUPage({ services = [], schedule = {}, reservations = [] }) {
+export default function PMUPage({ services = [], schedule = {}, reservations = [], loading = false }) {
   useSEO(SEO.pmu);
   const [menuOpen, setMenuOpen] = useState(false);
   const [sliders, setSliders] = useState([]);
@@ -71,10 +78,6 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
         afterImage: item.imageAfterUrl,
         altText: item.title || 'Před a po',
       }));
-
-  // Proměna do úvodu: vybraná podle názvu (Fotografie → Proměny), jinak nejnovější
-  const heroSlider =
-    displaySliders.find((item) => item.altText === HERO_TRANSFORMATION_TITLE) || displaySliders[0];
 
   // Scroll to #pmu when landing on this page with hash (e.g. from main nav link)
   useEffect(() => {
@@ -221,28 +224,22 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
       </header>
 
       <main>
-        {/* Hero – slib + jedno CTA, vedle skutečný výsledek před/po z Proměn PMU (rešerše 23. 10.: konkurence ukazuje výsledky hned nahoře) */}
+        {/* Hero – slib + jedno CTA, vedle skutečný výsledek před/po (rešerše 23. 10.: konkurence ukazuje výsledky hned nahoře) */}
         <section className="min-h-screen flex items-center px-4 pt-24 pb-16">
           <div
-            className={`max-w-6xl mx-auto w-full grid gap-12 items-center ${
-              displaySliders.length > 0 ? 'md:grid-cols-2' : ''
-            }`}
+            className="max-w-6xl mx-auto w-full grid gap-12 items-center md:grid-cols-2"
           >
-            <div className={displaySliders.length > 0 ? 'text-center md:text-left' : 'text-center'}>
+            <div className="text-center md:text-left">
               <p className="font-display text-[#C48F83] text-sm uppercase tracking-[0.3em] mb-6">
                 Permanent Make-Up
               </p>
               <h1
-                className={`font-display font-bold text-4xl sm:text-5xl md:text-6xl text-white tracking-tight ${
-                  displaySliders.length > 0 ? 'max-w-xl mx-auto md:mx-0' : 'max-w-3xl mx-auto lg:text-7xl'
-                }`}
+                className="font-display font-bold text-4xl sm:text-5xl md:text-6xl text-white tracking-tight max-w-xl mx-auto md:mx-0"
               >
                 Umění trvalé krásy
               </h1>
               <p
-                className={`mt-8 text-[#A1A1AA] text-base sm:text-lg max-w-xl leading-relaxed ${
-                  displaySliders.length > 0 ? 'mx-auto md:mx-0' : 'mx-auto'
-                }`}
+                className="mt-8 text-[#A1A1AA] text-base sm:text-lg max-w-xl leading-relaxed mx-auto md:mx-0"
               >
                 Precizní linky. Přirozený výsledek. Výjimečný zážitek.
               </p>
@@ -270,19 +267,18 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                 </a>
               )}
             </div>
-            {displaySliders.length > 0 && (
-              <figure className="w-full max-w-md mx-auto md:ml-auto md:mr-0">
+            <figure className="w-full max-w-md mx-auto md:ml-auto md:mr-0">
                 <ComparisonSlider
-                  beforeImage={heroSlider.beforeImage}
-                  afterImage={heroSlider.afterImage}
-                  altText={heroSlider.altText}
+                  beforeImage={HERO_TRANSFORMATION.beforeImage}
+                  afterImage={HERO_TRANSFORMATION.afterImage}
+                  altText={HERO_TRANSFORMATION.altText}
                   theme="dark"
+                  eager
                 />
                 <figcaption className="mt-3 text-center text-xs uppercase tracking-[0.2em] text-[#A1A1AA]">
                   Skutečný výsledek · před a po
                 </figcaption>
               </figure>
-            )}
           </div>
         </section>
 
@@ -433,7 +429,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
               Rezervace PMU
             </h2>
             <ReservationApp
-              loading={false}
+              loading={loading}
               view="customer"
               setView={() => {}}
               adminPassword=""

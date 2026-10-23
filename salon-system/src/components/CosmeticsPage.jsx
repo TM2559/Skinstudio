@@ -119,6 +119,10 @@ export default function CosmeticsPage({ services = [] }) {
         <div className="relative w-full h-[400px] md:h-full order-2 md:order-2 min-h-0">
           <img
             src="/lucie-portrait.jpg"
+            srcSet="/lucie-portrait-480.webp 480w, /lucie-portrait-800.webp 800w, /lucie-portrait-1200.webp 1200w"
+            sizes="(min-width: 768px) 50vw, 100vw"
+            width={1200}
+            height={1800}
             alt={WEB_CONTENT.imageAlts.portrait}
             className="w-full h-full object-cover object-[50%_48%]"
             loading="eager"

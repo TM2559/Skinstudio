@@ -8,7 +8,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import Layout from './Layout';
 
 vi.mock('../firebaseConfig', () => ({ INSTAGRAM_URL: '' }));
-vi.mock('./InstagramShowcase', () => ({ default: () => null }));
 
 const mockUseLocation = vi.fn(() => ({ pathname: '/rezervace' }));
 vi.mock('react-router-dom', () => ({
@@ -51,14 +50,14 @@ describe('Layout', () => {
     expect(setView).toHaveBeenCalledWith('customer');
   });
 
-  it('hides footer and Instagram on voucher checkout route /darkove-poukazy', () => {
+  it('hides footer on voucher checkout route /darkove-poukazy', () => {
     mockUseLocation.mockReturnValueOnce({ pathname: '/darkove-poukazy' });
     const { container } = render(<Layout setView={vi.fn()}><span>Content</span></Layout>);
     expect(container.querySelector('footer#kontakt')).not.toBeInTheDocument();
     expect(container.querySelector('main')).toBeInTheDocument();
   });
 
-  it('hides footer and Instagram on voucher success route /poukaz/success', () => {
+  it('hides footer on voucher success route /poukaz/success', () => {
     mockUseLocation.mockReturnValueOnce({ pathname: '/poukaz/success' });
     const { container } = render(<Layout setView={vi.fn()}><span>Content</span></Layout>);
     expect(container.querySelector('footer#kontakt')).not.toBeInTheDocument();

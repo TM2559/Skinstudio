@@ -17,9 +17,9 @@ function sitemapPlugin() {
       const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${BASE}/</loc><lastmod>${today()}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>${BASE}/kosmetika</loc><lastmod>${today()}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>${BASE}/pmu</loc><lastmod>${today()}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>${BASE}/rezervace</loc><lastmod>${today()}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>${BASE}/darkove-poukazy</loc><lastmod>${today()}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
 </urlset>`
       writeFileSync(join(outDir, 'sitemap.xml'), sitemap.trim(), 'utf8')
     },

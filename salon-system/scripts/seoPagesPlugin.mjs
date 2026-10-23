@@ -10,17 +10,22 @@
  *
  * Firebase Hosting s "cleanUrls": true servíruje /kosmetika z kosmetika.html.
  */
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { SEO } from '../src/constants/seo.js'
 
 const BASE = 'https://www.skinstudio.cz'
 
+// Hlavní obrázek stránky (LCP) – stahuje se hned s HTML
+const PRELOAD_PORTRAIT = '<link rel="preload" as="image" type="image/webp" href="/lucie-portrait-800.webp" imagesrcset="/lucie-portrait-480.webp 480w, /lucie-portrait-800.webp 800w, /lucie-portrait-1200.webp 1200w" imagesizes="(min-width: 768px) 50vw, 100vw" fetchpriority="high">'
+const PRELOAD_PMU = '<link rel="preload" as="image" type="image/webp" href="/pmu-hero-before.webp" fetchpriority="high"><link rel="preload" as="image" type="image/webp" href="/pmu-hero-after.webp" fetchpriority="high">'
+
 const PAGES = [
-  { path: '/', file: 'index.html', seo: SEO.home, h1: 'Skin Studio – kosmetika a permanentní make-up v Uherském Brodě', categories: ['STANDARD', 'PMU'] },
-  { path: '/kosmetika', file: 'kosmetika.html', seo: SEO.kosmetika, h1: 'Kosmetika Uherský Brod – ošetření pleti, laminace obočí, lashlifting', categories: ['STANDARD'] },
-  { path: '/pmu', file: 'pmu.html', seo: SEO.pmu, h1: 'Permanentní make-up Uherský Brod – obočí, rty, meziřasová linka', categories: ['PMU'] },
-  { path: '/rezervace', file: 'rezervace.html', seo: SEO.rezervace, h1: 'Online rezervace – Skin Studio Uherský Brod', categories: ['STANDARD', 'PMU'] },
+  { path: '/', file: 'index.html', seo: SEO.home, h1: 'Skin Studio – kosmetika a permanentní make-up v Uherském Brodě', categories: ['STANDARD', 'PMU'], preload: PRELOAD_PORTRAIT },
+  { path: '/kosmetika', file: 'kosmetika.html', seo: SEO.kosmetika, h1: 'Kosmetika Uherský Brod – ošetření pleti, laminace obočí, lashlifting', categories: ['STANDARD'], preload: PRELOAD_PORTRAIT },
+  { path: '/pmu', file: 'pmu.html', chunk: 'PMUPage', seo: SEO.pmu, h1: 'Permanentní make-up Uherský Brod – obočí, rty, meziřasová linka', categories: ['PMU'], preload: PRELOAD_PMU },
+  { path: '/rezervace', file: 'rezervace.html', chunk: 'ReservationApp', seo: SEO.rezervace, h1: 'Online rezervace – Skin Studio Uherský Brod', categories: ['STANDARD', 'PMU'] },
+  { path: '/darkove-poukazy', file: 'darkove-poukazy.html', chunk: 'GiftVoucherCheckoutPage', seo: SEO.darkovePoukazy, h1: 'Dárkový poukaz – kosmetika a permanentní make-up v Uherském Brodě', categories: ['STANDARD', 'PMU'] },
 ]
 
 const esc = (s) =>
@@ -60,9 +65,9 @@ function setMeta(html, attr, name, value) {
   return html.replace(re, `$1${esc(value)}$2`)
 }
 
-function renderHead(html, page) {
+function renderHead(html, page, services = [], chunks = []) {
   const { seo } = page
-  const url = `${BASE}${page.path}`
+  const url = `${BASE}${page.seo.canonicalPath || page.path}`
   let out = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(seo.title)}</title>`)
   out = out.replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${url}$2`)
   out = setMeta(out, 'name', 'description', seo.description)
@@ -71,7 +76,40 @@ function renderHead(html, page) {
   out = setMeta(out, 'property', 'og:url', url)
   out = setMeta(out, 'name', 'twitter:title', seo.ogTitle || seo.title)
   out = setMeta(out, 'name', 'twitter:description', seo.ogDescription || seo.description)
+  if (page.preload) out = out.replace('</head>', `${page.preload}\n</head>`)
+  // Kód stránky (lazy chunk) stáhnout hned s HTML, ne až po spuštění aplikace
+  const chunkFile = page.chunk && chunks.find((f) => f.startsWith(`${page.chunk}-`) && f.endsWith('.js'))
+  if (chunkFile) out = out.replace('</head>', `<link rel="modulepreload" crossorigin href="/assets/${chunkFile}">\n</head>`)
+  if (services.length) out = out.replace('</head>', `${offerCatalogJsonLd(page, services)}\n</head>`)
   return out
+}
+
+/** Ceník jako strukturovaná data (BeautySalon → hasOfferCatalog), ať Google zná služby a ceny. */
+function offerCatalogJsonLd(page, services) {
+  const list = services.filter((s) => page.categories.includes(s.category))
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'BeautySalon',
+    '@id': `${BASE}/#salon`,
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'Ceník – Skin Studio',
+      itemListElement: list.map((s) => ({
+        '@type': 'Offer',
+        itemOffered: { '@type': 'Service', name: s.name },
+        ...(s.price
+          ? {
+              priceSpecification: {
+                '@type': 'PriceSpecification',
+                priceCurrency: 'CZK',
+                [s.isStartingPrice ? 'minPrice' : 'price']: s.price,
+              },
+            }
+          : {}),
+      })),
+    },
+  }
+  return `<script type="application/ld+json">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`
 }
 
 function renderBody(page, services) {
@@ -105,8 +143,9 @@ export function seoPagesPlugin() {
       const dir = join(process.cwd(), outDir)
       const template = readFileSync(join(dir, 'index.html'), 'utf8')
       const services = await fetchServices(env)
+      const chunks = readdirSync(join(dir, 'assets'))
       for (const page of PAGES) {
-        const html = renderHead(template, page).replace(
+        const html = renderHead(template, page, services, chunks).replace(
           '<div id="root"></div>',
           `<div id="root">${renderBody(page, services)}</div>`
         )
