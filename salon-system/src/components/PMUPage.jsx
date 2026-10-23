@@ -21,6 +21,9 @@ import { SEO } from '../constants/seo';
 
 const CATEGORY_PMU = 'PMU';
 
+/** Název proměny PMU, která se ukáže v úvodu stránky (vybráno 23. 10. 2026). */
+const HERO_TRANSFORMATION_TITLE = 'PMU rtů před a ihned po';
+
 export default function PMUPage({ services = [], schedule = {}, reservations = [] }) {
   useSEO(SEO.pmu);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -68,6 +71,10 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
         afterImage: item.imageAfterUrl,
         altText: item.title || 'Před a po',
       }));
+
+  // Proměna do úvodu: vybraná podle názvu (Fotografie → Proměny), jinak nejnovější
+  const heroSlider =
+    displaySliders.find((item) => item.altText === HERO_TRANSFORMATION_TITLE) || displaySliders[0];
 
   // Scroll to #pmu when landing on this page with hash (e.g. from main nav link)
   useEffect(() => {
@@ -266,9 +273,9 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             {displaySliders.length > 0 && (
               <figure className="w-full max-w-md mx-auto md:ml-auto md:mr-0">
                 <ComparisonSlider
-                  beforeImage={displaySliders[0].beforeImage}
-                  afterImage={displaySliders[0].afterImage}
-                  altText={displaySliders[0].altText}
+                  beforeImage={heroSlider.beforeImage}
+                  afterImage={heroSlider.afterImage}
+                  altText={heroSlider.altText}
                   theme="dark"
                 />
                 <figcaption className="mt-3 text-center text-xs uppercase tracking-[0.2em] text-[#A1A1AA]">
