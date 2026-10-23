@@ -9,6 +9,7 @@ import ComparisonSlider from './ComparisonSlider';
 import EditorialGallery from './EditorialGallery';
 import LazySection from './LazySection';
 import ServiceListAccordion from './ServiceListAccordion';
+import AccentHeading from './AccentHeading';
 import SocialProofSection from './SocialProofSection';
 import PMUSpotlightSection from './PMUSpotlightSection';
 import { GOOGLE_REVIEW_URL } from '../firebaseConfig';
@@ -130,13 +131,13 @@ export default function CosmeticsPage({ services = [] }) {
       {/* 2. Filozofie – text-only, centered, no duplicate portrait */}
       <section
         id="o-nas"
-        className="scroll-mt-20 py-24 px-4 sm:px-6"
-        style={{ backgroundColor: 'var(--skin-cream-dark)' }}
+        className="scroll-mt-20 py-24 px-4 sm:px-6 bg-marble"
       >
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-display text-2xl font-bold mb-6 text-stone-800 md:mb-8">
-            {WEB_CONTENT.filozofie.heading}
-          </h2>
+          <AccentHeading
+            text={WEB_CONTENT.filozofie.heading}
+            className="font-display text-3xl sm:text-4xl font-semibold mb-6 text-stone-800 md:mb-8"
+          />
           <div className="body-text text-stone-700 space-y-6 leading-relaxed">
             <p>{WEB_CONTENT.filozofie.paragraphs[0]}</p>
             <p>
@@ -165,9 +166,10 @@ export default function CosmeticsPage({ services = [] }) {
         style={{ backgroundColor: COSMETICS_BG }}
       >
         <div className="max-w-6xl mx-auto">
-          <h2 className="font-display text-2xl sm:text-3xl font-semibold text-stone-700 text-center mb-12">
-            {WEB_CONTENT.promeny.heading}
-          </h2>
+          <AccentHeading
+            text={WEB_CONTENT.promeny.heading}
+            className="font-display text-3xl sm:text-4xl font-semibold text-stone-800 text-center mb-12"
+          />
           {transformationsWithImages.length > 0 ? (
             <>
               <LazySection rootMargin="240px">

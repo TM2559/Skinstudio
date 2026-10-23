@@ -118,7 +118,7 @@ export default function PMUSpotlightSection() {
             <motion.div variants={itemVariants}>
               <Link
                 to="/pmu#pmu"
-                className="inline-flex items-center justify-center min-w-[200px] px-8 py-4 border border-[#222] text-[#222] font-sans text-xs uppercase tracking-[0.2em] transition-colors duration-300 hover:bg-[#222] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#222] focus-visible:ring-offset-2"
+                className="inline-flex items-center gap-2 pb-1 border-b border-[#B08D55] text-stone-800 font-sans text-xs font-medium uppercase tracking-[0.2em] transition-colors duration-300 hover:text-[#B08D55] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B08D55] focus-visible:ring-offset-4"
                 aria-label={pmu.cta}
               >
                 {pmu.cta}

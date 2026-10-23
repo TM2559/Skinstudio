@@ -49,7 +49,7 @@ export const WEB_CONTENT = {
   },
 
   filozofie: {
-    heading: 'Filozofie',
+    heading: 'Proč *ke mně*',
     paragraphs: [
       'Jmenuji se Lucie Metelková a kosmetika je pro mě víc než jen práce – je to spojení odbornosti, relaxace a preciznosti. Kladu absolutní důraz na čistotu, špičkové postupy a zdraví vaší pleti.',
       'V mém studiu v Uherském Brodě nenajdete „pásovou výrobu“. Každá pleť je jedinečná, a proto je i každé mé ošetření 100% individuální. Ať už řešíme akné, vrásky, nebo jen toužíte po dokonalém obočí díky laminaci, mým cílem je, abyste odcházela nejen krásnější, ale i dokonale odpočatá.',
@@ -72,7 +72,7 @@ export const WEB_CONTENT = {
   },
 
   promeny: {
-    heading: 'Proměny',
+    heading: 'Před a *po*',
     emptyState: 'Proměny před/po budou zobrazeny, jakmile je v administraci přidáte (Fotografie → Proměny).',
     carouselAriaLabel: 'Proměny',
     transformationAriaLabel: 'Proměna',

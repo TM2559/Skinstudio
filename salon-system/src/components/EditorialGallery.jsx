@@ -55,7 +55,7 @@ export default function EditorialGallery({ category, theme = 'light' }) {
             dark ? 'text-white' : 'text-stone-800'
           }`}
         >
-          Galerie
+          Z mého studia
         </h2>
 
         {/* Mobile: horizontal swipe carousel */}
