@@ -1,12 +1,23 @@
 import React from 'react';
 import { Utils } from '../../utils/helpers';
+import { CONTACT } from '../../constants/config';
 
 export default function DateStrip({ dates, activeDateStr, slotsPerDate, selectedService, isDark, onSelect }) {
   return (
     <div>
       <h2 className={`text-[10px] font-bold uppercase tracking-widest mb-6 border-b pb-2 ${isDark ? 'text-stone-300 border-stone-800' : 'text-stone-500 border-stone-100'}`}>2. Termín</h2>
       <div className="mobile-carousel-strip date-strip-scroll flex gap-3 pb-4 min-w-0">
-        {dates.length === 0 && <p className={`text-xs ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>Momentálně nejsou vypsány žádné termíny.</p>}
+        {dates.length === 0 && (
+          <p className={`text-sm leading-relaxed ${isDark ? 'text-stone-300' : 'text-stone-600'}`}>
+            Volné termíny právě doplňuji. Zavolejte mi a termín domluvíme:{' '}
+            <a
+              href={CONTACT.PHONE_LINK}
+              className={`font-semibold whitespace-nowrap underline underline-offset-4 ${isDark ? 'text-[#daa59c]' : 'text-[var(--skin-gold-dark)]'}`}
+            >
+              {CONTACT.PHONE}
+            </a>
+          </p>
+        )}
         {dates.map(d => {
           const key = Utils.formatDateKey(d);
           const isActive = activeDateStr === key;
