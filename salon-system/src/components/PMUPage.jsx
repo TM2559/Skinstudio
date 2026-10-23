@@ -154,7 +154,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             <button
               type="button"
               onClick={() => scrollTo('rezervace-pmu')}
-              className="text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full bg-[#C48F83] text-white hover:bg-[#C48F83]/90 hover:scale-[1.01] transition-all"
+              className="text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full bg-[#C48F83] text-[#1F1B18] hover:bg-[#C48F83]/90 hover:scale-[1.01] transition-all"
             >
               Rezervace
             </button>
@@ -203,7 +203,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
             <button
               type="button"
               onClick={() => { scrollTo('rezervace-pmu'); setMenuOpen(false); }}
-              className="inline-flex justify-center py-3 mt-2 text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full bg-[#C48F83] text-white hover:bg-[#C48F83]/90 hover:scale-[1.01] transition-all"
+              className="inline-flex justify-center py-3 mt-2 text-sm font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full bg-[#C48F83] text-[#1F1B18] hover:bg-[#C48F83]/90 hover:scale-[1.01] transition-all"
             >
               Rezervace
             </button>
@@ -226,7 +226,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
           <button
             type="button"
             onClick={() => scrollTo('rezervace-pmu')}
-            className="mt-12 inline-flex items-center justify-center px-8 py-4 font-semibold uppercase text-[10px] tracking-[0.2em] rounded-full bg-[#C48F83] text-white hover:bg-[#C48F83]/90 hover:scale-[1.01] transition-all"
+            className="mt-12 inline-flex items-center justify-center px-8 py-4 font-semibold uppercase text-xs tracking-[0.2em] rounded-full bg-[#C48F83] text-[#1F1B18] hover:bg-[#C48F83]/90 hover:scale-[1.01] transition-all"
           >
             Objednat konzultaci
           </button>
@@ -307,7 +307,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                 )}
               </>
             ) : (
-              <p className="text-center text-[#A1A1AA]/60 text-sm py-12">
+              <p className="text-center text-[#A1A1AA] text-sm py-12">
                 Před/po proměny budou zobrazeny po přidání v administraci (Fotografie → Proměny, kategorie PMU).
               </p>
             )}
@@ -358,13 +358,13 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
                   })
                 )}
               </ul>
-              <p className="mt-8 text-[#A1A1AA]/70 text-sm text-center">
+              <p className="mt-8 text-[#A1A1AA] text-sm text-center">
                 Přesné ceny a termíny vám sdělíme při rezervaci nebo na konzultaci.
               </p>
               <button
                 type="button"
                 onClick={() => scrollTo('rezervace-pmu')}
-                className="mt-8 w-full inline-flex items-center justify-center py-4 font-semibold uppercase text-[10px] tracking-[0.2em] rounded-full text-white transition-all bg-[#C48F83] hover:bg-[#C48F83]/90 hover:scale-[1.01]"
+                className="mt-8 w-full inline-flex items-center justify-center py-4 font-semibold uppercase text-xs tracking-[0.2em] rounded-full text-[#1F1B18] transition-all bg-[#C48F83] hover:bg-[#C48F83]/90 hover:scale-[1.01]"
               >
                 Rezervovat termín
               </button>
@@ -435,7 +435,7 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
               <p className="flex items-center gap-2 md:justify-end">
                 IČO {WEB_CONTENT.footer.ico}
               </p>
-              <p className="flex items-center gap-2 md:justify-end text-xs text-[#A1A1AA]/70">
+              <p className="flex items-center gap-2 md:justify-end text-xs text-[#A1A1AA]">
                 {WEB_CONTENT.footer.tradeRegisterText}
               </p>
             </address>
@@ -444,12 +444,12 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
         <div className="border-t border-white/5">
           <div className="container mx-auto px-6 py-4 flex flex-row flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <p className="text-xs text-[#A1A1AA]/60">
+              <p className="text-xs text-[#A1A1AA]">
                 {WEB_CONTENT.footer.copyright}
               </p>
               <Link
                 to="/zpracovani-osobnich-udaju"
-                className="text-xs text-[#A1A1AA]/60 hover:text-[#C48F83] transition-colors"
+                className="text-xs text-[#A1A1AA] hover:text-[#C48F83] transition-colors"
               >
                 {WEB_CONTENT.footer.privacyLinkLabel}
               </Link>

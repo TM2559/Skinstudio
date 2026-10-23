@@ -106,7 +106,7 @@ export default function PMUSpotlightSection() {
               variants={itemVariants}
             >
               {pmu.headline}{' '}
-              <span className="italic text-stone-400">{pmu.headlineItalic}</span>
+              <span className="italic text-[#8C6A2E]">{pmu.headlineItalic}</span>
             </motion.h2>
             <motion.p
               className="font-sans text-[#4A4A4A] mb-8 max-w-lg mx-auto md:mx-0"

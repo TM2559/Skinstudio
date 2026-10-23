@@ -131,8 +131,8 @@ export default function ServiceListAccordion({
                             to={getReserveHref(s)}
                             className={
                               isDark
-                                ? 'mt-6 inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 font-sans font-semibold text-xs uppercase tracking-widest text-white transition-all duration-300 hover:brightness-95 border border-[#D49A91]/20 focus:outline-none focus:ring-2 focus:ring-[#daa59c] focus:ring-offset-2 focus:ring-offset-[#0F0F0F]'
-                                : 'mt-6 inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)] focus:outline-none focus:ring-2 focus:ring-stone-600 focus:ring-offset-2'
+                                ? 'mt-6 inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 font-sans font-semibold text-xs uppercase tracking-widest text-[#1F1B18] transition-all duration-300 hover:brightness-95 border border-[#D49A91]/20 focus:outline-none focus:ring-2 focus:ring-[#daa59c] focus:ring-offset-2 focus:ring-offset-[#0F0F0F]'
+                                : 'mt-6 inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-[#2E2925] font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)] focus:outline-none focus:ring-2 focus:ring-stone-600 focus:ring-offset-2'
                             }
                             style={
                               isDark
@@ -150,7 +150,7 @@ export default function ServiceListAccordion({
                           <Link
                             to={giftVoucherHref(s.id)}
                             className={`mt-6 inline-flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-widest underline-offset-4 hover:underline ${
-                              isDark ? 'text-[#daa59c]' : 'text-[#9a7b4f]'
+                              isDark ? 'text-[#daa59c]' : 'text-[#7A5C28]'
                             }`}
                           >
                             <Gift size={16} aria-hidden /> {WEB_CONTENT.cenik.ctaDarovat}
@@ -167,7 +167,7 @@ export default function ServiceListAccordion({
         })}
       </ul>
       {priceNote && (
-        <p className={`mt-6 text-center text-sm ${isDark ? 'text-[#A1A1AA]/70' : 'text-gray-500'}`}>
+        <p className={`mt-6 text-center text-sm ${isDark ? 'text-[#A1A1AA]' : 'text-gray-500'}`}>
           {priceNote}
         </p>
       )}
@@ -177,8 +177,8 @@ export default function ServiceListAccordion({
             to={footerHref}
             className={
               isDark
-                ? 'inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 font-sans font-semibold text-xs uppercase tracking-widest text-white transition-all duration-300 hover:brightness-95 border border-[#D49A91]/20'
-                : 'inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-white font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]'
+                ? 'inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 font-sans font-semibold text-xs uppercase tracking-widest text-[#1F1B18] transition-all duration-300 hover:brightness-95 border border-[#D49A91]/20'
+                : 'inline-flex items-center justify-center gap-2 bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95 border-t border-white/25 text-[#2E2925] font-sans font-semibold text-xs uppercase tracking-widest rounded-full px-8 py-3 transition-all duration-300 shadow-[0_4px_20px_rgba(197,165,114,0.3)] hover:shadow-[0_6px_25px_rgba(197,165,114,0.5)]'
             }
             style={
               isDark

@@ -63,7 +63,7 @@ export default function BookingSuccess({ isDark, reservationDetails, onReset }) 
       )}
 
       <div className="space-y-3">
-        <h3 className={`text-[10px] font-bold uppercase tracking-widest text-center mb-3 ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>
+        <h3 className={`text-[10px] font-bold uppercase tracking-widest text-center mb-3 ${isDark ? 'text-stone-400' : 'text-stone-400'}`}>
           Uložit termín do kalendáře
         </h3>
         <div className="flex flex-col sm:flex-row gap-3">

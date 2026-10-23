@@ -10,7 +10,7 @@ export default function AccentHeading({ text, className = '', as: Tag = 'h2' }) 
     <Tag className={className}>
       {parts.map((part, i) =>
         i % 2 === 1 ? (
-          <em key={i} className="font-display italic font-medium text-[#B08D55]">
+          <em key={i} className="font-display italic font-medium text-[#8C6A2E]">
             {part}
           </em>
         ) : (

@@ -14,7 +14,7 @@ function AccordionSection({ id, title, open, onToggle, children, isDark }) {
   const titleClass = isDark
     ? 'text-stone-100 hover:text-white'
     : 'text-stone-800 hover:text-stone-900';
-  const chevronClass = isDark ? 'text-stone-500' : 'text-stone-400';
+  const chevronClass = isDark ? 'text-stone-400' : 'text-stone-400';
   const bodyClass = isDark ? 'text-stone-300' : 'text-[#334155]';
   const linkClass = isDark ? 'text-[#daa59c] hover:underline' : 'text-[var(--skin-gold-dark)] hover:underline';
 

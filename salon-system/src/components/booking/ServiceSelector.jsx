@@ -12,7 +12,7 @@ function UpsellRow({ upsell, isActive, isDark, onToggle }) {
           {upsell.name}
         </span>
         {hasPrice && (
-          <span className={`text-[10px] font-light tracking-wide uppercase mt-0.5 ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>
+          <span className={`text-[10px] font-light tracking-wide uppercase mt-0.5 ${isDark ? 'text-stone-400' : 'text-stone-400'}`}>
             zvýhodněná cena k ošetření
           </span>
         )}
@@ -23,7 +23,7 @@ function UpsellRow({ upsell, isActive, isDark, onToggle }) {
         className={`ml-4 rounded-full px-3 py-1 text-xs font-semibold transition-colors border flex-shrink-0 ${
           isDark
             ? isActive
-              ? 'bg-[#daa59c]/90 text-white border-[#daa59c]/50'
+              ? 'bg-[#daa59c]/90 text-[#1F1B18] border-[#daa59c]/50'
               : 'bg-stone-800 text-stone-200 border-stone-700 hover:border-stone-600'
             : isActive
               ? 'bg-stone-800 text-white border-stone-800'
@@ -42,7 +42,7 @@ export default function ServiceSelector({ services, selectedService, selectedUps
     <div>
       <h2 className={`text-[10px] font-bold uppercase tracking-widest mb-6 flex items-center gap-2 border-b pb-2 ${isDark ? 'text-stone-300 border-stone-800' : 'text-stone-500 border-stone-100'}`}>
         <span
-          className={`w-5 h-5 rounded-full text-white flex items-center justify-center text-[8px] ${isDark ? 'bg-[#daa59c]' : ''}`}
+          className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] ${isDark ? 'bg-[#daa59c] text-[#1F1B18]' : 'text-white'}`}
           style={!isDark ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}
         >
           1

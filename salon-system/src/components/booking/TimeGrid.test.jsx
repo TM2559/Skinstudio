@@ -33,6 +33,6 @@ describe('TimeGrid', () => {
   it('renders in dark mode', () => {
     render(<TimeGrid slots={slots} selectedTime="09:00" isDark={true} onSelect={onSelect} />);
     const btn = screen.getByText('09:00');
-    expect(btn.className).toContain('text-white');
+    expect(btn.className).toContain('text-[#1F1B18]');
   });
 });

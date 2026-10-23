@@ -14,7 +14,7 @@ export default function TimeGrid({ slots, selectedTime, isDark, onSelect }) {
               onClick={() => onSelect(t)}
               className={`py-3 rounded-lg text-sm border transition-all ${
                 isDark
-                  ? isTimeSelected ? 'text-white border-[#daa59c]/60 bg-[#daa59c]/90' : 'bg-stone-900 border-stone-800 text-stone-200 hover:border-stone-700'
+                  ? isTimeSelected ? 'text-[#1F1B18] border-[#daa59c]/60 bg-[#daa59c]/90' : 'bg-stone-900 border-stone-800 text-stone-200 hover:border-stone-700'
                   : isTimeSelected ? 'text-white border-[var(--skin-gold-dark)]' : 'bg-white border-stone-200 text-stone-700 hover:bg-[#F9F7F2] hover:border-stone-300'
               }`}
               style={!isDark && isTimeSelected ? { backgroundColor: 'var(--skin-gold-dark)' } : undefined}

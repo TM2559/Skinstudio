@@ -281,7 +281,7 @@
 
   /* 1. CHAMPAGNE GOLD BUTTON (For Light Sections) */
   .btn-gold {
-    @apply inline-block rounded-full px-8 py-3 font-sans font-semibold text-xs uppercase tracking-widest text-white border-t border-white/25 transition-all duration-300;
+    @apply inline-block rounded-full px-8 py-3 font-sans font-semibold text-xs uppercase tracking-widest text-[#2E2925] border-t border-white/25 transition-all duration-300;
     background-image: linear-gradient(to bottom, var(--skin-gold-from), var(--skin-gold-to));
     box-shadow: 0 4px 20px rgba(197, 165, 114, 0.3);
   }
@@ -292,7 +292,7 @@
 
   /* 2. ROSE GOLD SATIN BUTTON (For Dark PMU Section) */
   .btn-rose {
-    @apply inline-block rounded-full px-8 py-3 font-sans font-semibold text-xs uppercase tracking-widest text-white transition-all duration-300;
+    @apply inline-block rounded-full px-8 py-3 font-sans font-semibold text-xs uppercase tracking-widest text-[#1F1B18] transition-all duration-300;
     background-image: linear-gradient(to bottom, var(--skin-rose-from), var(--skin-rose-via), var(--skin-rose-to));
     border: 1px solid var(--skin-rose-light);
     box-shadow: 0 4px 20px rgba(196, 143, 131, 0.35);

@@ -18,7 +18,7 @@ const ROSE_ACCENT = '#daa59c';
 
 function getMarkdownComponents(theme) {
   const isDark = theme === 'dark';
-  const accentClass = isDark ? 'font-semibold' : 'font-semibold text-[var(--skin-gold)]';
+  const accentClass = isDark ? 'font-semibold' : 'font-semibold text-stone-800';
   const accentStyle = isDark ? { color: ROSE_ACCENT } : undefined;
   return {
     p: ({ children, ...props }) => <p className="mb-3 last:mb-0" {...props}>{children}</p>,

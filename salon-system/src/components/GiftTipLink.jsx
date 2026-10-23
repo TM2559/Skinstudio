@@ -14,7 +14,7 @@ export default function GiftTipLink({ variant = 'light', serviceId }) {
   const className = `inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap align-middle transition-colors ${
     isDark
       ? 'border border-[#daa59c]/40 text-[#daa59c] hover:bg-[#daa59c]/10'
-      : 'border border-[#C5A880]/50 bg-[#FAF7F3] text-[#9a7b4f] hover:bg-[#F3ECE2]'
+      : 'border border-[#C5A880]/50 bg-[#FAF7F3] text-[#7A5C28] hover:bg-[#F3ECE2]'
   }`;
   const content = (
     <>

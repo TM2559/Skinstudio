@@ -48,7 +48,7 @@ export default class ErrorBoundary extends React.Component {
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="px-6 py-3 rounded-full font-semibold text-sm uppercase tracking-widest transition-all text-white bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95"
+              className="px-6 py-3 rounded-full font-semibold text-sm uppercase tracking-widest transition-all text-[#2E2925] bg-gradient-to-b from-[#dec89a] to-[#b08d55] hover:brightness-95"
             >
               Obnovit stránku
             </button>

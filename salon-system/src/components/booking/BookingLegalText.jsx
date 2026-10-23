@@ -4,7 +4,7 @@
  */
 export function BookingLegalText({ onOpenPrivacyModal, isDark = false }) {
   const baseClass = 'text-[11px] leading-tight mt-3 text-center';
-  const textClass = isDark ? 'text-stone-500' : 'text-stone-400';
+  const textClass = isDark ? 'text-stone-400' : 'text-stone-400';
   const buttonClass = [
     'underline underline-offset-[3px] rounded-sm transition-colors duration-200',
     isDark
