@@ -81,10 +81,10 @@ describe('CustomerView', () => {
     );
     const card = screen.getAllByText('Čištění pleti').find((el) => el.closest('[role="button"]'));
     fireEvent.click(card);
-    expect(screen.queryByText('Momentálně nejsou vypsány žádné termíny.')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Volné termíny právě doplňuji/)).not.toBeInTheDocument();
   });
 
-  // Prázdný rozvrh: po výběru služby se zobrazí „Momentálně nejsou vypsány žádné termíny.“
+  // Prázdný rozvrh: po výběru služby se zobrazí výzva zavolat („Volné termíny právě doplňuji…“)
   it('shows "no dates" message when schedule has no available days', () => {
     renderWithProviders(
       <CustomerView
@@ -94,7 +94,7 @@ describe('CustomerView', () => {
       />
     );
     fireEvent.click(screen.getByText('Klasická masáž'));
-    expect(screen.getByText('Momentálně nejsou vypsány žádné termíny.')).toBeInTheDocument();
+    expect(screen.getByText(/Volné termíny právě doplňuji/)).toBeInTheDocument();
   });
 
   // Při vybrané službě a rozvrhu: zobrazí se tlačítka časů (např. 09:00, 09:30).

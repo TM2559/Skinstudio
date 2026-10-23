@@ -56,7 +56,8 @@ describe('DateStrip', () => {
       <DateStrip dates={[]} activeDateStr={null} slotsPerDate={new Map()}
         selectedService={null} isDark={false} onSelect={onSelect} />
     );
-    expect(screen.getByText(/nejsou vypsány/i)).toBeTruthy();
+    expect(screen.getByText(/Volné termíny právě doplňuji/i)).toBeTruthy();
+    expect(screen.getByRole('link', { name: '+420 724 875 558' }).getAttribute('href')).toBe('tel:+420724875558');
   });
 
   it('renders in dark mode', () => {
