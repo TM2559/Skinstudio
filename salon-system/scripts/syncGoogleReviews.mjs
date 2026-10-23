@@ -14,7 +14,7 @@ const endpoint = `https://places.googleapis.com/v1/places/${placeId}?languageCod
 const response = await fetch(endpoint, {
   headers: {
     'X-Goog-Api-Key': apiKey,
-    'X-Goog-FieldMask': 'reviews',
+    'X-Goog-FieldMask': 'reviews,rating,userRatingCount',
   },
 });
 
@@ -45,7 +45,14 @@ const reviews = rawReviews
   .filter(Boolean);
 
 const outputFile = path.resolve(process.cwd(), 'src/constants/googleReviews.js');
-const fileContent = `export const GOOGLE_REVIEWS = ${JSON.stringify(reviews, null, 2)};\n`;
+// Celkové hodnocení profilu (štítek u PMU úvodu); null, když ho Google nevrátí
+const summary =
+  Number.isFinite(payload.rating) && Number.isFinite(payload.userRatingCount)
+    ? { rating: payload.rating, count: payload.userRatingCount }
+    : null;
+const fileContent =
+  `export const GOOGLE_REVIEWS = ${JSON.stringify(reviews, null, 2)};\n\n` +
+  `export const GOOGLE_RATING = ${JSON.stringify(summary)};\n`;
 
 await fs.writeFile(outputFile, fileContent, 'utf8');
 console.log(`Updated ${reviews.length} Google reviews in src/constants/googleReviews.js`);

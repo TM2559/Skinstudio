@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Phone, Mail, MapPin } from 'lucide-react';
+import { Menu, X, Phone, Mail, MapPin, Star } from 'lucide-react';
 import { query, where, onSnapshot } from 'firebase/firestore';
 import { getPublicContentCollectionPathsForRead } from '../firebaseConfig';
 import { TRANSFORMATIONS_COLLECTION, PMU_CATEGORY } from '../constants/cosmetics';
@@ -12,6 +12,8 @@ import { TaglineWithHeart } from './FooterTagline';
 import DeveloperSignature from './DeveloperSignature';
 import ServiceSchema from './ServiceSchema';
 import GiftTipLink from './GiftTipLink';
+import { GOOGLE_RATING } from '../constants/googleReviews';
+import { GOOGLE_REVIEW_URL } from '../firebaseConfig';
 import useGiftVoucherServiceIds from '../hooks/useGiftVoucherServiceIds';
 import BreadcrumbSchema from './BreadcrumbSchema';
 import useSEO from '../hooks/useSEO';
@@ -212,24 +214,69 @@ export default function PMUPage({ services = [], schedule = {}, reservations = [
       </header>
 
       <main>
-        {/* Hero – full-screen, jako na main */}
-        <section className="min-h-screen flex flex-col items-center justify-center px-4 pt-16 text-center">
-          <p className="font-display text-[#C48F83] text-sm uppercase tracking-[0.3em] mb-6">
-            Permanent Make-Up
-          </p>
-          <h1 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white tracking-tight max-w-3xl">
-            Umění trvalé krásy
-          </h1>
-          <p className="mt-8 text-[#A1A1AA] text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-            Precizní linky. Přirozený výsledek. Výjimečný zážitek.
-          </p>
-          <button
-            type="button"
-            onClick={() => scrollTo('rezervace-pmu')}
-            className="mt-12 inline-flex items-center justify-center px-8 py-4 font-semibold uppercase text-xs tracking-[0.2em] rounded-full bg-[#C48F83] text-[#1F1B18] hover:bg-[#C48F83]/90 hover:scale-[1.01] transition-all"
+        {/* Hero – slib + jedno CTA, vedle skutečný výsledek před/po z Proměn PMU (rešerše 23. 10.: konkurence ukazuje výsledky hned nahoře) */}
+        <section className="min-h-screen flex items-center px-4 pt-24 pb-16">
+          <div
+            className={`max-w-6xl mx-auto w-full grid gap-12 items-center ${
+              displaySliders.length > 0 ? 'md:grid-cols-2' : ''
+            }`}
           >
-            Objednat konzultaci
-          </button>
+            <div className={displaySliders.length > 0 ? 'text-center md:text-left' : 'text-center'}>
+              <p className="font-display text-[#C48F83] text-sm uppercase tracking-[0.3em] mb-6">
+                Permanent Make-Up
+              </p>
+              <h1
+                className={`font-display font-bold text-4xl sm:text-5xl md:text-6xl text-white tracking-tight ${
+                  displaySliders.length > 0 ? 'max-w-xl mx-auto md:mx-0' : 'max-w-3xl mx-auto lg:text-7xl'
+                }`}
+              >
+                Umění trvalé krásy
+              </h1>
+              <p
+                className={`mt-8 text-[#A1A1AA] text-base sm:text-lg max-w-xl leading-relaxed ${
+                  displaySliders.length > 0 ? 'mx-auto md:mx-0' : 'mx-auto'
+                }`}
+              >
+                Precizní linky. Přirozený výsledek. Výjimečný zážitek.
+              </p>
+              <button
+                type="button"
+                onClick={() => scrollTo('rezervace-pmu')}
+                className="mt-12 inline-flex items-center justify-center px-8 py-4 font-semibold uppercase text-xs tracking-[0.2em] rounded-full bg-[#C48F83] text-[#1F1B18] hover:bg-[#C48F83]/90 hover:scale-[1.01] transition-all"
+              >
+                Objednat konzultaci
+              </button>
+              {GOOGLE_RATING && (
+                <a
+                  href={GOOGLE_REVIEW_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 flex items-center gap-2 text-sm text-[#A1A1AA] hover:text-white transition-colors justify-center md:justify-start"
+                >
+                  <Star size={16} fill="#C48F83" stroke="#C48F83" aria-hidden />
+                  <span>
+                    <strong className="font-semibold text-white">
+                      {GOOGLE_RATING.rating.toLocaleString('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                    </strong>{' '}
+                    z {GOOGLE_RATING.count} hodnocení na Google
+                  </span>
+                </a>
+              )}
+            </div>
+            {displaySliders.length > 0 && (
+              <figure className="w-full max-w-md mx-auto md:ml-auto md:mr-0">
+                <ComparisonSlider
+                  beforeImage={displaySliders[0].beforeImage}
+                  afterImage={displaySliders[0].afterImage}
+                  altText={displaySliders[0].altText}
+                  theme="dark"
+                />
+                <figcaption className="mt-3 text-center text-xs uppercase tracking-[0.2em] text-[#A1A1AA]">
+                  Skutečný výsledek · před a po
+                </figcaption>
+              </figure>
+            )}
+          </div>
         </section>
 
         {/* Filozofie – text-left, heading centered, max-w-2xl */}
