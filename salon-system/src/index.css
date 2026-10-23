@@ -98,7 +98,7 @@
     border-color: var(--skin-beige-muted);
   }
   .font-display {
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'EB Garamond', Georgia, serif;
     letter-spacing: 0.005em;
   }
   /* Mramor (IDENTITA.md): zeď se zlatým žilkováním z Luciina portrétu, zesvětlená do krémové */
@@ -304,7 +304,7 @@
 
   /* 3. Editorial headline – Playfair Display, responsive sizes */
   .headline-editorial {
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'EB Garamond', Georgia, serif;
     @apply tracking-tight text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
   }
 

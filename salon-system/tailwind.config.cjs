@@ -5,7 +5,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['Jost', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        display: ['"EB Garamond"', 'Georgia', 'serif'],
       },
       colors: {
       // Identita Skin Studio (IDENTITA.md): teplé „mramorové“ šedé místo studené Tailwind palety

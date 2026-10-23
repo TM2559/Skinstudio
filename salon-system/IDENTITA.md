@@ -6,13 +6,13 @@ z jejích portrétů a **její ruční podpis**.
 
 ## Motivy
 - **Mramor:** jemné žilkování jako pozadí klidných sekcí (Filozofie / „Proč ke mně“), nikdy výrazně.
-- **Rukopis:** písmo Sacramento (už v podpisu) na jedno slovo v nadpisu sekce – „Proč *ke mně*“.
-  Max. jedno slovo na nadpis, nikdy v odstavcích ani tlačítkách.
+- **Zlatá kurzíva:** jedno slovo v nadpisu sekce kurzívou nadpisového písma ve zlaté – „Proč *ke mně*“.
+- **Rukopis:** Sacramento jen pro Luciin podpis (vedle patkového písma v nadpisu působí tence a nesedí na řádku).
 
 ## Písma
-- Nadpisy: **Cormorant Garamond** 500/600 (místo všudypřítomné Playfair Display).
+- Nadpisy: **EB Garamond** 500/600 (místo všudypřítomné Playfair Display; Cormorant měl odtržené české háčky).
 - Text a tlačítka: **Jost** 300/400/500 (místo systémového písma).
-- Rukopis: **Sacramento**.
+- Rukopis: **Sacramento** (jen podpis).
 
 ## Paleta (hex)
 | Role | Hex | Odkud |
